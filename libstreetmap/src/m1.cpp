@@ -22,6 +22,34 @@
 #include "m1.h"
 #include "StreetsDatabaseAPI.h"
 
+typedef int StreetSegmentIdx;
+typedef int IntersectionIdx;
+typedef int POIIdx;
+typedef int StreetIdx;
+
+std::vector<std::vector<StreetSegmentIdx>> streetSegmentsOfIntersections;
+
+
+void populateStreetSegmentsOfIntersections() {
+   int numberOfStreetSegments;
+   int b = 6;
+   int numberOfInstersections = getNumIntersections();
+   int a = 5;
+   streetSegmentsOfIntersections.resize(getNumIntersections());
+   for (int i = 0; i < getNumIntersections(); i++) {
+       numberOfStreetSegments = getNumIntersectionStreetSegment(i);
+       for (int j = 0; j < numberOfStreetSegments; j++) {
+           streetSegmentsOfIntersections[i].push_back(getIntersectionStreetSegment(j, i));
+       }
+   }
+}
+
+
+std::vector<StreetSegmentIdx> findStreetSegmentsOfIntersection(IntersectionIdx intersection_id) {
+   return streetSegmentsOfIntersections[intersection_id];
+}
+
+
 
 // loadMap will be called with the name of the file that stores the "layer-2"
 // map data accessed through StreetsDatabaseAPI: the street and intersection 
@@ -44,7 +72,9 @@ bool loadMap(std::string map_streets_database_filename) {
     //
     // Load your map related data structures here.
     //
+    loadStreetsDatabaseBIN(map_streets_database_filename);
 
+    populateStreetSegmentsOfIntersections();
     
 
     load_successful = true; //Make sure this is updated to reflect whether
@@ -56,4 +86,54 @@ bool loadMap(std::string map_streets_database_filename) {
 void closeMap() {
     //Clean-up your map related data structures here
     
+}
+
+double findDistanceBetweenTwoPoints(LatLon point_1, LatLon point_2) {
+    return 0.0;
+}
+
+double findStreetSegmentLength(StreetSegmentIdx street_segment_id) {
+    return 0.0;
+}
+
+double findStreetSegmentTravelTime(StreetSegmentIdx street_segment_id) {
+    return 0.0;
+}
+
+double findAngleBetweenStreetSegments(StreetSegmentIdx src_street_segment_id, StreetSegmentIdx dst_street_segment_id) {
+    return 0.0;
+}
+
+bool intersectionsAreDirectlyConnected(std::pair<IntersectionIdx, IntersectionIdx> intersection_ids) {
+    return 0.0;
+}
+
+std::vector<IntersectionIdx> findIntersectionsOfTwoStreets(std::pair<StreetIdx, StreetIdx> street_ids) {
+    std::vector<int> returnVector;
+    return returnVector;
+}
+
+std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_prefix) {
+    std::vector<int> returnVector;
+    return returnVector;
+}
+
+double findStreetLength(StreetIdx street_id) {
+    return 0.0;
+}
+
+POIIdx findClosestPOI(LatLon my_position, std::string poi_name) {
+    return 0;
+}
+
+double findFeatureArea(FeatureIdx feature_id) {
+    return 0.0;
+}
+
+double findWayLength(OSMID way_id) {
+    return 0.0;
+}
+
+std::string getOSMNodeTagValue(OSMID osm_id, std::string key) {
+    return "Hello";
 }
