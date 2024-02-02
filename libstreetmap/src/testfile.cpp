@@ -7,6 +7,10 @@ Please add a comment below and commit after you successfully pull and modify thi
 
 Go it! -Kevin
 
+C++ is cool
+    - Someone Famous, A long time ago
+
+
 
 
  */
