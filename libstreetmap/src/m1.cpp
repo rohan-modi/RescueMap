@@ -19,6 +19,7 @@
  * SOFTWARE.
  */
 #include <iostream>
+#include <cmath>
 #include "m1.h"
 #include "StreetsDatabaseAPI.h"
 
@@ -45,9 +46,9 @@ void populateStreetSegmentsOfIntersections() {
 }
 
 
-std::vector<StreetSegmentIdx> findStreetSegmentsOfIntersection(IntersectionIdx intersection_id) {
-   return streetSegmentsOfIntersections[intersection_id];
-}
+//std::vector<StreetSegmentIdx> findStreetSegmentsOfIntersection(IntersectionIdx intersection_id) {
+//   return streetSegmentsOfIntersections[intersection_id];
+//}
 
 
 
@@ -88,8 +89,27 @@ void closeMap() {
     
 }
 
+// Returns the distance between two (lattitude,longitude) coordinates in meters.
+// Speed Requirement --> moderate
 double findDistanceBetweenTwoPoints(LatLon point_1, LatLon point_2) {
-    return 0.0;
+    // Use the formula: (x,y) = (R * lon * cos(lat_avg), R * lat)
+    // where:   R = kEarthRadiusInMeters
+    // and      lat, lon expressed in [rad]; multiply [degree] values by kDegreeToRadian
+
+    // To find the distance between two points (lon1, lat1) and (lon2, lat2),
+    // it is accurate to compute lat_avg = (lat1 + lat2) / 2 [rad]
+    double lat_avg = kDegreeToRadian * (point_1.latitude() + point_2.latitude()) / 2;
+
+    // Compute x-coordinates for point_1 and point_2
+    double x1 = kEarthRadiusInMeters * kDegreeToRadian * point_1.longitude() * cos(lat_avg);
+    double x2 = kEarthRadiusInMeters * kDegreeToRadian * point_2.longitude() * cos(lat_avg);
+
+    // Compute y-coordinates for point_1 and point_2
+    double y1 = kEarthRadiusInMeters * kDegreeToRadian * point_1.latitude();
+    double y2 = kEarthRadiusInMeters * kDegreeToRadian * point_2.latitude();
+
+    // Return the distance by the Pythagoras theorem: d = sqrt((y2 - y1)^2, (x2 - x1)^2) [m]
+    return sqrt(pow(y2 - y1, 2) + pow(x2 - x1, 2));
 }
 
 double findStreetSegmentLength(StreetSegmentIdx street_segment_id) {
@@ -106,6 +126,20 @@ double findAngleBetweenStreetSegments(StreetSegmentIdx src_street_segment_id, St
 
 bool intersectionsAreDirectlyConnected(std::pair<IntersectionIdx, IntersectionIdx> intersection_ids) {
     return 0.0;
+}
+
+IntersectionIdx findClosestIntersection(LatLon my_position){
+    return 0;
+}
+
+std::vector<StreetSegmentIdx> findStreetSegmentsOfIntersection(IntersectionIdx intersection_id){
+    std::vector<int> returnVector;
+    return returnVector;
+} 
+
+std::vector<IntersectionIdx> findIntersectionsOfStreet(StreetIdx street_id){
+    std::vector<int> returnVector;
+    return returnVector;
 }
 
 std::vector<IntersectionIdx> findIntersectionsOfTwoStreets(std::pair<StreetIdx, StreetIdx> street_ids) {
