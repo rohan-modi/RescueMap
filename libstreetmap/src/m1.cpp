@@ -113,7 +113,59 @@ double findDistanceBetweenTwoPoints(LatLon point_1, LatLon point_2) {
 }
 
 double findStreetSegmentLength(StreetSegmentIdx street_segment_id) {
-    return 0.0;
+    // Get the StreetSegmentInfo struct associated with street_segment_id
+    StreetSegmentInfo segment = getStreetSegmentInfo(street_segment_id);
+
+    // If segment contains 0 curve points: it is a straight line
+    if (segment.numCurvePoints == 0) {
+
+        // Retrieve LatLon position for segment endpoints "from" and "to"
+        LatLon from_latlon = getIntersectionPosition(segment.from);
+        LatLon to_latlon = getIntersectionPosition(segment.to);
+
+        // Return straight-line distance between "from" and "to"
+        return findDistanceBetweenTwoPoints(from_latlon, to_latlon);
+    }
+
+    // Else, segment contains curve points
+    else {
+        // APPROACH: 
+        // Within the segment endpoints, add the sub-segment distances between curve points
+
+        // Initialize curvePointIdx = 0
+        int curvePointIdx = 0;
+
+        // Initialize first 2 points to calculate distance: endpoint "from" and curvePoint 0
+        LatLon latlon1 = getIntersectionPosition(segment.from);
+        LatLon latlon2 = getStreetSegmentCurvePoint(curvePointIdx, street_segment_id);
+
+        // Compute the first sub-segment distance between endpoint "from" and curvePoint 0
+        double distance = findDistanceBetweenTwoPoints(latlon1, latlon2);
+        
+        // Loop through all curve points to traverse the entire street segment
+        while (curvePointIdx < segment.numCurvePoints) {
+            
+            // Set the next curve point 1
+            latlon1 = latlon2;
+
+            // If current curve point is not the last: then set the next curve point 2
+            if (curvePointIdx + 1 != segment.numCurvePoints) {
+                latlon2 = getStreetSegmentCurvePoint(curvePointIdx + 1, street_segment_id);
+            }
+            // Else, final point becomes the overall segment endpoint "to"
+            else {
+                latlon2 = getIntersectionPosition(segment.to);
+            }
+
+            // Accumulate the total distance
+            distance += findDistanceBetweenTwoPoints(latlon1, latlon2);
+
+            // Increment curvePointIdx to calculate next sub-segment distance
+            ++curvePointIdx;
+        }
+
+        return distance;
+    }
 }
 
 double findStreetSegmentTravelTime(StreetSegmentIdx street_segment_id) {
