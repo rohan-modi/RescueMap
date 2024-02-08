@@ -112,6 +112,8 @@ double findDistanceBetweenTwoPoints(LatLon point_1, LatLon point_2) {
     return sqrt(pow(y2 - y1, 2) + pow(x2 - x1, 2));
 }
 
+// Returns the length of the given street segment in meters.
+// Speed Requirement --> moderate
 double findStreetSegmentLength(StreetSegmentIdx street_segment_id) {
     // Get the StreetSegmentInfo struct associated with street_segment_id
     StreetSegmentInfo segment = getStreetSegmentInfo(street_segment_id);
