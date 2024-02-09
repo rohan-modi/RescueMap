@@ -91,9 +91,6 @@ void closeMap() {
 
 
 
-double findStreetSegmentTravelTime(StreetSegmentIdx street_segment_id) {
-    return 0.0;
-}
 
 double findAngleBetweenStreetSegments(StreetSegmentIdx src_street_segment_id, StreetSegmentIdx dst_street_segment_id) {
     return 0.0;
