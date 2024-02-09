@@ -109,3 +109,15 @@ double findStreetSegmentLength(StreetSegmentIdx street_segment_id) {
         return distance;
     }
 }
+
+// Returns the travel time to drive from one end of a street segment
+// to the other, in seconds, when driving at the speed limit.
+// Note: (time = distance/speed_limit)
+// Speed Requirement --> high
+double findStreetSegmentTravelTime(StreetSegmentIdx street_segment_id) {
+    // Get the StreetSegmentInfo struct associated with street_segment_id
+    StreetSegmentInfo segment = getStreetSegmentInfo(street_segment_id);
+
+    // Return time [s] = distance [m] / speed_limit [m/s]
+    return (findStreetSegmentLength(street_segment_id) / segment.speedLimit);
+}
