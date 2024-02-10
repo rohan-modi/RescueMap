@@ -110,6 +110,7 @@ double findStreetSegmentLength(StreetSegmentIdx street_segment_id) {
     }
 }
 
+<<<<<<< HEAD
 // Returns the travel time to drive from one end of a street segment
 // to the other, in seconds, when driving at the speed limit.
 // Note: (time = distance/speed_limit)
@@ -121,3 +122,140 @@ double findStreetSegmentTravelTime(StreetSegmentIdx street_segment_id) {
     // Return time [s] = distance [m] / speed_limit [m/s]
     return (findStreetSegmentLength(street_segment_id) / segment.speedLimit);
 }
+=======
+
+// Returns the angle (in radians) that would result as you exit
+// src_street_segment_id and enter dst_street_segment_id, if they share an
+// intersection.
+// If a street segment is not completely straight, use the last piece of the
+// segment closest to the shared intersection.
+// If the two street segments do not share an intersection, return a constant
+// NO_ANGLE, which is defined above.
+// Speed Requirement --> none
+double findAngleBetweenStreetSegments(StreetSegmentIdx src_street_segment_id, StreetSegmentIdx dst_street_segment_id) {
+
+    // Initialize StreetSegmentInfo struct for src and dst
+    StreetSegmentInfo src_segment = getStreetSegmentInfo(src_street_segment_id);
+    StreetSegmentInfo dst_segment = getStreetSegmentInfo(dst_street_segment_id);
+
+    // Declare 3 reference points to represent 2 connected street segments
+    LatLon shared_point, point_1, point_2;
+
+    // Determine 3 reference points depending on orientation for src and dst
+    if (src_segment.from == dst_segment.from) {
+
+        // The shared intersection LatLon is src_segment.from    
+        shared_point = getIntersectionPosition(src_segment.from);
+
+        // If the src segment has 0 curve points, then ref point 1 is src_segment.to
+        if (src_segment.numCurvePoints == 0) {
+            point_1 = getIntersectionPosition(src_segment.to);
+        }
+        // Else, ref point 1 is first curve point
+        else {
+            point_1 = getStreetSegmentCurvePoint(0, src_street_segment_id);
+        }
+
+        // If the dst segment has 0 curve points, then the ref point 2 is dst_segment.to
+        if (dst_segment.numCurvePoints == 0) {
+            point_2 = getIntersectionPosition(dst_segment.to);
+        }
+        // Else, the ref point 2 is first curve point
+        else {
+            point_2 = getStreetSegmentCurvePoint(0, dst_street_segment_id);
+        }
+    }
+
+    else if (src_segment.to == dst_segment.to) {
+        // The shared intersection LatLon is src_segment.to
+        shared_point = getIntersectionPosition(src_segment.to);
+
+        // If the src segment has 0 curve points, then ref point 1 is src_segment.from
+        if (src_segment.numCurvePoints == 0) {
+            point_1 = getIntersectionPosition(src_segment.from);
+        }
+        // Else, ref point 1 is last curve point
+        else { 
+            point_1 = getStreetSegmentCurvePoint((src_segment.numCurvePoints - 1), src_street_segment_id);
+        }
+
+        // If the dst segment has 0 curve points, then the ref point 2 is dst_segment.from
+        if (dst_segment.numCurvePoints == 0) {
+            point_2 = getIntersectionPosition(dst_segment.from);
+        }
+        // Else, the ref point 2 is last curve point
+        else {
+            point_2 = getStreetSegmentCurvePoint((dst_segment.numCurvePoints - 1), dst_street_segment_id);
+        }
+    }
+
+    else if (src_segment.from == dst_segment.to) {
+        // The shared intersection LatLon is src_segment.from    
+        shared_point = getIntersectionPosition(src_segment.from);
+
+        // If the src segment has 0 curve points, then ref point 1 is src_segment.to
+        if (src_segment.numCurvePoints == 0) {
+            point_1 = getIntersectionPosition(src_segment.to);
+        }
+        // Else, ref point 1 is first curve point
+        else { 
+            point_1 = getStreetSegmentCurvePoint(0, src_street_segment_id);
+        }
+
+        // If the dst segment has 0 curve points, then the ref point 2 is dst_segment.from
+        if (dst_segment.numCurvePoints == 0) {
+            point_2 = getIntersectionPosition(dst_segment.from);
+        }
+        // Else, the ref point 2 is last curve point
+        else {
+            point_2 = getStreetSegmentCurvePoint((dst_segment.numCurvePoints - 1), dst_street_segment_id);
+        }
+    }
+
+    else if (src_segment.to == dst_segment.from) {
+        // The shared intersection LatLon is src_segment.to    
+        shared_point = getIntersectionPosition(src_segment.to);
+
+        // If the src segment has 0 curve points, then ref point 1 is src_segment.from
+        if (src_segment.numCurvePoints == 0) {
+            point_1 = getIntersectionPosition(src_segment.from);
+        }
+        // Else, ref point 1 is last curve point
+        else { 
+            point_1 = getStreetSegmentCurvePoint((src_segment.numCurvePoints - 1), src_street_segment_id);
+        }
+
+        // If the dst segment has 0 curve points, then the ref point 2 is dst_segment.to
+        if (dst_segment.numCurvePoints == 0) {
+            point_2 = getIntersectionPosition(dst_segment.to);
+        }
+        // Else, the ref point 2 is first curve point
+        else {
+            point_2 = getStreetSegmentCurvePoint(0, dst_street_segment_id);
+        }
+    }
+
+    else {
+        // The src and dst street segments do not share an intersection
+        return NO_ANGLE;
+    }
+
+    // COMPUTE THE ANGLE //
+    
+    // Determine the triangle side lengths between 3 reference points
+    double srclength = findDistanceBetweenTwoPoints(shared_point, point_1);
+    double dstlength = findDistanceBetweenTwoPoints(shared_point, point_2);
+    double side3 = findDistanceBetweenTwoPoints(point_1, point_2);
+
+    // Solve using the cosine law: side3^2 = srclength^2 + dstlength^2 - 2 * srclength * dstlength * cos(pi - angle)
+    double angle = M_PI - acos((pow(side3, 2) - pow(srclength, 2) - pow(dstlength, 2)) / (-2 * srclength * dstlength));
+
+    return angle;
+}
+
+
+
+
+
+
+>>>>>>> master
