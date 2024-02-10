@@ -31,6 +31,80 @@ typedef int StreetIdx;
 
 std::vector<std::vector<StreetSegmentIdx>> streetSegmentsOfIntersections;
 std::vector<std::vector<IntersectionIdx>> intersectionsOfStreets_;
+std::vector<std::pair<std::string, int>> streetNamesAndIDs;
+
+void populateStreetNamesVector();
+
+void populateStreetNamesVector() {
+    streetNamesAndIDs.resize(getNumStreets());
+    for (int i = 0; i < getNumStreets(); i++) {
+        std::string streetName = getStreetName(i);
+
+        std::string::iterator endPosition = std::remove(streetName.begin(), streetName.end(), ' ');
+        streetName.erase(endPosition, streetName.end());
+
+        for (int j = 0; j < streetName.size(); j++) {
+            streetName[j] = std::tolower(streetName[j]);
+        }
+
+        streetNamesAndIDs[i].first = streetName;
+        streetNamesAndIDs[i].second = i;
+    }
+    std::sort(streetNamesAndIDs.begin(), streetNamesAndIDs.end());
+}
+
+inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2);
+
+inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2) {
+    return (pair1.first < pair2.first || (pair1.first == pair2.first && pair1.second < pair2.second));
+}
+
+std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_prefix) {
+    std::string startString = street_prefix;
+
+    std::string::iterator endPosition = std::remove(startString.begin(), startString.end(), ' ');
+    startString.erase(endPosition, startString.end());
+
+    if (startString == "") {
+        std::vector<StreetIdx> returnVector;
+        returnVector.push_back(0);
+        return returnVector;
+    }
+
+    for (int i = 0; i < startString.size(); i++) {
+        startString[i] = std::tolower(startString[i]);
+    }
+    std::string endString = startString;
+    endString[endString.size() - 1] = static_cast<char>(endString[endString.size() - 1] + 1);
+
+    // std::cout << "Prefix: " << street_prefix << std::endl;
+    // std::cout << "Start string: " << startString << std::endl;
+    // std::cout << "End string: " << endString << std::endl;
+
+    std::pair<std::string, int> prefixPair = {startString, 0};
+    std::pair<std::string, int> endPair = {endString, 0};
+    
+    auto lowerBound = std::lower_bound(streetNamesAndIDs.begin(), streetNamesAndIDs.end(), prefixPair, streetPairComparer);
+    auto upperBound = std::upper_bound(streetNamesAndIDs.begin(), streetNamesAndIDs.end(), endPair, streetPairComparer);
+
+    // std::cout << "First one: " << lowerBound->first << std::endl;
+    // std::cout << "Last one: " << upperBound->first << std::endl;
+
+    auto pointer = lowerBound;
+
+    std::vector<StreetIdx> returnVector;
+
+    while(1) {
+        returnVector.push_back(pointer->second);
+        // std::cout << pointer->first << std::endl;
+        std::advance(pointer, 1);
+        if (pointer == upperBound) {
+            break;
+        }
+    }
+
+    return returnVector;
+}
 
 void populateStreetSegmentsOfIntersections();
 
@@ -147,8 +221,10 @@ bool loadMap(std::string map_streets_database_filename) {
     for (int i = 0; i < intersectionsOfStreets_.size(); i++) {
         intersectionsOfStreets_[i].clear();
     }
+    streetNamesAndIDs.clear();
 
     populateStreetSegmentsOfIntersections();
+    populateStreetNamesVector();
     
 
     load_successful = true; //Make sure this is updated to reflect whether
@@ -179,14 +255,6 @@ bool intersectionsAreDirectlyConnected(std::pair<IntersectionIdx, IntersectionId
         return true;
     }
     return true;
-}
-
-std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_prefix) {
-    std::vector<int> returnVector;
-    if (street_prefix == "hello") {
-        return returnVector;
-    }
-    return returnVector;
 }
 
 double findStreetLength(StreetIdx street_id) {
