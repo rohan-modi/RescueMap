@@ -162,22 +162,8 @@ void closeMap() {
     
 }
 
-double findDistanceBetweenTwoPoints(LatLon point_1, LatLon point_2) {
-    if (point_1.latitude() == point_2.latitude()) {
-        return 0.0;
-    }
-    return 0.0;
-}
 
-<<<<<<< HEAD
-=======
-double findStreetSegmentLength(StreetSegmentIdx street_segment_id) {
-    if (street_segment_id) {
-        return 0.0;
-    }
-    return 0.0;
-}
->>>>>>> master
+
 
 double findStreetSegmentTravelTime(StreetSegmentIdx street_segment_id) {
     if (street_segment_id) {
@@ -186,14 +172,7 @@ double findStreetSegmentTravelTime(StreetSegmentIdx street_segment_id) {
     return 0.0;
 }
 
-double findAngleBetweenStreetSegments(StreetSegmentIdx src_street_segment_id, StreetSegmentIdx dst_street_segment_id) {
-    int x = src_street_segment_id;
-    int y = dst_street_segment_id;
-    if (x == y) {
-        return 0.0;
-    }
-    return 0.0;
-}
+
 
 bool intersectionsAreDirectlyConnected(std::pair<IntersectionIdx, IntersectionIdx> intersection_ids) {
     if (intersection_ids.first == intersection_ids.second) {
