@@ -23,6 +23,7 @@
 #include "m1.h"
 #include "StreetsDatabaseAPI.h"
 #include <unordered_set>
+#include <unordered_map>
 
 typedef int StreetSegmentIdx;
 typedef int IntersectionIdx;
@@ -32,8 +33,11 @@ typedef int StreetIdx;
 std::vector<std::vector<StreetSegmentIdx>> streetSegmentsOfIntersections;
 std::vector<std::vector<IntersectionIdx>> intersectionsOfStreets_;
 std::vector<std::pair<std::string, int>> streetNamesAndIDs;
+void populateStreetSegmentsOfIntersections();
 
 void populateStreetNamesVector();
+double getDistanceBetweenPoints(LatLon point1, LatLon point2);
+inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2);
 
 void populateStreetNamesVector() {
     streetNamesAndIDs.resize(getNumStreets());
@@ -52,8 +56,6 @@ void populateStreetNamesVector() {
     }
     std::sort(streetNamesAndIDs.begin(), streetNamesAndIDs.end());
 }
-
-inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2);
 
 inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2) {
     return (pair1.first < pair2.first || (pair1.first == pair2.first && pair1.second < pair2.second));
@@ -77,18 +79,11 @@ std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_pre
     std::string endString = startString;
     endString[endString.size() - 1] = static_cast<char>(endString[endString.size() - 1] + 1);
 
-    // std::cout << "Prefix: " << street_prefix << std::endl;
-    // std::cout << "Start string: " << startString << std::endl;
-    // std::cout << "End string: " << endString << std::endl;
-
     std::pair<std::string, int> prefixPair = {startString, 0};
     std::pair<std::string, int> endPair = {endString, 0};
     
     auto lowerBound = std::lower_bound(streetNamesAndIDs.begin(), streetNamesAndIDs.end(), prefixPair, streetPairComparer);
     auto upperBound = std::upper_bound(streetNamesAndIDs.begin(), streetNamesAndIDs.end(), endPair, streetPairComparer);
-
-    // std::cout << "First one: " << lowerBound->first << std::endl;
-    // std::cout << "Last one: " << upperBound->first << std::endl;
 
     auto pointer = lowerBound;
 
@@ -96,7 +91,6 @@ std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_pre
 
     while(1) {
         returnVector.push_back(pointer->second);
-        // std::cout << pointer->first << std::endl;
         std::advance(pointer, 1);
         if (pointer == upperBound) {
             break;
@@ -105,8 +99,6 @@ std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_pre
 
     return returnVector;
 }
-
-void populateStreetSegmentsOfIntersections();
 
 void populateStreetSegmentsOfIntersections() {
     int numberOfStreetSegments;
@@ -156,8 +148,6 @@ std::vector<IntersectionIdx> findIntersectionsOfTwoStreets(std::pair<StreetIdx, 
     }
     return returnVector;
 }
-
-double getDistanceBetweenPoints(LatLon point1, LatLon point2);
 
 double getDistanceBetweenPoints(LatLon point1, LatLon point2) {
     double lat1 = point1.latitude()*kDegreeToRadian;
@@ -235,11 +225,14 @@ bool loadMap(std::string map_streets_database_filename) {
 
 void closeMap() {
     //Clean-up your map related data structures here
-    
+    for (int i = 0; i < streetSegmentsOfIntersections.size(); i++) {
+        streetSegmentsOfIntersections[i].clear();
+    }
+    for (int i = 0; i < intersectionsOfStreets_.size(); i++) {
+        intersectionsOfStreets_[i].clear();
+    }
+    streetNamesAndIDs.clear();
 }
-
-
-
 
 double findStreetSegmentTravelTime(StreetSegmentIdx street_segment_id) {
     if (street_segment_id) {
@@ -247,8 +240,6 @@ double findStreetSegmentTravelTime(StreetSegmentIdx street_segment_id) {
     }
     return 0.0;
 }
-
-
 
 bool intersectionsAreDirectlyConnected(std::pair<IntersectionIdx, IntersectionIdx> intersection_ids) {
     if (intersection_ids.first == intersection_ids.second) {
