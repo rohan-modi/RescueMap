@@ -33,6 +33,26 @@ typedef int StreetIdx;
 std::vector<std::vector<StreetSegmentIdx>> streetSegmentsOfIntersections;
 std::vector<std::vector<IntersectionIdx>> intersectionsOfStreets_;
 std::vector<std::pair<std::string, int>> streetNamesAndIDs;
+std::vector<double> segmentTravelTimes;
+
+void populateSegmentTravelTimes();
+
+void populateSegmentTravelTimes() {
+    // Initialize the vector size to the number of street segments
+    segmentTravelTimes.resize(getNumStreetSegments());
+
+    // Compute the travel time for each street segment and populate the vector
+    for (StreetSegmentIdx idx = 0; idx < getNumStreetSegments(); ++idx) {
+        
+        // Get the StreetSegmentInfo struct associated with street_segment_id
+        StreetSegmentInfo segment = getStreetSegmentInfo(idx);
+
+        // Compute time [s] = distance [m] / speed_limit [m/s]
+        segmentTravelTimes[idx] = (findStreetSegmentLength(idx) / segment.speedLimit);
+    }
+}
+
+
 void populateStreetSegmentsOfIntersections();
 
 void populateStreetNamesVector();
@@ -214,7 +234,15 @@ bool loadMap(std::string map_streets_database_filename) {
     streetNamesAndIDs.clear();
 
     populateStreetSegmentsOfIntersections();
+    
     populateStreetNamesVector();
+    for (int i = 0; i < intersectionsOfStreets_.size(); i++) {
+        intersectionsOfStreets_[i].clear();
+    }
+
+    populateStreetSegmentsOfIntersections();
+
+    populateSegmentTravelTimes();
     
 
     load_successful = true; //Make sure this is updated to reflect whether
@@ -234,12 +262,6 @@ void closeMap() {
     streetNamesAndIDs.clear();
 }
 
-double findStreetSegmentTravelTime(StreetSegmentIdx street_segment_id) {
-    if (street_segment_id) {
-        return 0.0;
-    }
-    return 0.0;
-}
 
 bool intersectionsAreDirectlyConnected(std::pair<IntersectionIdx, IntersectionIdx> intersection_ids) {
     if (intersection_ids.first == intersection_ids.second) {
@@ -282,4 +304,13 @@ std::string getOSMNodeTagValue(OSMID osm_id, std::string key) {
     std::vector<OSMID> aVector;
     aVector.push_back(osm_id);
     return "Hello";
+}
+
+// Returns the travel time to drive from one end of a street segment
+// to the other, in seconds, when driving at the speed limit.
+// Note: (time = distance/speed_limit)
+// Speed Requirement --> high
+double findStreetSegmentTravelTime(StreetSegmentIdx street_segment_id) {
+    // Look up travel time stored in global vector segmentTravelTimes
+    return segmentTravelTimes[street_segment_id];
 }
