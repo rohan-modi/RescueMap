@@ -53,16 +53,6 @@ void populateStreetSegmentsOfIntersections() {
             }
         }
     }
-
-    // for (int i = 0; i < 100; i++) {
-    //     if (intersectionsOfStreets_[i].size() <= 10) {
-    //         std::cout << "Start of vector in initializer function:" << std::endl;
-    //         for (int j = 0; j < intersectionsOfStreets_[i].size(); j++) {
-    //             std::cout << intersectionsOfStreets_[i][j] << std::endl;
-    //         }
-    //         std::cout << "End of vector in initializer function" << std::endl;
-    //     }
-    // }
 }
 
 std::vector<StreetSegmentIdx> findStreetSegmentsOfIntersection(IntersectionIdx intersection_id) {
@@ -77,20 +67,6 @@ std::vector<IntersectionIdx> findIntersectionsOfTwoStreets(std::pair<StreetIdx, 
     std::vector<IntersectionIdx> intersectionsOfStreet1 = findIntersectionsOfStreet(street_ids.first);
     std::vector<IntersectionIdx> intersectionsOfStreet2 = findIntersectionsOfStreet(street_ids.second);
 
-    // if (intersectionsOfStreet1.size() + intersectionsOfStreet2.size() <= 30) {
-    //     std::cout << "First vector start:" << std::endl;
-    //     for (int i = 0; i < intersectionsOfStreet1.size(); i++) {
-    //         std::cout << intersectionsOfStreet1[i] << std::endl;
-    //     }
-    //     std::cout << "First vector end" << std::endl;
-
-    //     std::cout << "Second vector start:" << std::endl;
-    //     for (int i = 0; i < intersectionsOfStreet2.size(); i++) {
-    //         std::cout << intersectionsOfStreet2[i] << std::endl;
-    //     }
-    //     std::cout << "Second vector end" << std::endl;
-    // }
-
     std::unordered_set<IntersectionIdx> vec1AsSet(intersectionsOfStreet1.begin(), intersectionsOfStreet1.end());
 
     std::vector<IntersectionIdx> returnVector;
@@ -104,24 +80,42 @@ std::vector<IntersectionIdx> findIntersectionsOfTwoStreets(std::pair<StreetIdx, 
             }
         }
     }
-
-    // for (int i = 0; i < intersectionsOfStreet2.size(); i++) {
-    //     if (vec1AsSet.find(intersectionsOfStreet2[i]) != vec1AsSet.end()) {
-    //         returnSet.insert(intersectionsOfStreet2[i]);
-    //     }
-    // }
-
-    // std::vector<IntersectionIdx> returnVector(returnSet.begin(), returnSet.end());
-
-    // if (returnVector.size() <= 30) {
-    //     std::cout << "Return vector start:" << std::endl;
-    //     for (int i = 0; i < returnVector.size(); i++) {
-    //         std::cout << returnVector[i] << std::endl;
-    //     }
-    //     std::cout << "Return vector end" << std::endl;
-    // }
-
     return returnVector;
+}
+
+double getDistanceBetweenPoints(LatLon point1, LatLon point2);
+
+double getDistanceBetweenPoints(LatLon point1, LatLon point2) {
+    double lat1 = point1.latitude()*kDegreeToRadian;
+    double lon1 = point1.longitude()*kDegreeToRadian;
+
+    double lat2 = point2.latitude()*kDegreeToRadian;
+    double lon2 = point2.longitude()*kDegreeToRadian;
+
+    double lat_avg = (lat1 + lat2)/2;
+
+    double x1 = kEarthRadiusInMeters*lon1*cos(lat_avg);
+    double y1 = kEarthRadiusInMeters*lat1;
+
+    double x2 = kEarthRadiusInMeters*lon2*cos(lat_avg);
+    double y2 = kEarthRadiusInMeters*lat2;
+
+    double distance = sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2));
+
+    return distance;
+}
+
+IntersectionIdx findClosestIntersection(LatLon my_position) {
+    IntersectionIdx closestIntersection = 0;
+    double minDistance = getDistanceBetweenPoints(my_position, getIntersectionPosition(0));
+
+    for (int i = 0; i < getNumIntersections(); i++) {
+        if (getDistanceBetweenPoints(my_position, getIntersectionPosition(i)) < minDistance) {
+            minDistance = getDistanceBetweenPoints(my_position, getIntersectionPosition(i));
+            closestIntersection = i;
+        }
+    }
+    return closestIntersection;
 }
 
 // loadMap will be called with the name of the file that stores the "layer-2"
@@ -166,14 +160,6 @@ bool loadMap(std::string map_streets_database_filename) {
 void closeMap() {
     //Clean-up your map related data structures here
     
-}
-
-IntersectionIdx findClosestIntersection(LatLon my_position) {
-    LatLon newOne = my_position;
-    if (newOne.latitude() == my_position.latitude()) {
-        return 0;
-    }
-    return 0;
 }
 
 double findDistanceBetweenTwoPoints(LatLon point_1, LatLon point_2) {
