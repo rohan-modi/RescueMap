@@ -232,6 +232,7 @@ bool loadMap(std::string map_streets_database_filename) {
         intersectionsOfStreets_[i].clear();
     }
     streetNamesAndIDs.clear();
+    segmentTravelTimes.clear();
 
     populateStreetSegmentsOfIntersections();
     
@@ -254,6 +255,7 @@ void closeMap() {
         intersectionsOfStreets_[i].clear();
     }
     streetNamesAndIDs.clear();
+    segmentTravelTimes.clear();
 }
 
 
