@@ -21,6 +21,7 @@
 #include <iostream>
 #include "m1.h"
 #include "StreetsDatabaseAPI.h"
+#include <unordered_set>
 
 typedef int StreetSegmentIdx;
 typedef int IntersectionIdx;
@@ -28,28 +29,99 @@ typedef int POIIdx;
 typedef int StreetIdx;
 
 std::vector<std::vector<StreetSegmentIdx>> streetSegmentsOfIntersections;
+std::vector<std::vector<IntersectionIdx>> intersectionsOfStreets_;
 
+void populateStreetSegmentsOfIntersections();
 
 void populateStreetSegmentsOfIntersections() {
-   int numberOfStreetSegments;
-   int b = 6;
-   int numberOfInstersections = getNumIntersections();
-   int a = 5;
-   streetSegmentsOfIntersections.resize(getNumIntersections());
-   for (int i = 0; i < getNumIntersections(); i++) {
-       numberOfStreetSegments = getNumIntersectionStreetSegment(i);
-       for (int j = 0; j < numberOfStreetSegments; j++) {
-           streetSegmentsOfIntersections[i].push_back(getIntersectionStreetSegment(j, i));
-       }
-   }
-}
+    int numberOfStreetSegments;
+    StreetSegmentIdx streetSegmentID;
+    StreetIdx streetID;
+    streetSegmentsOfIntersections.resize(getNumIntersections());
+    intersectionsOfStreets_.resize(getNumStreets());
+    for (int i = 0; i < getNumIntersections(); i++) {
+        numberOfStreetSegments = getNumIntersectionStreetSegment(i);
+        for (int j = 0; j < numberOfStreetSegments; j++) {
+            streetSegmentID = getIntersectionStreetSegment(j, i);
+            streetID = (getStreetSegmentInfo(streetSegmentID)).streetID;
+            streetSegmentsOfIntersections[i].push_back(streetSegmentID);
+            if (intersectionsOfStreets_[streetID].size() == 0) {
+                intersectionsOfStreets_[streetID].push_back(i);
+            } else if (intersectionsOfStreets_[streetID].back() != i) {
+                intersectionsOfStreets_[streetID].push_back(i);
+            }
+        }
+    }
 
+    // for (int i = 0; i < 100; i++) {
+    //     if (intersectionsOfStreets_[i].size() <= 10) {
+    //         std::cout << "Start of vector in initializer function:" << std::endl;
+    //         for (int j = 0; j < intersectionsOfStreets_[i].size(); j++) {
+    //             std::cout << intersectionsOfStreets_[i][j] << std::endl;
+    //         }
+    //         std::cout << "End of vector in initializer function" << std::endl;
+    //     }
+    // }
+}
 
 std::vector<StreetSegmentIdx> findStreetSegmentsOfIntersection(IntersectionIdx intersection_id) {
    return streetSegmentsOfIntersections[intersection_id];
 }
 
+std::vector<IntersectionIdx> findIntersectionsOfStreet(StreetIdx street_id) {
+    return intersectionsOfStreets_[street_id];
+}
 
+std::vector<IntersectionIdx> findIntersectionsOfTwoStreets(std::pair<StreetIdx, StreetIdx> street_ids) {
+    std::vector<IntersectionIdx> intersectionsOfStreet1 = findIntersectionsOfStreet(street_ids.first);
+    std::vector<IntersectionIdx> intersectionsOfStreet2 = findIntersectionsOfStreet(street_ids.second);
+
+    // if (intersectionsOfStreet1.size() + intersectionsOfStreet2.size() <= 30) {
+    //     std::cout << "First vector start:" << std::endl;
+    //     for (int i = 0; i < intersectionsOfStreet1.size(); i++) {
+    //         std::cout << intersectionsOfStreet1[i] << std::endl;
+    //     }
+    //     std::cout << "First vector end" << std::endl;
+
+    //     std::cout << "Second vector start:" << std::endl;
+    //     for (int i = 0; i < intersectionsOfStreet2.size(); i++) {
+    //         std::cout << intersectionsOfStreet2[i] << std::endl;
+    //     }
+    //     std::cout << "Second vector end" << std::endl;
+    // }
+
+    std::unordered_set<IntersectionIdx> vec1AsSet(intersectionsOfStreet1.begin(), intersectionsOfStreet1.end());
+
+    std::vector<IntersectionIdx> returnVector;
+
+    for (int i = 0; i < intersectionsOfStreet2.size(); i++) {
+        if (vec1AsSet.find(intersectionsOfStreet2[i]) != vec1AsSet.end()) {
+            if (returnVector.size() == 0) {
+                returnVector.push_back(intersectionsOfStreet2[i]);
+            } else if (returnVector.back() != intersectionsOfStreet2[i]) {
+                returnVector.push_back(intersectionsOfStreet2[i]);
+            }
+        }
+    }
+
+    // for (int i = 0; i < intersectionsOfStreet2.size(); i++) {
+    //     if (vec1AsSet.find(intersectionsOfStreet2[i]) != vec1AsSet.end()) {
+    //         returnSet.insert(intersectionsOfStreet2[i]);
+    //     }
+    // }
+
+    // std::vector<IntersectionIdx> returnVector(returnSet.begin(), returnSet.end());
+
+    // if (returnVector.size() <= 30) {
+    //     std::cout << "Return vector start:" << std::endl;
+    //     for (int i = 0; i < returnVector.size(); i++) {
+    //         std::cout << returnVector[i] << std::endl;
+    //     }
+    //     std::cout << "Return vector end" << std::endl;
+    // }
+
+    return returnVector;
+}
 
 // loadMap will be called with the name of the file that stores the "layer-2"
 // map data accessed through StreetsDatabaseAPI: the street and intersection 
@@ -74,6 +146,13 @@ bool loadMap(std::string map_streets_database_filename) {
     //
     loadStreetsDatabaseBIN(map_streets_database_filename);
 
+    for (int i = 0; i < streetSegmentsOfIntersections.size(); i++) {
+        streetSegmentsOfIntersections[i].clear();
+    }
+    for (int i = 0; i < intersectionsOfStreets_.size(); i++) {
+        intersectionsOfStreets_[i].clear();
+    }
+
     populateStreetSegmentsOfIntersections();
     
 
@@ -88,52 +167,91 @@ void closeMap() {
     
 }
 
+IntersectionIdx findClosestIntersection(LatLon my_position) {
+    LatLon newOne = my_position;
+    if (newOne.latitude() == my_position.latitude()) {
+        return 0;
+    }
+    return 0;
+}
+
 double findDistanceBetweenTwoPoints(LatLon point_1, LatLon point_2) {
+    if (point_1.latitude() == point_2.latitude()) {
+        return 0.0;
+    }
     return 0.0;
 }
 
 double findStreetSegmentLength(StreetSegmentIdx street_segment_id) {
+    if (street_segment_id) {
+        return 0.0;
+    }
     return 0.0;
 }
 
 double findStreetSegmentTravelTime(StreetSegmentIdx street_segment_id) {
+    if (street_segment_id) {
+        return 0.0;
+    }
     return 0.0;
 }
 
 double findAngleBetweenStreetSegments(StreetSegmentIdx src_street_segment_id, StreetSegmentIdx dst_street_segment_id) {
+    int x = src_street_segment_id;
+    int y = dst_street_segment_id;
+    if (x == y) {
+        return 0.0;
+    }
     return 0.0;
 }
 
 bool intersectionsAreDirectlyConnected(std::pair<IntersectionIdx, IntersectionIdx> intersection_ids) {
-    return 0.0;
-}
-
-std::vector<IntersectionIdx> findIntersectionsOfTwoStreets(std::pair<StreetIdx, StreetIdx> street_ids) {
-    std::vector<int> returnVector;
-    return returnVector;
+    if (intersection_ids.first == intersection_ids.second) {
+        return true;
+    }
+    return false;
 }
 
 std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_prefix) {
     std::vector<int> returnVector;
+    if (street_prefix == "hello") {
+        return returnVector;
+    }
     return returnVector;
 }
 
 double findStreetLength(StreetIdx street_id) {
+    if (street_id == 1) {
+        return 0.0;
+    }
     return 0.0;
 }
 
 POIIdx findClosestPOI(LatLon my_position, std::string poi_name) {
+    if (my_position.latitude() == 1 && poi_name == "hello") {
+        return 0.0;
+    }
     return 0;
 }
 
 double findFeatureArea(FeatureIdx feature_id) {
+    if (feature_id == 1) {
+        return 0.0;
+    }
     return 0.0;
 }
 
 double findWayLength(OSMID way_id) {
+    std::vector<OSMID> aVector;
+    aVector.push_back(way_id);
     return 0.0;
 }
 
 std::string getOSMNodeTagValue(OSMID osm_id, std::string key) {
+    if (key == "hello") {
+        return  "hello";
+    }
+    std::vector<OSMID> aVector;
+    aVector.push_back(osm_id);
     return "Hello";
 }

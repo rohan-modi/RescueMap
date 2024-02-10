@@ -1,0 +1,301 @@
+
+#include "m1.h"
+#include "unit_test_util.h"
+
+#include "StreetsDatabaseAPI.h"
+#include "OSMDatabaseAPI.h"
+
+#include <UnitTest++/UnitTest++.h>
+
+#include <random>
+#include <algorithm>
+#include <set>
+
+using ece297test::relative_error;
+using ece297test::sorted;
+
+SUITE(intersection_queries_public_toronto_canada) {
+
+    struct BaseMapFixture {
+        BaseMapFixture() {
+            //Load the map
+            try {
+                loadMap("/cad2/ece297s/public/maps/toronto_canada.streets.bin");
+            } catch (...) {
+                std::cout << "!!!! BaseMapFixture test setup: loadMap threw an exception !!!!" << std::endl;
+                throw; // re-throw exception
+            }
+        }
+    
+        ~BaseMapFixture() {
+            //Clean-up
+            try {
+                closeMap();
+            } catch (const std::exception& e) {
+                std::cout << "!!!! BaseMapFixture test teardown: closeMap threw an exception. what(): " << e.what() << " !!!!" << std::endl;
+                std::terminate(); // we're in a destructor
+            } catch (...) {
+                std::cout << "!!!! BaseMapFixture test teardown: closeMap threw an exception !!!!" << std::endl;
+                std::terminate(); // we're in a destructor
+            }
+        }
+    };
+
+
+    struct MapFixture : BaseMapFixture {};
+
+    TEST_FIXTURE(MapFixture, intersection_street_segments) {
+        std::vector<StreetSegmentIdx> expected;
+
+        expected = {7, 140, 147};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(13)));
+
+        expected = {31787, 31788, 31837};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(34725)));
+
+        expected = {34936, 34937, 220373};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(37717)));
+
+        expected = {42450, 42451};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(44815)));
+
+        expected = {47569, 85425, 85426};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(49589)));
+
+        expected = {49799, 51228, 53244};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(52222)));
+
+        expected = {51362, 54402, 62613};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(54071)));
+
+        expected = {90437, 90438, 177287};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(83337)));
+
+        expected = {105679, 105680, 227658};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(96058)));
+
+        expected = {116044, 160239, 160240};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(104028)));
+
+        expected = {118934, 118935, 245535};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(105931)));
+
+        expected = {125756, 125772, 125773};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(110624)));
+
+        expected = {127079, 127086};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(111575)));
+
+        expected = {142844, 142846, 142847};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(122449)));
+
+        expected = {156714, 156715, 156723, 156724};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(131184)));
+
+        expected = {159016, 159017, 163281};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(132416)));
+
+        expected = {164624, 164820, 164821};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(135783)));
+
+        expected = {166832, 166833, 216478, 216479};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(136971)));
+
+        expected = {172443, 172444, 257290};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(140068)));
+
+        expected = {181096, 181097, 260154};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(145152)));
+
+        expected = {191590, 191595, 191598};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(150803)));
+
+        expected = {196461, 196467};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(153323)));
+
+        expected = {201608, 201628};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(156304)));
+
+        expected = {230765, 230766};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(171471)));
+
+        expected = {231741};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(171961)));
+
+        expected = {234103, 234104};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(173265)));
+
+        expected = {237148, 237149, 237152};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(174923)));
+
+        expected = {238431, 238432, 261858};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(175707)));
+
+        expected = {261404, 261405, 261407};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(186424)));
+
+        expected = {272517, 272520};
+        ECE297_CHECK_EQUAL(expected, sorted(findStreetSegmentsOfIntersection(191528)));
+
+    } //intersection_street_segments
+
+    TEST_FIXTURE(MapFixture, directly_connected) {
+        ECE297_CHECK(!intersectionsAreDirectlyConnected(std::make_pair(13106, 123016)));
+
+        ECE297_CHECK(!intersectionsAreDirectlyConnected(std::make_pair(36213, 71800)));
+
+        ECE297_CHECK(!intersectionsAreDirectlyConnected(std::make_pair(41792, 111889)));
+
+        ECE297_CHECK(!intersectionsAreDirectlyConnected(std::make_pair(42365, 183196)));
+
+        ECE297_CHECK(!intersectionsAreDirectlyConnected(std::make_pair(48968, 105756)));
+
+        ECE297_CHECK(!intersectionsAreDirectlyConnected(std::make_pair(61531, 45868)));
+
+        ECE297_CHECK(!intersectionsAreDirectlyConnected(std::make_pair(92754, 61922)));
+
+        ECE297_CHECK(!intersectionsAreDirectlyConnected(std::make_pair(130404, 66308)));
+
+        ECE297_CHECK(!intersectionsAreDirectlyConnected(std::make_pair(151088, 54603)));
+
+        ECE297_CHECK(!intersectionsAreDirectlyConnected(std::make_pair(155253, 103959)));
+
+        ECE297_CHECK(!intersectionsAreDirectlyConnected(std::make_pair(161047, 57692)));
+
+        ECE297_CHECK(!intersectionsAreDirectlyConnected(std::make_pair(165253, 143351)));
+
+        ECE297_CHECK(!intersectionsAreDirectlyConnected(std::make_pair(179887, 105882)));
+
+        ECE297_CHECK(intersectionsAreDirectlyConnected(std::make_pair(13, 13)));
+
+        ECE297_CHECK(intersectionsAreDirectlyConnected(std::make_pair(34725, 34777)));
+
+        ECE297_CHECK(intersectionsAreDirectlyConnected(std::make_pair(49589, 49589)));
+
+        ECE297_CHECK(intersectionsAreDirectlyConnected(std::make_pair(52222, 53937)));
+
+        ECE297_CHECK(intersectionsAreDirectlyConnected(std::make_pair(96058, 69445)));
+
+        ECE297_CHECK(intersectionsAreDirectlyConnected(std::make_pair(105931, 105930)));
+
+        ECE297_CHECK(intersectionsAreDirectlyConnected(std::make_pair(122449, 122450)));
+
+        ECE297_CHECK(intersectionsAreDirectlyConnected(std::make_pair(135783, 135852)));
+
+        ECE297_CHECK(intersectionsAreDirectlyConnected(std::make_pair(136971, 134721)));
+
+        ECE297_CHECK(intersectionsAreDirectlyConnected(std::make_pair(140068, 140087)));
+
+        ECE297_CHECK(intersectionsAreDirectlyConnected(std::make_pair(145152, 145151)));
+
+        ECE297_CHECK(intersectionsAreDirectlyConnected(std::make_pair(150803, 9892)));
+
+        ECE297_CHECK(intersectionsAreDirectlyConnected(std::make_pair(153323, 153321)));
+
+        ECE297_CHECK(intersectionsAreDirectlyConnected(std::make_pair(156304, 156303)));
+
+        ECE297_CHECK(intersectionsAreDirectlyConnected(std::make_pair(157213, 157208)));
+
+        ECE297_CHECK(intersectionsAreDirectlyConnected(std::make_pair(173265, 173256)));
+
+        ECE297_CHECK(intersectionsAreDirectlyConnected(std::make_pair(175707, 149057)));
+
+    } //directly_connected
+
+    TEST_FIXTURE(MapFixture, angle_between_segments) {
+        double expected;
+
+        expected = 0.00000097040773363;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(149019, 149020), 0.01745329251994330);
+
+        expected = 0.00597365830085696;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(54294, 53400), 0.01745329251994330);
+
+        expected = 0.01652618343723600;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(186446, 186447), 0.01745329251994330);
+
+        expected = 0.01960199776763193;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(160239, 160240), 0.01745329251994330);
+
+        expected = 0.02043415773549584;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(42450, 42451), 0.01745329251994330);
+
+        expected = 0.03128748157786025;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(156724, 156723), 0.01745329251994330);
+
+        expected = 0.04433886621867971;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(93392, 93390), 0.01745329251994330);
+
+        expected = 0.04698237319532687;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(219245, 219244), 0.01745329251994330);
+
+        expected = 0.05547184180345114;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(203097, 203098), 0.01745329251994330);
+
+        expected = 0.05910070960799083;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(7, 147), 0.01745329251994330);
+
+        expected = 0.06063659930106758;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(75977, 75974), 0.01745329251994330);
+
+        expected = 0.15062540769190771;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(215673, 215672), 0.01745329251994330);
+
+        expected = 1.40282292372566753;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(118934, 245535), 0.01745329251994330);
+
+        expected = 1.41060757177501794;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(181097, 260154), 0.01745329251994330);
+
+        expected = 1.42483191331856740;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(132344, 629), 0.01745329251994330);
+
+        expected = 1.46717092722375897;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(48506, 51757), 0.01745329251994330);
+
+        expected = 1.51402047835571718;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(225064, 225087), 0.01745329251994330);
+
+        expected = 1.53763035205334120;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(32048, 145343), 0.01745329251994330);
+
+        expected = 1.54826693889734290;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(180470, 176136), 0.01745329251994330);
+
+        expected = 1.55666743861444390;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(266308, 132545), 0.01745329251994330);
+
+        expected = 1.57984444438251459;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(126751, 207559), 0.01745329251994330);
+
+        expected = 1.58392786412385456;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(11582, 94068), 0.01745329251994330);
+
+        expected = 1.58961548672772701;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(79215, 78865), 0.01745329251994330);
+
+        expected = 1.59493247831291352;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(61993, 118948), 0.01745329251994330);
+
+        expected = 1.59574906582620768;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(81442, 81494), 0.01745329251994330);
+
+        expected = 1.60584891361420867;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(204662, 204639), 0.01745329251994330);
+
+        expected = 1.63183530849041469;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(200007, 199989), 0.01745329251994330);
+
+        expected = 1.64786601113590336;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(79957, 19491), 0.01745329251994330);
+
+        expected = 1.68620745900838842;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(178232, 77802), 0.01745329251994330);
+
+        expected = 1.87116139330732278;
+        ECE297_CHECK_ABSOLUTE_ERROR(expected, findAngleBetweenStreetSegments(232684, 39880), 0.01745329251994330);
+
+    } //angle_between_segments
+
+} //intersection_queries_public_toronto_canada
+
