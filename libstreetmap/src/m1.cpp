@@ -19,6 +19,7 @@
  * SOFTWARE.
  */
 #include <iostream>
+#include <cmath>
 #include "m1.h"
 #include "StreetsDatabaseAPI.h"
 #include <unordered_set>
@@ -65,7 +66,7 @@ void populateStreetSegmentsOfIntersections() {
 }
 
 std::vector<StreetSegmentIdx> findStreetSegmentsOfIntersection(IntersectionIdx intersection_id) {
-   return streetSegmentsOfIntersections[intersection_id];
+  return streetSegmentsOfIntersections[intersection_id];
 }
 
 std::vector<IntersectionIdx> findIntersectionsOfStreet(StreetIdx street_id) {
@@ -206,10 +207,26 @@ double findAngleBetweenStreetSegments(StreetSegmentIdx src_street_segment_id, St
 }
 
 bool intersectionsAreDirectlyConnected(std::pair<IntersectionIdx, IntersectionIdx> intersection_ids) {
-    if (intersection_ids.first == intersection_ids.second) {
-        return true;
-    }
-    return false;
+    return 0.0;
+}
+
+IntersectionIdx findClosestIntersection(LatLon my_position){
+    return 0;
+}
+
+std::vector<StreetSegmentIdx> findStreetSegmentsOfIntersection(IntersectionIdx intersection_id){
+    std::vector<int> returnVector;
+    return returnVector;
+} 
+
+std::vector<IntersectionIdx> findIntersectionsOfStreet(StreetIdx street_id){
+    std::vector<int> returnVector;
+    return returnVector;
+}
+
+std::vector<IntersectionIdx> findIntersectionsOfTwoStreets(std::pair<StreetIdx, StreetIdx> street_ids) {
+    std::vector<int> returnVector;
+    return returnVector;
 }
 
 std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_prefix) {
