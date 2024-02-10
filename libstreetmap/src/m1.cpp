@@ -236,14 +236,8 @@ bool loadMap(std::string map_streets_database_filename) {
     populateStreetSegmentsOfIntersections();
     
     populateStreetNamesVector();
-    for (int i = 0; i < intersectionsOfStreets_.size(); i++) {
-        intersectionsOfStreets_[i].clear();
-    }
-
-    populateStreetSegmentsOfIntersections();
-
-    populateSegmentTravelTimes();
     
+    populateSegmentTravelTimes();
 
     load_successful = true; //Make sure this is updated to reflect whether
                             //loading the map succeeded or failed
