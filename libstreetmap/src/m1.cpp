@@ -44,7 +44,7 @@ std::unordered_map<OSMID, double> OSMWaylengths;
 
 // ==================================== Declare functions to populate globals ====================================
 void populateSegmentTravelTimes();
-void populateStreetSegmentsOfIntersections();
+void populateStreetSegmentsAndIntersectionsVectors();
 void populateStreetNamesVector();
 void populateOSMNodeByID();
 void populateOSMWaylengths();
@@ -56,6 +56,30 @@ std::pair<double, double> latLontoCartesian(LatLon point_1, double latavg);
 
 
 // ==================================== Implementation of m1 functions ====================================
+
+// Returns the distance between two (lattitude,longitude) coordinates in meters.
+// Speed Requirement --> moderate
+// Written by Jonathan
+double findDistanceBetweenTwoPoints(LatLon point_1, LatLon point_2) {
+    // Use the formula: (x,y) = (R * lon * cos(lat_avg), R * lat)
+    // where:   R = kEarthRadiusInMeters
+    // and      lat, lon expressed in [rad]; multiply [degree] values by kDegreeToRadian
+
+    // To find the distance between two points (lon1, lat1) and (lon2, lat2),
+    // it is accurate to compute lat_avg = (lat1 + lat2) / 2 [rad]
+    double lat_avg = kDegreeToRadian * (point_1.latitude() + point_2.latitude()) / 2;
+
+    // Compute x-coordinates for point_1 and point_2
+    double x1 = kEarthRadiusInMeters * kDegreeToRadian * point_1.longitude() * cos(lat_avg);
+    double x2 = kEarthRadiusInMeters * kDegreeToRadian * point_2.longitude() * cos(lat_avg);
+
+    // Compute y-coordinates for point_1 and point_2
+    double y1 = kEarthRadiusInMeters * kDegreeToRadian * point_1.latitude();
+    double y2 = kEarthRadiusInMeters * kDegreeToRadian * point_2.latitude();
+
+    // Return the distance by the Pythagoras theorem: d = sqrt((y2 - y1)^2, (x2 - x1)^2) [m]
+    return sqrt(pow(y2 - y1, 2) + pow(x2 - x1, 2));
+}
 
 // Returns the length of the given street segment in meters.
 // Speed Requirement --> moderate
@@ -311,6 +335,8 @@ bool intersectionsAreDirectlyConnected(std::pair<IntersectionIdx, IntersectionId
     return false;
 }
 
+// Loops through all intersections and calls findDistanceBetweenTwoPoints to check its distance
+// Tracks the closest intersection by IntersectionIdx and tracks the smallest distance
 // Writen by Rohan
 IntersectionIdx findClosestIntersection(LatLon my_position) {
     IntersectionIdx closestIntersection = 0;
@@ -325,16 +351,20 @@ IntersectionIdx findClosestIntersection(LatLon my_position) {
     return closestIntersection;
 }
 
+// Accesses the index of the global variable that stores all street segments attached to any given intersection
 // Writen by Rohan
 std::vector<StreetSegmentIdx> findStreetSegmentsOfIntersection(IntersectionIdx intersection_id) {
     return streetSegmentsOfIntersections[intersection_id];
 }
 
+// Accesses the index of the global variable that stores all the intersections along a street
 // Written by Rohan
 std::vector<IntersectionIdx> findIntersectionsOfStreet(StreetIdx street_id) {
     return intersectionsOfStreets_[street_id];
 }
 
+// Initializes an unordered set as a copy of one of the vectors that contain all the intersections along a street
+// Loops through the second vector and searches in the set for each intersection in the vector, pushing it to a return vector if it is found
 // Written by Rohan
 std::vector<IntersectionIdx> findIntersectionsOfTwoStreets(std::pair<StreetIdx, StreetIdx> street_ids) {
     std::vector<IntersectionIdx> intersectionsOfStreet1 = findIntersectionsOfStreet(street_ids.first);
@@ -356,6 +386,13 @@ std::vector<IntersectionIdx> findIntersectionsOfTwoStreets(std::pair<StreetIdx, 
     return returnVector;
 }
 
+// Process string to remove spaces, and convert to lowercase
+// Then return vector containing 0 if the processed string is empty
+// Create a string that is 1 value higher than the input string by incrementing the ASCII value of the last character of the input string
+// Use this string as an upper bound in a binary search and use the input string as the lower bound
+// Loop until the iterator of the lower bound points to the higher bound, and push all associated street ids to the return vector
+// The street id associated with any given street name is stored with the name in a global variable
+// The global variable is a vector of pairs, a custom comparator helper function was written for the binary search, implemented below (streetPairComparer)
 // Written by Rohan
 std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_prefix) {
     std::string startString = street_prefix;
@@ -481,6 +518,11 @@ double findWayLength(OSMID way_id) {
     return OSMWaylengths[way_id];
 }
 
+// Find the OSMNode associated with the input OSMID by searching in the global variable
+// Return an empty string if it was not in the global unordered set
+// If the OSMID was found, get the associated node and loop through its tags
+// If the key in the tag matches the key parameter passed in, return the associated value
+// Return an empty string if all tags are looped through and the OSMNode does not contain the input key
 // Written by Rohan
 std::string getOSMNodeTagValue(OSMID osm_id, std::string key) {
     const OSMNode* node;
@@ -520,6 +562,9 @@ std::string getOSMNodeTagValue(OSMID osm_id, std::string key) {
 // name of the ".osm.bin" file that matches your map -- just change 
 // ".streets" to ".osm" in the map_streets_database_filename to get the proper
 // name.
+
+// Call functions to preload gloabl variables, clearing them first to ensure there is no extra data
+// Open both databases and check if they were both successful
 // Written by all members of group
 bool loadMap(std::string map_streets_database_filename) {
     bool load_successful = false; //Indicates whether the map has loaded 
@@ -553,7 +598,7 @@ bool loadMap(std::string map_streets_database_filename) {
     segmentTravelTimes.clear();
     OSMNodeByID.clear();
 
-    populateStreetSegmentsOfIntersections();
+    populateStreetSegmentsAndIntersectionsVectors();
     
     populateStreetNamesVector();
     
@@ -567,6 +612,7 @@ bool loadMap(std::string map_streets_database_filename) {
     return load_successful;
 }
 
+// Clear all global variables and close the two databases
 // Written by all members of group
 void closeMap() {
     //Clean-up your map related data structures here
@@ -581,7 +627,6 @@ void closeMap() {
         streetSegments[i].clear();
     }
 
-
     streetSegments.clear();
     streetNamesAndIDs.clear();
     segmentTravelTimes.clear();
@@ -592,6 +637,10 @@ void closeMap() {
 
 // ==================================== Implementation of helper functions to populate global variables ====================================
 
+// Loop up to the number of nodes and set the key value pairs of the global unordered set
+// Set the key to the OSMID of OSMNode with index i
+// Set the value to the OSMNode with index i
+// Enables you to search by OSMID and find an OSMNode with a given OSMID
 // Written by Rohan
 void populateOSMNodeByID() {
     for (int i = 0; i < getNumberOfNodes(); i++) {
@@ -644,6 +693,9 @@ void populateOSMWaylengths() {
     }
 }
 
+// Process the street names by removing spaces and converting to lowercase
+// Put the name of the street as the first value in the pair and the ith value (street id) as the second
+// Sort the vector using the name (because it's the first value) so it can be used for a binary search
 // Written by Rohan
 void populateStreetNamesVector() {
     streetNamesAndIDs.resize(getNumStreets());
@@ -663,13 +715,18 @@ void populateStreetNamesVector() {
     std::sort(streetNamesAndIDs.begin(), streetNamesAndIDs.end());
 }
 
+// Comparator for pair, checks if first value is lower then checks if first values are equal and second is lower
+// Used for binary searches lower_bound and upper_bound
 // Written by Rohan
 inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2) {
     return (pair1.first < pair2.first || (pair1.first == pair2.first && pair1.second < pair2.second));
 }
 
+// Resizes two global vectors, first to store all street segments attached to an intersection, second to store all intersections along a street
+// Loops through intersections and adds all street segments tangent to it to the corresponding vector
+// Then adds that intersection id to the indices of the second vector to populate both simultaneously
 // Written by Rohan
-void populateStreetSegmentsOfIntersections() {
+void populateStreetSegmentsAndIntersectionsVectors() {
     int numberOfStreetSegments;
     StreetSegmentIdx streetSegmentID;
     StreetIdx streetID;
@@ -690,11 +747,11 @@ void populateStreetSegmentsOfIntersections() {
     }
 }
 
+// Converts LatLon to cartesian coordinates
 // Written by Kevin and Jonathan
 std::pair<double, double> latLontoCartesian(LatLon point_1, double latavg){ 
 
     double x1 = kEarthRadiusInMeters * kDegreeToRadian * point_1.longitude() * cos(latavg*kDegreeToRadian);
-
     double y1 = kEarthRadiusInMeters * kDegreeToRadian * point_1.latitude();
 
     return {x1,y1};
