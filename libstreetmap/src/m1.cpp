@@ -26,18 +26,33 @@
 #include <unordered_set>
 #include <unordered_map>
 
+// Declare typedefs
 typedef int StreetSegmentIdx;
 typedef int IntersectionIdx;
 typedef int POIIdx;
 typedef int StreetIdx;
 
+// Declare global variables
 std::vector<std::vector<StreetSegmentIdx>> streetSegmentsOfIntersections;
 std::vector<std::vector<IntersectionIdx>> intersectionsOfStreets_;
 std::vector<std::pair<std::string, int>> streetNamesAndIDs;
 std::vector<double> segmentTravelTimes;
 std::vector<std::vector<int>> streetSegments;
+std::unordered_map<OSMID, const OSMNode*> OSMNodeByID;
 
+// Declare helper functions
 void populateSegmentTravelTimes();
+void populateStreetSegmentsOfIntersections();
+void populateStreetNamesVector();
+double getDistanceBetweenPoints(LatLon point1, LatLon point2);
+inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2);
+void populateOSMNodeByID();
+
+void populateOSMNodeByID() {
+    for (int i = 0; i < getNumberOfNodes(); i++) {
+        OSMNodeByID[(getNodeByIndex(i)->id())] = getNodeByIndex(i);
+    }
+}
 
 void populateSegmentTravelTimes() {
     // Initialize the vector size to the number of street segments
@@ -229,11 +244,11 @@ double getDistanceBetweenPoints(LatLon point1, LatLon point2) {
 
 IntersectionIdx findClosestIntersection(LatLon my_position) {
     IntersectionIdx closestIntersection = 0;
-    double minDistance = getDistanceBetweenPoints(my_position, getIntersectionPosition(0));
+    double minDistance = findDistanceBetweenTwoPoints(my_position, getIntersectionPosition(0));
 
     for (int i = 0; i < getNumIntersections(); i++) {
-        if (getDistanceBetweenPoints(my_position, getIntersectionPosition(i)) < minDistance) {
-            minDistance = getDistanceBetweenPoints(my_position, getIntersectionPosition(i));
+        if (findDistanceBetweenTwoPoints(my_position, getIntersectionPosition(i)) < minDistance) {
+            minDistance = findDistanceBetweenTwoPoints(my_position, getIntersectionPosition(i));
             closestIntersection = i;
         }
     }
