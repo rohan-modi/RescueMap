@@ -32,29 +32,36 @@ typedef int IntersectionIdx;
 typedef int POIIdx;
 typedef int StreetIdx;
 
-// Declare global variables
+// ==================================== Declare global variables ====================================
 std::vector<std::vector<StreetSegmentIdx>> streetSegmentsOfIntersections;
 std::vector<std::vector<IntersectionIdx>> intersectionsOfStreets_;
 std::vector<std::pair<std::string, int>> streetNamesAndIDs;
 std::vector<double> segmentTravelTimes;
 std::vector<std::vector<int>> streetSegments;
 std::unordered_map<OSMID, const OSMNode*> OSMNodeByID;
+std::unordered_map<OSMID, double> OSMWaylengths;
 
-// Declare helper functions
+
+// ==================================== Declare functions to populate globals ====================================
 void populateSegmentTravelTimes();
 void populateStreetSegmentsOfIntersections();
 void populateStreetNamesVector();
+void populateOSMNodeByID();
+void populateOSMWaylengths();
+void populateSegmentsOfStreets();
+
+// Declare helper functions
 double getDistanceBetweenPoints(LatLon point1, LatLon point2);
 inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2);
-void populateOSMNodeByID();
+std::pair<double, double> latLontoCartesian(LatLon point_1, double latavg);
+
+
 
 void populateOSMNodeByID() {
     for (int i = 0; i < getNumberOfNodes(); i++) {
         OSMNodeByID[(getNodeByIndex(i)->id())] = getNodeByIndex(i);
     }
 }
-void populateOSMWaylengths();
-std::pair<double, double> latLontoCartesian(LatLon point_1, double latavg);
 
 void populateSegmentTravelTimes() {
     // Initialize the vector size to the number of street segments
@@ -70,7 +77,6 @@ void populateSegmentTravelTimes() {
         segmentTravelTimes[idx] = (findStreetSegmentLength(idx) / segment.speedLimit);
     }
 }
-void populateSegmentsOfStreets();
 
 void populateSegmentsOfStreets() {
     for(int i = 0; i < getNumStreets(); i++){
@@ -84,12 +90,6 @@ void populateSegmentsOfStreets() {
     }
 }
 
-
-std::unordered_map<OSMID, const OSMNode*> OSMNodeByID;
-std::unordered_map<OSMID, double> OSMWaylengths;
-
-
-
 void populateOSMWaylengths() {
     for (int i = 0; i < getNumberOfWays(); i++) {
 
@@ -102,20 +102,6 @@ void populateOSMWaylengths() {
         }
 
         OSMWaylengths[(getWayByIndex(i)->id())] = sum;
-    }
-}
-
-
-
-
-
-
-
-
-
-void populateOSMNodeByID() {
-    for (int i = 0; i < getNumberOfNodes(); i++) {
-        OSMNodeByID[(getNodeByIndex(i)->id())] = getNodeByIndex(i);
     }
 }
 
