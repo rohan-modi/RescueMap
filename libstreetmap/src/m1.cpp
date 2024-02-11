@@ -38,6 +38,13 @@ std::vector<double> segmentTravelTimes;
 std::vector<std::vector<int>> streetSegments;
 
 void populateSegmentTravelTimes();
+void populateStreetSegmentsOfIntersections();
+void populateStreetNamesVector();
+double getDistanceBetweenPoints(LatLon point1, LatLon point2);
+inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2);
+void populateOSMNodeByID();
+void populateOSMWaylengths();
+std::pair<double, double> latLontoCartesian(LatLon point_1, double latavg);
 
 void populateSegmentTravelTimes() {
     // Initialize the vector size to the number of street segments
@@ -53,8 +60,9 @@ void populateSegmentTravelTimes() {
         segmentTravelTimes[idx] = (findStreetSegmentLength(idx) / segment.speedLimit);
     }
 }
+void populateSegmentsOfStreets();
 
-void populateSegmentsOfStreets(){
+void populateSegmentsOfStreets() {
     for(int i = 0; i < getNumStreets(); i++){
         std::vector<int> row;
         streetSegments.push_back(row);
@@ -68,11 +76,22 @@ void populateSegmentsOfStreets(){
 
 
 std::unordered_map<OSMID, const OSMNode*> OSMNodeByID;
+std::unordered_map<OSMID, double> OSMWaylengths;
 
 
-void populateOSMWayByID () {
+
+void populateOSMWaylengths() {
     for (int i = 0; i < getNumberOfWays(); i++) {
-        OSMNodeByID[(getWayByIndex(i)->id())] = getWayByIndex(i);
+
+        std::vector<OSMID> nodesID = getWayMembers(getWayByIndex(i));
+
+        double sum = 0.0;
+
+        for(int j = 1; j < nodesID.size(); j++){
+            sum += findDistanceBetweenTwoPoints(getNodeCoords(OSMNodeByID[nodesID[j-1]]),getNodeCoords(OSMNodeByID[nodesID[j]]));
+        }
+
+        OSMWaylengths[(getWayByIndex(i)->id())] = sum;
     }
 }
 
@@ -83,13 +102,6 @@ void populateOSMWayByID () {
 
 
 
-std::unordered_map<OSMID, const OSMWay*> OSMwayByID;
-
-void populateStreetSegmentsOfIntersections();
-void populateStreetNamesVector();
-double getDistanceBetweenPoints(LatLon point1, LatLon point2);
-inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2);
-void populateOSMNodeByID();
 
 void populateOSMNodeByID() {
     for (int i = 0; i < getNumberOfNodes(); i++) {
@@ -258,16 +270,20 @@ bool loadMap(std::string map_streets_database_filename) {
 
     std::cout << "loadMap: " << map_streets_database_filename << std::endl;
 
+    if (map_streets_database_filename.find("streets") == std::string::npos) {
+        return false;
+    }
+
     //
     // Load your map related data structures here.
     //
     std::string mapName = map_streets_database_filename;
 
-    loadStreetsDatabaseBIN(mapName);
+    bool check1 = loadStreetsDatabaseBIN(mapName);  
 
-    mapName.replace(mapName.find("streets"), 7, "osm");
+    std::string osmMapName = mapName.replace(mapName.find(".streets"), 8, ".osm");
 
-    loadOSMDatabaseBIN(mapName);
+    bool check2 = loadOSMDatabaseBIN(osmMapName);
     populateSegmentsOfStreets();
 
     for (int i = 0; i < streetSegmentsOfIntersections.size(); i++) {
@@ -286,8 +302,9 @@ bool loadMap(std::string map_streets_database_filename) {
     
     populateSegmentTravelTimes();
     populateOSMNodeByID();
+    populateOSMWaylengths();
 
-    load_successful = true; //Make sure this is updated to reflect whether
+    load_successful = check1 && check2; //Make sure this is updated to reflect whether
                             //loading the map succeeded or failed
 
     return load_successful;
@@ -301,8 +318,18 @@ void closeMap() {
     for (int i = 0; i < intersectionsOfStreets_.size(); i++) {
         intersectionsOfStreets_[i].clear();
     }
+
+    for (int i = 0; i < streetSegments.size(); i++) {
+        streetSegments[i].clear();
+    }
+
+
+    streetSegments.clear();
     streetNamesAndIDs.clear();
     segmentTravelTimes.clear();
+
+    closeOSMDatabase();
+    closeStreetDatabase();
 }
 
 
@@ -313,7 +340,7 @@ double findStreetLength(StreetIdx street_id) {
         result = result + findStreetSegmentLength(segID);
     }
 
-    return result/3;
+    return result;
 }
 
 POIIdx findClosestPOI(LatLon my_position, std::string poi_name) {
@@ -394,9 +421,8 @@ double findFeatureArea(FeatureIdx feature_id) {
 }
 
 double findWayLength(OSMID way_id) {
-    std::vector<OSMID> aVector;
-    aVector.push_back(way_id);
-    return 0.0;
+    
+    return OSMWaylengths[way_id];
 }
 
 std::string getOSMNodeTagValue(OSMID osm_id, std::string key) {
