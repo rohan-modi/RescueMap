@@ -291,10 +291,13 @@ void closeMap() {
 
 
 double findStreetLength(StreetIdx street_id) {
-    if (street_id == 1) {
-        return 0.0;
+
+    double result = 0.0;
+    for(int segID : streetSegments[street_id]){
+        result = result + findStreetSegmentLength(segID);
     }
-    return 0.0;
+
+    return result/3;
 }
 
 POIIdx findClosestPOI(LatLon my_position, std::string poi_name) {
