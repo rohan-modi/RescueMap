@@ -50,83 +50,313 @@ void populateOSMNodeByID();
 void populateOSMWaylengths();
 void populateSegmentsOfStreets();
 
-// Declare helper functions
-double getDistanceBetweenPoints(LatLon point1, LatLon point2);
+// ==================================== Declare helper functions ====================================
 inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2);
 std::pair<double, double> latLontoCartesian(LatLon point_1, double latavg);
 
 
+// ==================================== Implementation of m1 functions ====================================
 
-void populateOSMNodeByID() {
-    for (int i = 0; i < getNumberOfNodes(); i++) {
-        OSMNodeByID[(getNodeByIndex(i)->id())] = getNodeByIndex(i);
+// Returns the length of the given street segment in meters.
+// Speed Requirement --> moderate
+// Written by Jonathan
+double findStreetSegmentLength(StreetSegmentIdx street_segment_id) {
+    // Get the StreetSegmentInfo struct associated with street_segment_id
+    StreetSegmentInfo segment = getStreetSegmentInfo(street_segment_id);
+
+    // If segment contains 0 curve points: it is a straight line
+    if (segment.numCurvePoints == 0) {
+
+        // Retrieve LatLon position for segment endpoints "from" and "to"
+        LatLon from_latlon = getIntersectionPosition(segment.from);
+        LatLon to_latlon = getIntersectionPosition(segment.to);
+
+        // Return straight-line distance between "from" and "to"
+        return findDistanceBetweenTwoPoints(from_latlon, to_latlon);
     }
-}
 
-void populateSegmentTravelTimes() {
-    // Initialize the vector size to the number of street segments
-    segmentTravelTimes.resize(getNumStreetSegments());
+    // Else, segment contains curve points
+    else {
+        // APPROACH: 
+        // Within the segment endpoints, add the sub-segment distances between curve points
 
-    // Compute the travel time for each street segment and populate the vector
-    for (StreetSegmentIdx idx = 0; idx < getNumStreetSegments(); ++idx) {
+        // Initialize curvePointIdx = 0
+        int curvePointIdx = 0;
+
+        // Initialize first 2 points to calculate distance: endpoint "from" and curvePoint 0
+        LatLon latlon1 = getIntersectionPosition(segment.from);
+        LatLon latlon2 = getStreetSegmentCurvePoint(curvePointIdx, street_segment_id);
+
+        // Compute the first sub-segment distance between endpoint "from" and curvePoint 0
+        double distance = findDistanceBetweenTwoPoints(latlon1, latlon2);
         
-        // Get the StreetSegmentInfo struct associated with street_segment_id
-        StreetSegmentInfo segment = getStreetSegmentInfo(idx);
+        // Loop through all curve points to traverse the entire street segment
+        while (curvePointIdx < segment.numCurvePoints) {
+            
+            // Set the next curve point 1
+            latlon1 = latlon2;
 
-        // Compute time [s] = distance [m] / speed_limit [m/s]
-        segmentTravelTimes[idx] = (findStreetSegmentLength(idx) / segment.speedLimit);
-    }
-}
+            // If current curve point is not the last: then set the next curve point 2
+            if (curvePointIdx + 1 != segment.numCurvePoints) {
+                latlon2 = getStreetSegmentCurvePoint(curvePointIdx + 1, street_segment_id);
+            }
+            // Else, final point becomes the overall segment endpoint "to"
+            else {
+                latlon2 = getIntersectionPosition(segment.to);
+            }
 
-void populateSegmentsOfStreets() {
-    for(int i = 0; i < getNumStreets(); i++){
-        std::vector<int> row;
-        streetSegments.push_back(row);
-    }
+            // Accumulate the total distance
+            distance += findDistanceBetweenTwoPoints(latlon1, latlon2);
 
-    int max = getNumStreetSegments();
-    for(int i = 0; i< max; i++){
-        streetSegments[getStreetSegmentInfo(i).streetID].push_back(i);
-    }
-}
-
-void populateOSMWaylengths() {
-    for (int i = 0; i < getNumberOfWays(); i++) {
-
-        std::vector<OSMID> nodesID = getWayMembers(getWayByIndex(i));
-
-        double sum = 0.0;
-
-        for(int j = 1; j < nodesID.size(); j++){
-            sum += findDistanceBetweenTwoPoints(getNodeCoords(OSMNodeByID[nodesID[j-1]]),getNodeCoords(OSMNodeByID[nodesID[j]]));
+            // Increment curvePointIdx to calculate next sub-segment distance
+            ++curvePointIdx;
         }
 
-        OSMWaylengths[(getWayByIndex(i)->id())] = sum;
+        return distance;
     }
 }
 
-void populateStreetNamesVector() {
-    streetNamesAndIDs.resize(getNumStreets());
-    for (int i = 0; i < getNumStreets(); i++) {
-        std::string streetName = getStreetName(i);
+// Returns the travel time to drive from one end of a street segment
+// to the other, in seconds, when driving at the speed limit.
+// Note: (time = distance/speed_limit)
+// Speed Requirement --> high
+// Written by Jonathan
+double findStreetSegmentTravelTime(StreetSegmentIdx street_segment_id) {
+    // Look up travel time stored in global vector segmentTravelTimes
+    return segmentTravelTimes[street_segment_id];
+}
 
-        std::string::iterator endPosition = std::remove(streetName.begin(), streetName.end(), ' ');
-        streetName.erase(endPosition, streetName.end());
+// Returns the angle (in radians) that would result as you exit
+// src_street_segment_id and enter dst_street_segment_id, if they share an
+// intersection.
+// If a street segment is not completely straight, use the last piece of the
+// segment closest to the shared intersection.
+// If the two street segments do not share an intersection, return a constant
+// NO_ANGLE, which is defined above.
+// Speed Requirement --> none
+// Written by Jonathan
+double findAngleBetweenStreetSegments(StreetSegmentIdx src_street_segment_id, StreetSegmentIdx dst_street_segment_id) {
 
-        for (int j = 0; j < streetName.size(); j++) {
-            streetName[j] = std::tolower(streetName[j]);
+    // Initialize StreetSegmentInfo struct for src and dst
+    StreetSegmentInfo src_segment = getStreetSegmentInfo(src_street_segment_id);
+    StreetSegmentInfo dst_segment = getStreetSegmentInfo(dst_street_segment_id);
+
+    // Declare 3 reference points to represent 2 connected street segments
+    LatLon shared_point, point_1, point_2;
+
+    // Determine 3 reference points depending on orientation for src and dst
+    if (src_segment.from == dst_segment.from) {
+
+        // If src_segment is one-way, then ILLEGAL -- not possible
+        if (src_segment.oneWay) {
+            return NO_ANGLE;
         }
 
-        streetNamesAndIDs[i].first = streetName;
-        streetNamesAndIDs[i].second = i;
+        // The shared intersection LatLon is src_segment.from    
+        shared_point = getIntersectionPosition(src_segment.from);
+
+        // If the src segment has 0 curve points, then ref point 1 is src_segment.to
+        if (src_segment.numCurvePoints == 0) {
+            point_1 = getIntersectionPosition(src_segment.to);
+        }
+        // Else, ref point 1 is first curve point
+        else {
+            point_1 = getStreetSegmentCurvePoint(0, src_street_segment_id);
+        }
+
+        // If the dst segment has 0 curve points, then the ref point 2 is dst_segment.to
+        if (dst_segment.numCurvePoints == 0) {
+            point_2 = getIntersectionPosition(dst_segment.to);
+        }
+        // Else, the ref point 2 is first curve point
+        else {
+            point_2 = getStreetSegmentCurvePoint(0, dst_street_segment_id);
+        }
     }
-    std::sort(streetNamesAndIDs.begin(), streetNamesAndIDs.end());
+
+    else if (src_segment.to == dst_segment.to) {
+
+        // If dst_segment is one-way, then ILLEGAL -- not possible
+        if (dst_segment.oneWay) {
+            return NO_ANGLE;
+        }
+
+        // The shared intersection LatLon is src_segment.to
+        shared_point = getIntersectionPosition(src_segment.to);
+
+        // If the src segment has 0 curve points, then ref point 1 is src_segment.from
+        if (src_segment.numCurvePoints == 0) {
+            point_1 = getIntersectionPosition(src_segment.from);
+        }
+        // Else, ref point 1 is last curve point
+        else { 
+            point_1 = getStreetSegmentCurvePoint((src_segment.numCurvePoints - 1), src_street_segment_id);
+        }
+
+        // If the dst segment has 0 curve points, then the ref point 2 is dst_segment.from
+        if (dst_segment.numCurvePoints == 0) {
+            point_2 = getIntersectionPosition(dst_segment.from);
+        }
+        // Else, the ref point 2 is last curve point
+        else {
+            point_2 = getStreetSegmentCurvePoint((dst_segment.numCurvePoints - 1), dst_street_segment_id);
+        }
+    }
+
+    else if (src_segment.from == dst_segment.to) {
+        
+        // If src_segment OR dst_segment is one-way, then ILLEGAL -- not possible
+        if (src_segment.oneWay || dst_segment.oneWay) {
+            return NO_ANGLE;
+        }
+
+        // The shared intersection LatLon is src_segment.from    
+        shared_point = getIntersectionPosition(src_segment.from);
+
+        // If the src segment has 0 curve points, then ref point 1 is src_segment.to
+        if (src_segment.numCurvePoints == 0) {
+            point_1 = getIntersectionPosition(src_segment.to);
+        }
+        // Else, ref point 1 is first curve point
+        else { 
+            point_1 = getStreetSegmentCurvePoint(0, src_street_segment_id);
+        }
+
+        // If the dst segment has 0 curve points, then the ref point 2 is dst_segment.from
+        if (dst_segment.numCurvePoints == 0) {
+            point_2 = getIntersectionPosition(dst_segment.from);
+        }
+        // Else, the ref point 2 is last curve point
+        else {
+            point_2 = getStreetSegmentCurvePoint((dst_segment.numCurvePoints - 1), dst_street_segment_id);
+        }
+    }
+
+    else if (src_segment.to == dst_segment.from) {
+        
+        // No need to check for one-way streets -- both segments are forward direction
+        
+        // The shared intersection LatLon is src_segment.to    
+        shared_point = getIntersectionPosition(src_segment.to);
+
+        // If the src segment has 0 curve points, then ref point 1 is src_segment.from
+        if (src_segment.numCurvePoints == 0) {
+            point_1 = getIntersectionPosition(src_segment.from);
+        }
+        // Else, ref point 1 is last curve point
+        else { 
+            point_1 = getStreetSegmentCurvePoint((src_segment.numCurvePoints - 1), src_street_segment_id);
+        }
+
+        // If the dst segment has 0 curve points, then the ref point 2 is dst_segment.to
+        if (dst_segment.numCurvePoints == 0) {
+            point_2 = getIntersectionPosition(dst_segment.to);
+        }
+        // Else, the ref point 2 is first curve point
+        else {
+            point_2 = getStreetSegmentCurvePoint(0, dst_street_segment_id);
+        }
+    }
+
+    else {
+        // The src and dst street segments do not share an intersection
+        return NO_ANGLE;
+    }
+
+    // COMPUTE THE ANGLE //
+    
+    // Determine the triangle side lengths between 3 reference points
+    double srclength = findDistanceBetweenTwoPoints(shared_point, point_1);
+    double dstlength = findDistanceBetweenTwoPoints(shared_point, point_2);
+    double side3 = findDistanceBetweenTwoPoints(point_1, point_2);
+
+    // Solve using the cosine law: side3^2 = srclength^2 + dstlength^2 - 2 * srclength * dstlength * cos(pi - angle)
+    double angle = M_PI - acos((pow(side3, 2) - pow(srclength, 2) - pow(dstlength, 2)) / (-2 * srclength * dstlength));
+
+    return angle;
 }
 
-inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2) {
-    return (pair1.first < pair2.first || (pair1.first == pair2.first && pair1.second < pair2.second));
+// Returns true if the two intersections are directly connected, meaning you can
+// legally drive from the first intersection to the second using only one
+// streetSegment.
+// Speed Requirement --> moderate
+// Written by Jonathan
+bool intersectionsAreDirectlyConnected(std::pair<IntersectionIdx, IntersectionIdx> intersection_ids) {
+
+    // Get the number of street segments attached to IntersectionIdx 1
+    int point1_numSegments = getNumIntersectionStreetSegment(intersection_ids.first);
+
+    // Loop to see if any segments connect to IntersectionIdx 2
+    for (int segmentNum = 0; segmentNum < point1_numSegments; ++segmentNum) {
+        
+        // Get StreetSegmentIdx for the segmentNum'th segment attached to IntersectionIdx 1
+        StreetSegmentIdx segmentID_1 = getIntersectionStreetSegment(segmentNum, intersection_ids.first);
+        
+        // Get StreetSegmentInfo struct for segmentID 1
+        StreetSegmentInfo segmentInfo = getStreetSegmentInfo(segmentID_1);
+
+        // If segment "to" matches IntersectionIdx 2,
+        // then the intersections are directly connected (regardless of one-way status)
+        if (intersection_ids.second == segmentInfo.to) {
+            return true;
+        }
+        // If segment "from" matches IntersectionIdx 2 && the street is NOT one-way,
+        // then the intersections are directly connected
+        else if ((intersection_ids.second == segmentInfo.from) && (!segmentInfo.oneWay)) {
+            return true;
+        }
+    }
+
+    // The intersections are not directly connected; IntersectionIdx 2 not found
+    return false;
 }
 
+// Writen by Rohan
+IntersectionIdx findClosestIntersection(LatLon my_position) {
+    IntersectionIdx closestIntersection = 0;
+    double minDistance = findDistanceBetweenTwoPoints(my_position, getIntersectionPosition(0));
+
+    for (int i = 0; i < getNumIntersections(); i++) {
+        if (findDistanceBetweenTwoPoints(my_position, getIntersectionPosition(i)) < minDistance) {
+            minDistance = findDistanceBetweenTwoPoints(my_position, getIntersectionPosition(i));
+            closestIntersection = i;
+        }
+    }
+    return closestIntersection;
+}
+
+// Writen by Rohan
+std::vector<StreetSegmentIdx> findStreetSegmentsOfIntersection(IntersectionIdx intersection_id) {
+    return streetSegmentsOfIntersections[intersection_id];
+}
+
+// Written by Rohan
+std::vector<IntersectionIdx> findIntersectionsOfStreet(StreetIdx street_id) {
+    return intersectionsOfStreets_[street_id];
+}
+
+// Written by Rohan
+std::vector<IntersectionIdx> findIntersectionsOfTwoStreets(std::pair<StreetIdx, StreetIdx> street_ids) {
+    std::vector<IntersectionIdx> intersectionsOfStreet1 = findIntersectionsOfStreet(street_ids.first);
+    std::vector<IntersectionIdx> intersectionsOfStreet2 = findIntersectionsOfStreet(street_ids.second);
+
+    std::unordered_set<IntersectionIdx> vec1AsSet(intersectionsOfStreet1.begin(), intersectionsOfStreet1.end());
+
+    std::vector<IntersectionIdx> returnVector;
+
+    for (int i = 0; i < intersectionsOfStreet2.size(); i++) {
+        if (vec1AsSet.find(intersectionsOfStreet2[i]) != vec1AsSet.end()) {
+            if (returnVector.size() == 0) {
+                returnVector.push_back(intersectionsOfStreet2[i]);
+            } else if (returnVector.back() != intersectionsOfStreet2[i]) {
+                returnVector.push_back(intersectionsOfStreet2[i]);
+            }
+        }
+    }
+    return returnVector;
+}
+
+// Written by Rohan
 std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_prefix) {
     std::string startString = street_prefix;
 
@@ -166,87 +396,117 @@ std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_pre
     return returnVector;
 }
 
-void populateStreetSegmentsOfIntersections() {
-    int numberOfStreetSegments;
-    StreetSegmentIdx streetSegmentID;
-    StreetIdx streetID;
-    streetSegmentsOfIntersections.resize(getNumIntersections());
-    intersectionsOfStreets_.resize(getNumStreets());
-    for (int i = 0; i < getNumIntersections(); i++) {
-        numberOfStreetSegments = getNumIntersectionStreetSegment(i);
-        for (int j = 0; j < numberOfStreetSegments; j++) {
-            streetSegmentID = getIntersectionStreetSegment(j, i);
-            streetID = (getStreetSegmentInfo(streetSegmentID)).streetID;
-            streetSegmentsOfIntersections[i].push_back(streetSegmentID);
-            if (intersectionsOfStreets_[streetID].size() == 0) {
-                intersectionsOfStreets_[streetID].push_back(i);
-            } else if (intersectionsOfStreets_[streetID].back() != i) {
-                intersectionsOfStreets_[streetID].push_back(i);
+// Written by Kevin
+double findStreetLength(StreetIdx street_id) {
+
+    double result = 0.0;
+    for(int segID : streetSegments[street_id]){
+        result = result + findStreetSegmentLength(segID);
+    }
+
+    return result;
+}
+
+// Written by Kevin
+POIIdx findClosestPOI(LatLon my_position, std::string poi_name) {
+
+    int max = getNumPointsOfInterest();
+    int current = 0;
+    bool foundFirst = false;
+
+    while(!foundFirst){
+        if(poi_name == getPOIName(current)){
+            foundFirst = true;
+        }
+        current++;
+    }
+
+    POIIdx result = current-1;
+
+    double leastDistance  = findDistanceBetweenTwoPoints(my_position, getPOIPosition(result));
+    double tempDistance;
+
+    for(int i = current; i < max; i++){
+        if(poi_name == getPOIName(i)){
+            tempDistance = findDistanceBetweenTwoPoints(my_position, getPOIPosition(i));
+            if(tempDistance < leastDistance){
+                result = i;
+                leastDistance = tempDistance;
             }
         }
     }
+    return result;
 }
 
-std::vector<StreetSegmentIdx> findStreetSegmentsOfIntersection(IntersectionIdx intersection_id) {
-  return streetSegmentsOfIntersections[intersection_id];
+// Written by Kevin
+double findFeatureArea(FeatureIdx feature_id) {
+
+    double result = 0.0;
+    int points = getNumFeaturePoints(feature_id);
+
+    int first = 0; 
+    int second = 1;
+
+    if(points > 1 && getFeaturePoint(0, feature_id) == getFeaturePoint(points-1, feature_id)){
+
+
+        double latavg = 0.0;
+
+        for(int i = 0; i < points; i++){
+            latavg += getFeaturePoint(i, feature_id).latitude();
+        }
+
+        latavg = latavg/points;
+
+
+        while(second != points){
+
+            std::pair<double, double> point_1 = latLontoCartesian(getFeaturePoint(first, feature_id), latavg);
+            std::pair<double, double> point_2 = latLontoCartesian(getFeaturePoint(second, feature_id), latavg);
+
+            result += (point_1.first * point_2.second);
+            result -= (point_1.second * point_2.first);
+
+            first++;
+            second++;
+        }
+
+    }
+
+    return std::abs(result/2);
 }
 
-std::vector<IntersectionIdx> findIntersectionsOfStreet(StreetIdx street_id) {
-    return intersectionsOfStreets_[street_id];
+// Written by Kevin
+double findWayLength(OSMID way_id) {
+    return OSMWaylengths[way_id];
 }
 
-std::vector<IntersectionIdx> findIntersectionsOfTwoStreets(std::pair<StreetIdx, StreetIdx> street_ids) {
-    std::vector<IntersectionIdx> intersectionsOfStreet1 = findIntersectionsOfStreet(street_ids.first);
-    std::vector<IntersectionIdx> intersectionsOfStreet2 = findIntersectionsOfStreet(street_ids.second);
+// Written by Rohan
+std::string getOSMNodeTagValue(OSMID osm_id, std::string key) {
+    const OSMNode* node;
+    std::pair<std::string, std::string> tagPair;
 
-    std::unordered_set<IntersectionIdx> vec1AsSet(intersectionsOfStreet1.begin(), intersectionsOfStreet1.end());
+    auto iterator = OSMNodeByID.find(osm_id);
 
-    std::vector<IntersectionIdx> returnVector;
+    if (iterator == OSMNodeByID.end()) {
+        return "";
+    }
 
-    for (int i = 0; i < intersectionsOfStreet2.size(); i++) {
-        if (vec1AsSet.find(intersectionsOfStreet2[i]) != vec1AsSet.end()) {
-            if (returnVector.size() == 0) {
-                returnVector.push_back(intersectionsOfStreet2[i]);
-            } else if (returnVector.back() != intersectionsOfStreet2[i]) {
-                returnVector.push_back(intersectionsOfStreet2[i]);
-            }
+    node = iterator->second;
+
+    for (int j = 0; j < getTagCount(node); j++) {
+        tagPair = getTagPair(node, j);
+        if (tagPair.first == key) {
+            return tagPair.second;
         }
     }
-    return returnVector;
+    return "";
 }
 
-double getDistanceBetweenPoints(LatLon point1, LatLon point2) {
-    double lat1 = point1.latitude()*kDegreeToRadian;
-    double lon1 = point1.longitude()*kDegreeToRadian;
 
-    double lat2 = point2.latitude()*kDegreeToRadian;
-    double lon2 = point2.longitude()*kDegreeToRadian;
 
-    double lat_avg = (lat1 + lat2)/2;
+// ==================================== LoadMap and closeMap ====================================
 
-    double x1 = kEarthRadiusInMeters*lon1*cos(lat_avg);
-    double y1 = kEarthRadiusInMeters*lat1;
-
-    double x2 = kEarthRadiusInMeters*lon2*cos(lat_avg);
-    double y2 = kEarthRadiusInMeters*lat2;
-
-    double distance = sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2));
-
-    return distance;
-}
-
-IntersectionIdx findClosestIntersection(LatLon my_position) {
-    IntersectionIdx closestIntersection = 0;
-    double minDistance = findDistanceBetweenTwoPoints(my_position, getIntersectionPosition(0));
-
-    for (int i = 0; i < getNumIntersections(); i++) {
-        if (findDistanceBetweenTwoPoints(my_position, getIntersectionPosition(i)) < minDistance) {
-            minDistance = findDistanceBetweenTwoPoints(my_position, getIntersectionPosition(i));
-            closestIntersection = i;
-        }
-    }
-    return closestIntersection;
-}
 
 // loadMap will be called with the name of the file that stores the "layer-2"
 // map data accessed through StreetsDatabaseAPI: the street and intersection 
@@ -260,6 +520,7 @@ IntersectionIdx findClosestIntersection(LatLon my_position) {
 // name of the ".osm.bin" file that matches your map -- just change 
 // ".streets" to ".osm" in the map_streets_database_filename to get the proper
 // name.
+// Written by all members of group
 bool loadMap(std::string map_streets_database_filename) {
     bool load_successful = false; //Indicates whether the map has loaded 
                                   //successfully
@@ -306,6 +567,7 @@ bool loadMap(std::string map_streets_database_filename) {
     return load_successful;
 }
 
+// Written by all members of group
 void closeMap() {
     //Clean-up your map related data structures here
     for (int i = 0; i < streetSegmentsOfIntersections.size(); i++) {
@@ -328,125 +590,113 @@ void closeMap() {
     closeStreetDatabase();
 }
 
+// ==================================== Implementation of helper functions to populate global variables ====================================
 
-double findStreetLength(StreetIdx street_id) {
-
-    double result = 0.0;
-    for(int segID : streetSegments[street_id]){
-        result = result + findStreetSegmentLength(segID);
+// Written by Rohan
+void populateOSMNodeByID() {
+    for (int i = 0; i < getNumberOfNodes(); i++) {
+        OSMNodeByID[(getNodeByIndex(i)->id())] = getNodeByIndex(i);
     }
-
-    return result;
 }
 
-POIIdx findClosestPOI(LatLon my_position, std::string poi_name) {
+// Written by Jonathan
+void populateSegmentTravelTimes() {
+    // Initialize the vector size to the number of street segments
+    segmentTravelTimes.resize(getNumStreetSegments());
 
-    int max = getNumPointsOfInterest();
-    int current = 0;
-    bool foundFirst = false;
+    // Compute the travel time for each street segment and populate the vector
+    for (StreetSegmentIdx idx = 0; idx < getNumStreetSegments(); ++idx) {
+        
+        // Get the StreetSegmentInfo struct associated with street_segment_id
+        StreetSegmentInfo segment = getStreetSegmentInfo(idx);
 
-    while(!foundFirst){
-        if(poi_name == getPOIName(current)){
-            foundFirst = true;
-        }
-        current++;
+        // Compute time [s] = distance [m] / speed_limit [m/s]
+        segmentTravelTimes[idx] = (findStreetSegmentLength(idx) / segment.speedLimit);
+    }
+}
+
+// Written by Kevin
+void populateSegmentsOfStreets() {
+    for(int i = 0; i < getNumStreets(); i++){
+        std::vector<int> row;
+        streetSegments.push_back(row);
     }
 
-    POIIdx result = current-1;
+    int max = getNumStreetSegments();
+    for(int i = 0; i< max; i++){
+        streetSegments[getStreetSegmentInfo(i).streetID].push_back(i);
+    }
+}
 
-    double leastDistance  = findDistanceBetweenTwoPoints(my_position, getPOIPosition(result));
-    double tempDistance;
+// Written by Kevin
+void populateOSMWaylengths() {
+    for (int i = 0; i < getNumberOfWays(); i++) {
 
-    for(int i = current; i < max; i++){
-        if(poi_name == getPOIName(i)){
-            tempDistance = findDistanceBetweenTwoPoints(my_position, getPOIPosition(i));
-            if(tempDistance < leastDistance){
-                result = i;
-                leastDistance = tempDistance;
+        std::vector<OSMID> nodesID = getWayMembers(getWayByIndex(i));
+
+        double sum = 0.0;
+
+        for(int j = 1; j < nodesID.size(); j++){
+            sum += findDistanceBetweenTwoPoints(getNodeCoords(OSMNodeByID[nodesID[j-1]]),getNodeCoords(OSMNodeByID[nodesID[j]]));
+        }
+
+        OSMWaylengths[(getWayByIndex(i)->id())] = sum;
+    }
+}
+
+// Written by Rohan
+void populateStreetNamesVector() {
+    streetNamesAndIDs.resize(getNumStreets());
+    for (int i = 0; i < getNumStreets(); i++) {
+        std::string streetName = getStreetName(i);
+
+        std::string::iterator endPosition = std::remove(streetName.begin(), streetName.end(), ' ');
+        streetName.erase(endPosition, streetName.end());
+
+        for (int j = 0; j < streetName.size(); j++) {
+            streetName[j] = std::tolower(streetName[j]);
+        }
+
+        streetNamesAndIDs[i].first = streetName;
+        streetNamesAndIDs[i].second = i;
+    }
+    std::sort(streetNamesAndIDs.begin(), streetNamesAndIDs.end());
+}
+
+// Written by Rohan
+inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2) {
+    return (pair1.first < pair2.first || (pair1.first == pair2.first && pair1.second < pair2.second));
+}
+
+// Written by Rohan
+void populateStreetSegmentsOfIntersections() {
+    int numberOfStreetSegments;
+    StreetSegmentIdx streetSegmentID;
+    StreetIdx streetID;
+    streetSegmentsOfIntersections.resize(getNumIntersections());
+    intersectionsOfStreets_.resize(getNumStreets());
+    for (int i = 0; i < getNumIntersections(); i++) {
+        numberOfStreetSegments = getNumIntersectionStreetSegment(i);
+        for (int j = 0; j < numberOfStreetSegments; j++) {
+            streetSegmentID = getIntersectionStreetSegment(j, i);
+            streetID = (getStreetSegmentInfo(streetSegmentID)).streetID;
+            streetSegmentsOfIntersections[i].push_back(streetSegmentID);
+            if (intersectionsOfStreets_[streetID].size() == 0) {
+                intersectionsOfStreets_[streetID].push_back(i);
+            } else if (intersectionsOfStreets_[streetID].back() != i) {
+                intersectionsOfStreets_[streetID].push_back(i);
             }
         }
     }
-    return result;
 }
 
+// Written by Kevin and Jonathan
 std::pair<double, double> latLontoCartesian(LatLon point_1, double latavg){ 
 
-            double x1 = kEarthRadiusInMeters * kDegreeToRadian * point_1.longitude() * cos(latavg*kDegreeToRadian);
+    double x1 = kEarthRadiusInMeters * kDegreeToRadian * point_1.longitude() * cos(latavg*kDegreeToRadian);
 
-            double y1 = kEarthRadiusInMeters * kDegreeToRadian * point_1.latitude();
+    double y1 = kEarthRadiusInMeters * kDegreeToRadian * point_1.latitude();
 
-            return {x1,y1};
+    return {x1,y1};
 }
 
-double findFeatureArea(FeatureIdx feature_id) {
-
-    double result = 0.0;
-    int points = getNumFeaturePoints(feature_id);
-
-    int first = 0; 
-    int second = 1;
-
-    if(points > 1 && getFeaturePoint(0, feature_id) == getFeaturePoint(points-1, feature_id)){
-
-
-        double latavg = 0.0;
-
-        for(int i = 0; i < points; i++){
-            latavg += getFeaturePoint(i, feature_id).latitude();
-        }
-
-        latavg = latavg/points;
-
-
-        while(second != points){
-
-            std::pair<double, double> point_1 = latLontoCartesian(getFeaturePoint(first, feature_id), latavg);
-            std::pair<double, double> point_2 = latLontoCartesian(getFeaturePoint(second, feature_id), latavg);
-
-            result += (point_1.first * point_2.second);
-            result -= (point_1.second * point_2.first);
-
-            first++;
-            second++;
-        }
-
-    }
-
-
-    return fabs(result/2);
-}
-
-double findWayLength(OSMID way_id) {
-    
-    return OSMWaylengths[way_id];
-}
-
-std::string getOSMNodeTagValue(OSMID osm_id, std::string key) {
-    const OSMNode* node;
-    std::pair<std::string, std::string> tagPair;
-
-    auto iterator = OSMNodeByID.find(osm_id);
-
-    if (iterator == OSMNodeByID.end()) {
-        return "";
-    }
-
-    node = iterator->second;
-
-    for (int j = 0; j < getTagCount(node); j++) {
-        tagPair = getTagPair(node, j);
-        if (tagPair.first == key) {
-            return tagPair.second;
-        }
-    }
-    return "";
-}
-
-// Returns the travel time to drive from one end of a street segment
-// to the other, in seconds, when driving at the speed limit.
-// Note: (time = distance/speed_limit)
-// Speed Requirement --> high
-double findStreetSegmentTravelTime(StreetSegmentIdx street_segment_id) {
-    // Look up travel time stored in global vector segmentTravelTimes
-    return segmentTravelTimes[street_segment_id];
-}
