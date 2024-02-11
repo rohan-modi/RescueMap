@@ -254,13 +254,19 @@ bool intersectionsAreDirectlyConnected(std::pair<IntersectionIdx, IntersectionId
     for (int segmentNum = 0; segmentNum < point1_numSegments; ++segmentNum) {
         
         // Get StreetSegmentIdx for the segmentNum'th segment attached to IntersectionIdx 1
-        StreetSegmentIdx segmentID = getIntersectionStreetSegment(segmentNum, intersection_ids.first);
+        StreetSegmentIdx segmentID_1 = getIntersectionStreetSegment(segmentNum, intersection_ids.first);
         
-        // Get StreetSegmentInfo struct for segmentID
-        StreetSegmentInfo segmentInfo = getStreetSegmentInfo(segmentID);
+        // Get StreetSegmentInfo struct for segmentID 1
+        StreetSegmentInfo segmentInfo = getStreetSegmentInfo(segmentID_1);
 
-        // If segment "from" or "to" match IntersectionIdx 2, the intersections are directly connected
-        if ((intersection_ids.second == segmentInfo.from) || (intersection_ids.second == segmentInfo.to)) {
+        // If segment "to" matches IntersectionIdx 2,
+        // then the intersections are directly connected (regardless of one-way status)
+        if (intersection_ids.second == segmentInfo.to) {
+            return true;
+        }
+        // If segment "from" matches IntersectionIdx 2 && the street is NOT one-way,
+        // then the intersections are directly connected
+        else if ((intersection_ids.second == segmentInfo.from) && (!segmentInfo.oneWay)) {
             return true;
         }
     }
