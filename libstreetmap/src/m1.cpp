@@ -35,6 +35,7 @@ std::vector<std::vector<StreetSegmentIdx>> streetSegmentsOfIntersections;
 std::vector<std::vector<IntersectionIdx>> intersectionsOfStreets_;
 std::vector<std::pair<std::string, int>> streetNamesAndIDs;
 std::vector<double> segmentTravelTimes;
+std::vector<std::vector<int>> streetSegments;
 
 void populateSegmentTravelTimes();
 
@@ -50,6 +51,18 @@ void populateSegmentTravelTimes() {
 
         // Compute time [s] = distance [m] / speed_limit [m/s]
         segmentTravelTimes[idx] = (findStreetSegmentLength(idx) / segment.speedLimit);
+    }
+}
+
+void populateSegmentsOfStreets(){
+    for(int i = 0; i < getNumStreets(); i++){
+        std::vector<int> row;
+        streetSegments.push_back(row);
+    }
+
+    int max = getNumStreetSegments();
+    for(int i = 0; i< max; i++){
+        streetSegments[getStreetSegmentInfo(i).streetID].push_back(i);
     }
 }
 
@@ -239,6 +252,7 @@ bool loadMap(std::string map_streets_database_filename) {
     mapName.replace(mapName.find("streets"), 7, "osm");
 
     loadOSMDatabaseBIN(mapName);
+    populateSegmentsOfStreets();
 
     for (int i = 0; i < streetSegmentsOfIntersections.size(); i++) {
         streetSegmentsOfIntersections[i].clear();
