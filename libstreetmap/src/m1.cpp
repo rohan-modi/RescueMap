@@ -284,10 +284,33 @@ double findStreetLength(StreetIdx street_id) {
 }
 
 POIIdx findClosestPOI(LatLon my_position, std::string poi_name) {
-    if (my_position.latitude() == 1 && poi_name == "hello") {
-        return 0.0;
+
+    int max = getNumPointsOfInterest();
+    int current = 0;
+    bool foundFirst = false;
+
+    while(!foundFirst){
+        if(poi_name == getPOIName(current)){
+            foundFirst = true;
+        }
+        current++;
     }
-    return 0;
+
+    POIIdx result = current-1;
+
+    double leastDistance  = findDistanceBetweenTwoPoints(my_position, getPOIPosition(result));
+    double tempDistance;
+
+    for(int i = current; i < max; i++){
+        if(poi_name == getPOIName(i)){
+            tempDistance = findDistanceBetweenTwoPoints(my_position, getPOIPosition(i));
+            if(tempDistance < leastDistance){
+                result = i;
+                leastDistance = tempDistance;
+            }
+        }
+    }
+    return result;
 }
 
 double findFeatureArea(FeatureIdx feature_id) {
