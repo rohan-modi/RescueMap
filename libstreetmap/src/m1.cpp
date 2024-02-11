@@ -397,6 +397,8 @@ std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_pre
 }
 
 // Written by Kevin
+// 2D vector used in load maps to associate street segments with respective street ID
+// Street IDs are matched with rows of 2D vector and all entries are summed for street length
 double findStreetLength(StreetIdx street_id) {
 
     double result = 0.0;
@@ -408,6 +410,8 @@ double findStreetLength(StreetIdx street_id) {
 }
 
 // Written by Kevin
+// Loops through all POI's looking for names matching input poi_name.
+// running minimum distance used to determine closest poi location
 POIIdx findClosestPOI(LatLon my_position, std::string poi_name) {
 
     int max = getNumPointsOfInterest();
@@ -439,6 +443,8 @@ POIIdx findClosestPOI(LatLon my_position, std::string poi_name) {
 }
 
 // Written by Kevin
+// Utilizes Shoelace method for polygon area calculation
+// depends on latLontoCartesian to convert LatLon coords to XY coordinates
 double findFeatureArea(FeatureIdx feature_id) {
 
     double result = 0.0;
@@ -449,7 +455,6 @@ double findFeatureArea(FeatureIdx feature_id) {
 
     if(points > 1 && getFeaturePoint(0, feature_id) == getFeaturePoint(points-1, feature_id)){
 
-
         double latavg = 0.0;
 
         for(int i = 0; i < points; i++){
@@ -457,7 +462,6 @@ double findFeatureArea(FeatureIdx feature_id) {
         }
 
         latavg = latavg/points;
-
 
         while(second != points){
 
@@ -477,6 +481,9 @@ double findFeatureArea(FeatureIdx feature_id) {
 }
 
 // Written by Kevin
+// Way lengths are calculated in load map function to meet function speed requirements
+// Unordered Map used to pair OSMIDs to calculated way Lengths
+// lengths calculated in load maps to increase function speed
 double findWayLength(OSMID way_id) {
     return OSMWaylengths[way_id];
 }
@@ -616,6 +623,7 @@ void populateSegmentTravelTimes() {
 }
 
 // Written by Kevin
+// loops through all street segments and pushes to vector of respective streetID associating the two together
 void populateSegmentsOfStreets() {
     for(int i = 0; i < getNumStreets(); i++){
         std::vector<int> row;
@@ -629,6 +637,8 @@ void populateSegmentsOfStreets() {
 }
 
 // Written by Kevin
+// calculates way distances through summing distance of way nodes
+// Unordered map used to access length data by OSMID
 void populateOSMWaylengths() {
     for (int i = 0; i < getNumberOfWays(); i++) {
 
