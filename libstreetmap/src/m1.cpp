@@ -313,11 +313,51 @@ POIIdx findClosestPOI(LatLon my_position, std::string poi_name) {
     return result;
 }
 
+std::pair<double, double> latLontoCartesian(LatLon point_1, double latavg){ 
+
+            double x1 = kEarthRadiusInMeters * kDegreeToRadian * point_1.longitude() * cos(latavg*kDegreeToRadian);
+
+            double y1 = kEarthRadiusInMeters * kDegreeToRadian * point_1.latitude();
+
+            return {x1,y1};
+}
+
 double findFeatureArea(FeatureIdx feature_id) {
-    if (feature_id == 1) {
-        return 0.0;
+
+    double result = 0.0;
+    int points = getNumFeaturePoints(feature_id);
+
+    int first = 0; 
+    int second = 1;
+
+    if(points > 1 && getFeaturePoint(0, feature_id) == getFeaturePoint(points-1, feature_id)){
+
+
+        double latavg = 0.0;
+
+        for(int i = 0; i < points; i++){
+            latavg += getFeaturePoint(i, feature_id).latitude();
+        }
+
+        latavg = latavg/points;
+
+
+        while(second != points){
+
+            std::pair<double, double> point_1 = latLontoCartesian(getFeaturePoint(first, feature_id), latavg);
+            std::pair<double, double> point_2 = latLontoCartesian(getFeaturePoint(second, feature_id), latavg);
+
+            result += (point_1.first * point_2.second);
+            result -= (point_1.second * point_2.first);
+
+            first++;
+            second++;
+        }
+
     }
-    return 0.0;
+
+
+    return fabs(result/2);
 }
 
 double findWayLength(OSMID way_id) {
