@@ -131,6 +131,11 @@ double findAngleBetweenStreetSegments(StreetSegmentIdx src_street_segment_id, St
     // Determine 3 reference points depending on orientation for src and dst
     if (src_segment.from == dst_segment.from) {
 
+        // If src_segment is one-way, then ILLEGAL -- not possible
+        if (src_segment.oneWay) {
+            return NO_ANGLE;
+        }
+
         // The shared intersection LatLon is src_segment.from    
         shared_point = getIntersectionPosition(src_segment.from);
 
@@ -154,6 +159,12 @@ double findAngleBetweenStreetSegments(StreetSegmentIdx src_street_segment_id, St
     }
 
     else if (src_segment.to == dst_segment.to) {
+
+        // If dst_segment is one-way, then ILLEGAL -- not possible
+        if (dst_segment.oneWay) {
+            return NO_ANGLE;
+        }
+
         // The shared intersection LatLon is src_segment.to
         shared_point = getIntersectionPosition(src_segment.to);
 
@@ -177,6 +188,12 @@ double findAngleBetweenStreetSegments(StreetSegmentIdx src_street_segment_id, St
     }
 
     else if (src_segment.from == dst_segment.to) {
+        
+        // If src_segment OR dst_segment is one-way, then ILLEGAL -- not possible
+        if (src_segment.oneWay || dst_segment.oneWay) {
+            return NO_ANGLE;
+        }
+
         // The shared intersection LatLon is src_segment.from    
         shared_point = getIntersectionPosition(src_segment.from);
 
@@ -200,6 +217,9 @@ double findAngleBetweenStreetSegments(StreetSegmentIdx src_street_segment_id, St
     }
 
     else if (src_segment.to == dst_segment.from) {
+        
+        // No need to check for one-way streets -- both segments are forward direction
+        
         // The shared intersection LatLon is src_segment.to    
         shared_point = getIntersectionPosition(src_segment.to);
 
