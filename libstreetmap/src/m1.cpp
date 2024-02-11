@@ -22,6 +22,7 @@
 #include <cmath>
 #include "m1.h"
 #include "StreetsDatabaseAPI.h"
+#include "OSMDatabaseAPI.h"
 #include <unordered_set>
 #include <unordered_map>
 
@@ -53,11 +54,19 @@ void populateSegmentTravelTimes() {
 }
 
 
-void populateStreetSegmentsOfIntersections();
+std::unordered_map<OSMID, const OSMNode*> OSMNodeByID;
 
+void populateStreetSegmentsOfIntersections();
 void populateStreetNamesVector();
 double getDistanceBetweenPoints(LatLon point1, LatLon point2);
 inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2);
+void populateOSMNodeByID();
+
+void populateOSMNodeByID() {
+    for (int i = 0; i < getNumberOfNodes(); i++) {
+        OSMNodeByID[(getNodeByIndex(i)->id())] = getNodeByIndex(i);
+    }
+}
 
 void populateStreetNamesVector() {
     streetNamesAndIDs.resize(getNumStreets());
@@ -223,7 +232,13 @@ bool loadMap(std::string map_streets_database_filename) {
     //
     // Load your map related data structures here.
     //
-    loadStreetsDatabaseBIN(map_streets_database_filename);
+    std::string mapName = map_streets_database_filename;
+
+    loadStreetsDatabaseBIN(mapName);
+
+    mapName.replace(mapName.find("streets"), 7, "osm");
+
+    loadOSMDatabaseBIN(mapName);
 
     for (int i = 0; i < streetSegmentsOfIntersections.size(); i++) {
         streetSegmentsOfIntersections[i].clear();
@@ -233,12 +248,14 @@ bool loadMap(std::string map_streets_database_filename) {
     }
     streetNamesAndIDs.clear();
     segmentTravelTimes.clear();
+    OSMNodeByID.clear();
 
     populateStreetSegmentsOfIntersections();
     
     populateStreetNamesVector();
     
     populateSegmentTravelTimes();
+    populateOSMNodeByID();
 
     load_successful = true; //Make sure this is updated to reflect whether
                             //loading the map succeeded or failed
@@ -294,12 +311,24 @@ double findWayLength(OSMID way_id) {
 }
 
 std::string getOSMNodeTagValue(OSMID osm_id, std::string key) {
-    if (key == "hello") {
-        return  "hello";
+    const OSMNode* node;
+    std::pair<std::string, std::string> tagPair;
+
+    auto iterator = OSMNodeByID.find(osm_id);
+
+    if (iterator == OSMNodeByID.end()) {
+        return "";
     }
-    std::vector<OSMID> aVector;
-    aVector.push_back(osm_id);
-    return "Hello";
+
+    node = iterator->second;
+
+    for (int j = 0; j < getTagCount(node); j++) {
+        tagPair = getTagPair(node, j);
+        if (tagPair.first == key) {
+            return tagPair.second;
+        }
+    }
+    return "";
 }
 
 // Returns the travel time to drive from one end of a street segment
