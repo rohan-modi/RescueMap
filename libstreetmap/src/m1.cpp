@@ -69,6 +69,22 @@ void populateSegmentsOfStreets(){
 
 std::unordered_map<OSMID, const OSMNode*> OSMNodeByID;
 
+
+void populateOSMWayByID () {
+    for (int i = 0; i < getNumberOfWays(); i++) {
+        OSMNodeByID[(getWayByIndex(i)->id())] = getWayByIndex(i);
+    }
+}
+
+
+
+
+
+
+
+
+std::unordered_map<OSMID, const OSMWay*> OSMwayByID;
+
 void populateStreetSegmentsOfIntersections();
 void populateStreetNamesVector();
 double getDistanceBetweenPoints(LatLon point1, LatLon point2);
