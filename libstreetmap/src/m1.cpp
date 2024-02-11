@@ -257,13 +257,6 @@ void closeMap() {
 }
 
 
-bool intersectionsAreDirectlyConnected(std::pair<IntersectionIdx, IntersectionIdx> intersection_ids) {
-    if (intersection_ids.first == intersection_ids.second) {
-        return true;
-    }
-    return true;
-}
-
 double findStreetLength(StreetIdx street_id) {
     if (street_id == 1) {
         return 0.0;

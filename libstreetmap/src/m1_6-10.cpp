@@ -241,6 +241,33 @@ double findAngleBetweenStreetSegments(StreetSegmentIdx src_street_segment_id, St
 }
 
 
+// Returns true if the two intersections are directly connected, meaning you can
+// legally drive from the first intersection to the second using only one
+// streetSegment.
+// Speed Requirement --> moderate
+bool intersectionsAreDirectlyConnected(std::pair<IntersectionIdx, IntersectionIdx> intersection_ids) {
+
+    // Get the number of street segments attached to IntersectionIdx 1
+    int point1_numSegments = getNumIntersectionStreetSegment(intersection_ids.first);
+
+    // Loop to see if any segments connect to IntersectionIdx 2
+    for (int segmentNum = 0; segmentNum < point1_numSegments; ++segmentNum) {
+        
+        // Get StreetSegmentIdx for the segmentNum'th segment attached to IntersectionIdx 1
+        StreetSegmentIdx segmentID = getIntersectionStreetSegment(segmentNum, intersection_ids.first);
+        
+        // Get StreetSegmentInfo struct for segmentID
+        StreetSegmentInfo segmentInfo = getStreetSegmentInfo(segmentID);
+
+        // If segment "from" or "to" match IntersectionIdx 2, the intersections are directly connected
+        if ((intersection_ids.second == segmentInfo.from) || (intersection_ids.second == segmentInfo.to)) {
+            return true;
+        }
+    }
+
+    // The intersections are not directly connected; IntersectionIdx 2 not found
+    return false;
+}
 
 
 
