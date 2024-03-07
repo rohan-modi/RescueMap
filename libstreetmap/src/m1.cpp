@@ -32,6 +32,29 @@ typedef int IntersectionIdx;
 typedef int POIIdx;
 typedef int StreetIdx;
 
+/*
+Cities:
+beijing_china
+boston_usa
+cape-town_south-africa
+golden-horseshoe_canada
+hamilton_canada
+hong-kong_china
+iceland
+interlaken_switzerland
+kyiv_ukraine
+london_england
+new-delhi_india
+new-york_usa
+rio-de-janeiro_brazil
+saint-helena
+singapore
+sydney_australia
+tehran_iran
+tokyo_japan
+toronto_canada
+*/
+
 // ==================================== Declare global variables ====================================
 std::vector<std::vector<StreetSegmentIdx>> streetSegmentsOfIntersections;
 std::vector<std::vector<IntersectionIdx>> intersectionsOfStreets_;
@@ -410,7 +433,7 @@ std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_pre
         startString[i] = std::tolower(startString[i]);
     }
     std::string endString = startString;
-    endString[endString.size() - 1] = static_cast<char>(endString[endString.size() - 1] + 1);
+    endString[endString.size() - 1] = static_cast<unsigned char>(endString[endString.size() - 1] + 1);
 
     std::pair<std::string, int> prefixPair = {startString, 0};
     std::pair<std::string, int> endPair = {endString, 0};

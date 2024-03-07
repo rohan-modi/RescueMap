@@ -1,0 +1,21 @@
+{
+    "makefile.configurations": [
+
+    {
+        "name": "Release",
+        "makeArgs": ["CONF=release"]
+    },
+    {
+        "name": "Debug",
+        "makeArgs": ["CONF=debug"]
+    }
+    ],
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "${workspaceFolder}",
+            "binaryPath": "./basic_application",
+            "binaryArgs": []
+        }
+    ],
+    "C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools"
+}
