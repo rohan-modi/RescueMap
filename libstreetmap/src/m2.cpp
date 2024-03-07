@@ -30,4 +30,20 @@ void drawMap() {
    // and your main() function in main/src/main.cpp.
    // The unit tests always call loadMap() before calling this function
    // and call closeMap() after this function returns.
+
+   // Setup EZGL Configuration
+   // main.ui file defines window layout
+   ezgl::application::settings settings;
+   settings.main_ui_resource = "libstreetmap/resources/main.ui";
+   settings.window_identifier = "MainWindow";
+   settings.canvas_identifier = "MainCanvas";
+
+   // Create the EZGL application
+   ezgl::application application(settings);
+
+   // Run the application
+   application.run(nullptr, nullptr, nullptr, nullptr);
+
+
+
 }
