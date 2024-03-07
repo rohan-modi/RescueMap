@@ -20,6 +20,8 @@
  */
 
 #include "m2.h"
+#include "ezgl/application.hpp"
+#include "ezgl/graphics.hpp"
 
 void drawMap() {
    // Set up the ezgl graphics window and hand control to it, as shown in the 
