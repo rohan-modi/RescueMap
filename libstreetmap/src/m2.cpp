@@ -30,24 +30,27 @@
 #include <thread>
 
 // Declare global variables
+
 struct Intersection_data {
-   LatLon position;
+   ezgl::point2d position;
    std::string name;
 };
-std::vector<Intersection_data> intersections;
-extern std::vector<std::vector<int>> streetSegments;
-extern std::unordered_map<OSMID, const OSMNode*> OSMWayByID;
-
 struct Map_bounds {
    double max_lat;
    double min_lat;
    double max_lon;
    double min_lon;
-} mapBounds;
+};
+
+extern std::vector<std::vector<int>> streetSegments;
+extern std::unordered_map<OSMID, const OSMNode*> OSMWayByID;
+extern std::vector<Intersection_data> intersections;
+
+extern Map_bounds mapBounds;
 
 double viewPortArea;
 
-float cos_latavg;
+extern float cos_latavg;
 
 
 // Declare helper functions
@@ -69,9 +72,7 @@ float lon_from_x(float x);
 float lat_from_y(float y);
 
 
-// void drawMap()
 void drawMap() {
-   initializeIntersections();
    // Set up the ezgl graphics window and hand control to it, as shown in the 
    // ezgl example program. 
    // This function will be called by both the unit tests (ece297exercise) 
@@ -94,8 +95,6 @@ void drawMap() {
                                  {x_from_lon(mapBounds.max_lon), y_from_lat(mapBounds.max_lat)});
    application.add_canvas("MainCanvas", draw_main_canvas, initial_world);
 
-   
-
    // Run the application
    application.run(nullptr, nullptr, nullptr, nullptr);
 
@@ -111,28 +110,26 @@ void draw_main_canvas (ezgl::renderer *g) {
    
 }
 
-void draw_intersections(ezgl::renderer *g){
-   auto startTime = std::chrono::high_resolution_clock::now();
-   g->set_color(ezgl::RED);
-   for (IntersectionIdx inter_id = 0; inter_id < intersections.size(); inter_id++) {
-      float x = x_from_lon(intersections[inter_id].position.longitude());
-      float y = y_from_lat(intersections[inter_id].position.latitude());
+// void draw_intersections(ezgl::renderer *g){
+//    auto startTime = std::chrono::high_resolution_clock::now();
+//    g->set_color(ezgl::RED);
+//    for (IntersectionIdx inter_id = 0; inter_id < intersections.size(); inter_id++) {
+//       float x = x_from_lon(intersections[inter_id].position.longitude());
+//       float y = y_from_lat(intersections[inter_id].position.latitude());
 
-      float width = 5;
-      float height = width;
+//       float width = 5;
+//       float height = width;
 
-      g->fill_rectangle({x, y}, {x + width, y + height});
+//       g->fill_rectangle({x, y}, {x + width, y + height});
 
-   }
-   auto currTime = std::chrono::high_resolution_clock::now();
-   auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
-   std::cout << "draw_intersections took " << wallClock.count() <<" seconds" << std::endl;
-}
+//    }
+//    auto currTime = std::chrono::high_resolution_clock::now();
+//    auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
+//    std::cout << "draw_intersections took " << wallClock.count() <<" seconds" << std::endl;
+// }
 
 void draw_streets(ezgl::renderer *g){
    auto startTime = std::chrono::high_resolution_clock::now();
-
-   g->set_line_width(1);
 
    for(int segment_id = 0; segment_id < getNumStreetSegments(); segment_id++){
       if(getStreetSegmentInfo(segment_id).numCurvePoints > 0){
@@ -151,36 +148,11 @@ void draw_streets(ezgl::renderer *g){
          LatLon point1 = getIntersectionPosition(getStreetSegmentInfo(segment_id).from);
          LatLon point2 = getIntersectionPosition(getStreetSegmentInfo(segment_id).to);
          set_segment_color(g,segment_id,latlon_to_point(point1), latlon_to_point(point2));
-         
       }
    }
-
    auto currTime = std::chrono::high_resolution_clock::now();
    auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
    std::cout << "draw_streets took " << wallClock.count() <<" seconds" << std::endl;
-}
-
-void set_segment_color(ezgl::renderer *g, int segment_id, ezgl::point2d point1, ezgl::point2d point2){
-
-
-   StreetSegmentInfo segment = getStreetSegmentInfo(segment_id);
-
-   std::string key = "highway";
-   std::string streetType = getOSMWayTagValue(segment.wayOSMID, key);
-
-   if(streetType == "motorway"||streetType == "motorway_link"||streetType == "trunk"||streetType == "trunk_link"){
-      g->set_color(255, 195, 187);
-      g->set_line_width(1);
-   }else if (streetType == "secondary"||streetType == "secondary_link"||streetType == "primary"||streetType == "primary_link"){
-      g->set_color(157, 157, 157);
-      g->set_line_width(1);
-   }else {
-      if(viewPortArea > 500000)
-         return;
-      g->set_color(187, 187, 187);
-      g->set_line_width(2);
-   }
-   g->draw_line(point1, point2);
 }
 
 void draw_features(ezgl::renderer *g){
@@ -215,7 +187,30 @@ void draw_features(ezgl::renderer *g){
    auto currTime = std::chrono::high_resolution_clock::now();
    auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
    std::cout << "draw_features took " << wallClock.count() <<" seconds" << std::endl;
+}
 
+
+void set_segment_color(ezgl::renderer *g, int segment_id, ezgl::point2d point1, ezgl::point2d point2){
+
+
+   StreetSegmentInfo segment = getStreetSegmentInfo(segment_id);
+
+   std::string key = "highway";
+   std::string streetType = getOSMWayTagValue(segment.wayOSMID, key);
+
+   if(streetType == "motorway"||streetType == "motorway_link"||streetType == "trunk"||streetType == "trunk_link"){
+      g->set_color(255, 195, 187);
+      g->set_line_width(1);
+   }else if (streetType == "secondary"||streetType == "secondary_link"||streetType == "primary"||streetType == "primary_link"){
+      g->set_color(157, 157, 157);
+      g->set_line_width(1);
+   }else {
+      if(viewPortArea > 500000)
+         return;
+      g->set_color(187, 187, 187);
+      g->set_line_width(2);
+   }
+   g->draw_line(point1, point2);
 }
 
 void set_feature_color(ezgl::renderer *g, int feature_id){
@@ -245,28 +240,6 @@ void set_feature_color(ezgl::renderer *g, int feature_id){
    }
 }
 
-
-void initializeIntersections() {
-   mapBounds.max_lat = getIntersectionPosition(0).latitude();
-   mapBounds.min_lat = mapBounds.max_lat;
-   mapBounds.max_lon = getIntersectionPosition(0).longitude();
-   mapBounds.min_lon = mapBounds.max_lon;
-   
-   intersections.resize(getNumIntersections());
-
-   for (int inter_id = 0; inter_id < getNumIntersections(); inter_id++) {
-      intersections[inter_id].position = getIntersectionPosition(inter_id);
-      intersections[inter_id].name = getIntersectionName(inter_id);
-
-      mapBounds.max_lat = std::max(mapBounds.max_lat, intersections[inter_id].position.latitude());
-      mapBounds.min_lat = std::min(mapBounds.min_lat, intersections[inter_id].position.latitude());
-      mapBounds.max_lon = std::max(mapBounds.max_lon, intersections[inter_id].position.longitude());
-      mapBounds.min_lon = std::min(mapBounds.min_lon, intersections[inter_id].position.longitude());
-   }
-
-   cos_latavg = cos((mapBounds.min_lat + mapBounds.max_lat) * kDegreeToRadian / 2);
-
-}
 
 float x_from_lon(float lon) {
    return kEarthRadiusInMeters * kDegreeToRadian * lon * cos_latavg;

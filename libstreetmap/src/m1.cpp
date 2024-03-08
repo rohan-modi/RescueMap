@@ -23,6 +23,8 @@
 #include "m1.h"
 #include "StreetsDatabaseAPI.h"
 #include "OSMDatabaseAPI.h"
+#include "ezgl/application.hpp"
+#include "ezgl/graphics.hpp"
 #include <unordered_set>
 #include <unordered_map>
 
@@ -31,6 +33,20 @@ typedef int StreetSegmentIdx;
 typedef int IntersectionIdx;
 typedef int POIIdx;
 typedef int StreetIdx;
+
+
+// ==================================== Declare structs ====================================
+struct Map_bounds {
+   double max_lat;
+   double min_lat;
+   double max_lon;
+   double min_lon;
+} mapBounds;
+
+struct Intersection_data {
+   ezgl::point2d position;
+   std::string name;
+};
 
 // ==================================== Declare global variables ====================================
 std::vector<std::vector<StreetSegmentIdx>> streetSegmentsOfIntersections;
@@ -41,6 +57,8 @@ std::vector<std::vector<int>> streetSegments;
 std::unordered_map<OSMID, const OSMNode*> OSMNodeByID;
 std::unordered_map<OSMID, const OSMWay*> OSMWayByID;
 std::unordered_map<OSMID, double> OSMWaylengths;
+std::vector<Intersection_data> intersections;
+float cos_latavg;
 
 
 // ==================================== Declare functions to populate globals ====================================
@@ -51,10 +69,18 @@ void populateOSMNodeByID();
 void populateOSMWaylengths();
 void populateSegmentsOfStreets();
 void populateOSMWayByID();
+void initializeIntersections();
 
 // ==================================== Declare helper functions ====================================
 inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2);
 std::pair<double, double> latLontoCartesian(LatLon point_1, double latavg);
+ezgl::point2d latlon_to_pointm1(LatLon position);
+
+//Migrating M2 Functions to Load map
+
+
+
+
 
 
 // ==================================== Implementation of m1 functions ====================================
@@ -610,13 +636,12 @@ bool loadMap(std::string map_streets_database_filename) {
     OSMNodeByID.clear();
 
     populateStreetSegmentsAndIntersectionsVectors();
-    
     populateStreetNamesVector();
-    
     populateSegmentTravelTimes();
     populateOSMNodeByID();
     populateOSMWayByID();
     populateOSMWaylengths();
+    initializeIntersections();
 
     load_successful = check1 && check2; //Make sure this is updated to reflect whether
                             //loading the map succeeded or failed
@@ -768,6 +793,37 @@ void populateStreetSegmentsAndIntersectionsVectors() {
     }
 }
 
+
+void initializeIntersections() {
+   double max_lat = getIntersectionPosition(0).latitude();
+   double min_lat = max_lat;
+   double max_lon = getIntersectionPosition(0).longitude();
+   double min_lon = max_lon;
+   
+   std::vector<LatLon> intersectionsTemp;
+   intersections.resize(getNumIntersections());
+
+   for (int inter_id = 0; inter_id < getNumIntersections(); inter_id++) {
+      intersectionsTemp.push_back(getIntersectionPosition(inter_id));
+      intersections[inter_id].name = getIntersectionName(inter_id);
+
+      max_lat = std::max(max_lat, intersectionsTemp[inter_id].latitude());
+      min_lat = std::min(min_lat, intersectionsTemp[inter_id].latitude());
+      max_lon = std::max(max_lon, intersectionsTemp[inter_id].longitude());
+      min_lon = std::min(min_lon, intersectionsTemp[inter_id].longitude());
+   }
+   cos_latavg = cos((mapBounds.min_lat + mapBounds.max_lat) * kDegreeToRadian / 2);
+
+   for (int inter_id = 0; inter_id < getNumIntersections(); inter_id++) {
+       intersections[inter_id].position = latlon_to_pointm1(intersectionsTemp[inter_id]);
+   }
+    mapBounds.max_lat = max_lat;
+    mapBounds.min_lat = min_lat;
+    mapBounds.max_lon = max_lon;
+    mapBounds.min_lon = min_lon;
+
+}
+
 // Converts LatLon to cartesian coordinates
 // Written by Kevin and Jonathan
 std::pair<double, double> latLontoCartesian(LatLon point_1, double latavg){ 
@@ -776,5 +832,12 @@ std::pair<double, double> latLontoCartesian(LatLon point_1, double latavg){
     double y1 = kEarthRadiusInMeters * kDegreeToRadian * point_1.latitude();
 
     return {x1,y1};
+}
+
+ezgl::point2d latlon_to_pointm1(LatLon position){
+   float x = kEarthRadiusInMeters * kDegreeToRadian * position.longitude() * cos_latavg;
+   float y = kEarthRadiusInMeters * kDegreeToRadian * position.latitude();
+
+   return(ezgl::point2d(x,y));
 }
 
