@@ -362,7 +362,7 @@ void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, doubl
    int inter_id = findClosestIntersection(position);
 
    std::stringstream closestIntersection;
-   closestIntersection << "Intersection selected: " << intersections[inter_id].name;
+   closestIntersection << "Selected: " << intersections[inter_id].name;
    app->update_message(closestIntersection.str());
    app->refresh_drawing();
 }
