@@ -31,9 +31,11 @@
 struct Intersection_data {
    LatLon position;
    std::string name;
+   bool highlight = false;
 };
 std::vector<Intersection_data> intersections;
 extern std::vector<std::vector<int>> streetSegments;
+extern std::vector<std::pair<std::string, int>> streetNamesAndIDs;
 
 struct Map_bounds {
    double max_lat;
@@ -61,6 +63,16 @@ float y_from_lat(float lat);
 float lon_from_x(float x);
 float lat_from_y(float y);
 
+struct buttonData {
+   std::string string1;
+   std::string string2;
+   ezgl::application* application;
+};
+
+void initial_setup(ezgl::application *application, bool new_window);
+void firstTextEntered(GtkEntry* textBox, buttonData* myStruct);
+void secondTextEntered(GtkEntry* textBox, buttonData* myStruct);
+void findIntersections(GtkButton* button, buttonData* myStruct);
 
 // void drawMap()
 void drawMap() {
@@ -87,10 +99,8 @@ void drawMap() {
                                  {x_from_lon(mapBounds.max_lon), y_from_lat(mapBounds.max_lat)});
    application.add_canvas("MainCanvas", draw_main_canvas, initial_world);
 
-   
-
    // Run the application
-   application.run(nullptr, nullptr, nullptr, nullptr);
+   application.run(initial_setup, nullptr, nullptr, nullptr);
 
 }
 
@@ -110,6 +120,12 @@ void draw_intersections(ezgl::renderer *g){
 
       float width = 5;
       float height = width;
+
+      if (intersections[inter_id].highlight) {
+         g->set_color(ezgl::RED);
+      } else {
+         g->set_color(ezgl::BLACK);
+      }
 
       g->fill_rectangle({x, y}, {x + width, y + height});
 
@@ -252,4 +268,62 @@ ezgl::point2d latlon_to_point(LatLon position){
    float y = kEarthRadiusInMeters * kDegreeToRadian * position.latitude();
 
    return(ezgl::point2d(x,y));
+struct buttonData findButtonData;
+
+void firstTextEntered(GtkEntry* textBox, buttonData* myStruct) {
+   const gchar* text = gtk_entry_get_text(textBox);
+   myStruct->string1 = text;
+}
+
+void secondTextEntered(GtkEntry* textBox, buttonData* myStruct) {
+   const gchar* text = gtk_entry_get_text(textBox);
+   myStruct->string2 = text;
+}
+
+void findIntersections(GtkButton* /*button*/, buttonData* myStruct) {
+   std::string street1 = myStruct->string1;
+   std::string street2 = myStruct->string2;
+   myStruct->application->update_message(street1 + street2);
+
+   std::pair<StreetIdx, StreetIdx> streetPair;
+
+   std::vector<StreetIdx> firstResults = findStreetIdsFromPartialStreetName(street1);
+   std::vector<StreetIdx> secondResults = findStreetIdsFromPartialStreetName(street2);
+
+   bool anyResult = true;
+
+   if (firstResults.size() != 0) {
+      streetPair.first = firstResults[0];
+   } else {
+      anyResult = false;
+   }
+
+   if (secondResults.size() != 0) {
+      streetPair.second = secondResults[0];
+   } else {
+      anyResult = false;
+   }
+
+   if (anyResult) {
+      std::vector<IntersectionIdx> intersections_ = findIntersectionsOfTwoStreets(streetPair);
+      for (int i = 0; i < intersections_.size(); i++) {
+         intersections[intersections_[i]].highlight = true;
+      }
+   } else {
+      std::cout << "Street names incomplete" << std::endl;
+   }
+
+}
+
+void initial_setup(ezgl::application* application, bool /*new_window*/) {
+   findButtonData.application = application;
+   buttonData* findButtonPointer = &findButtonData;
+
+   application->update_message("MAP THING");
+   GObject* firstBox = application->get_object("Street1");
+   GObject* secondBox = application->get_object("Street2");
+   GObject* findButton = application->get_object("FindIntersections");
+   g_signal_connect(firstBox, "activate", G_CALLBACK(firstTextEntered), findButtonPointer);
+   g_signal_connect(secondBox, "activate", G_CALLBACK(secondTextEntered), findButtonPointer);
+   g_signal_connect(findButton, "clicked", G_CALLBACK(findIntersections), findButtonPointer);
 }

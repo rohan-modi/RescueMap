@@ -732,6 +732,7 @@ void populateOSMWaylengths() {
 // Written by Rohan
 void populateStreetNamesVector() {
     streetNamesAndIDs.resize(getNumStreets());
+    std::vector<int> ids = {180, 193, 763, 20800, 22256, 665, 1798, 10494, 13672, 3251, 6730, 19168, 3160, 310, 2579, 6428, 20611, 225, 10438, 20803, 21567, 21008};
     for (int i = 0; i < getNumStreets(); i++) {
         std::string streetName = getStreetName(i);
 
@@ -744,6 +745,11 @@ void populateStreetNamesVector() {
 
         streetNamesAndIDs[i].first = streetName;
         streetNamesAndIDs[i].second = i;
+        for (int k = 0; k < ids.size(); k++) {
+            if (i == ids[k]) {
+                std::cout << "Street: " << streetName << " ID: " << i << std::endl;
+            }
+        }
     }
     std::sort(streetNamesAndIDs.begin(), streetNamesAndIDs.end());
 }
