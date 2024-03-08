@@ -39,7 +39,7 @@
           </packing>
         </child>
         <child>
-          <!-- n-columns=3 n-rows=9 -->
+          <!-- n-columns=3 n-rows=10 -->
           <object class="GtkGrid" id="InnerGrid">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
@@ -167,7 +167,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkEntry" id="TextEntry">
+              <object class="GtkEntry" id="Street1">
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="placeholder-text" translatable="yes">First Street</property>
@@ -179,7 +179,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkEntry">
+              <object class="GtkEntry" id="Street2">
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="placeholder-text" translatable="yes">Second Street</property>
@@ -187,6 +187,19 @@
               <packing>
                 <property name="left-attach">0</property>
                 <property name="top-attach">8</property>
+                <property name="width">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="FindIntersections">
+                <property name="label" translatable="yes">Find Intersections</property>
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
+              </object>
+              <packing>
+                <property name="left-attach">0</property>
+                <property name="top-attach">9</property>
                 <property name="width">3</property>
               </packing>
             </child>

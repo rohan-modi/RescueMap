@@ -67,6 +67,7 @@ struct buttonData {
    std::string string1;
    std::string string2;
    ezgl::application* application;
+   // GObject* infoBox;
 };
 
 void initial_setup(ezgl::application *application, bool new_window);
@@ -275,12 +276,24 @@ struct buttonData findButtonData;
 
 void firstTextEntered(GtkEntry* textBox, buttonData* myStruct) {
    const gchar* text = gtk_entry_get_text(textBox);
-   myStruct->string1 = text;
+   std::string streetString = text;
+   std::string::iterator endPosition = std::remove(streetString.begin(), streetString.end(), ' ');
+   streetString.erase(endPosition, streetString.end());
+   for (int j = 0; j < streetString.size(); j++) {
+      streetString[j] = std::tolower(streetString[j]);
+   }
+   myStruct->string1 = streetString;
 }
 
 void secondTextEntered(GtkEntry* textBox, buttonData* myStruct) {
    const gchar* text = gtk_entry_get_text(textBox);
-   myStruct->string2 = text;
+   std::string streetString = text;
+   std::string::iterator endPosition = std::remove(streetString.begin(), streetString.end(), ' ');
+   streetString.erase(endPosition, streetString.end());
+   for (int j = 0; j < streetString.size(); j++) {
+      streetString[j] = std::tolower(streetString[j]);
+   }
+   myStruct->string2 = streetString;
 }
 
 void findIntersections(GtkButton* /*button*/, buttonData* myStruct) {
@@ -309,23 +322,31 @@ void findIntersections(GtkButton* /*button*/, buttonData* myStruct) {
 
    if (anyResult) {
       std::vector<IntersectionIdx> intersections_ = findIntersectionsOfTwoStreets(streetPair);
-      for (int i = 0; i < intersections_.size(); i++) {
-         intersections[intersections_[i]].highlight = true;
+      if (intersections_.size() == 0) {
+         myStruct->application->create_popup_message("No Intersections Found", "The street names provided do not intersect, check for spelling.");
+      } else {
+         for (int i = 0; i < intersections_.size(); i++) {
+            intersections[intersections_[i]].highlight = true;
+         }
       }
    } else {
       std::cout << "Street names incomplete" << std::endl;
+      myStruct->application->create_popup_message("Incorrect Street Names", "There were no streets found matching the provided names");
    }
    myStruct->application->refresh_drawing();
 }
 
 void initial_setup(ezgl::application* application, bool /*new_window*/) {
-   findButtonData.application = application;
-   buttonData* findButtonPointer = &findButtonData;
-
    application->update_message("MAP THING");
    GObject* firstBox = application->get_object("Street1");
    GObject* secondBox = application->get_object("Street2");
    GObject* findButton = application->get_object("FindIntersections");
+   // GObject* outputText = application->get_object("InfoBox");
+
+   findButtonData.application = application;
+   // findButtonData.infoBox = outputText;
+   buttonData* findButtonPointer = &findButtonData;
+
    g_signal_connect(firstBox, "activate", G_CALLBACK(firstTextEntered), findButtonPointer);
    g_signal_connect(secondBox, "activate", G_CALLBACK(secondTextEntered), findButtonPointer);
    g_signal_connect(findButton, "clicked", G_CALLBACK(findIntersections), findButtonPointer);

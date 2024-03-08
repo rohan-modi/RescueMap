@@ -418,6 +418,7 @@ std::vector<IntersectionIdx> findIntersectionsOfTwoStreets(std::pair<StreetIdx, 
 // The global variable is a vector of pairs, a custom comparator helper function was written for the binary search, implemented below (streetPairComparer)
 // Written by Rohan
 std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_prefix) {
+    std::cout << "Function entered" << std::endl;
     std::string startString = street_prefix;
 
     std::string::iterator endPosition = std::remove(startString.begin(), startString.end(), ' ');
@@ -425,7 +426,6 @@ std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_pre
 
     if (startString == "") {
         std::vector<StreetIdx> returnVector;
-        returnVector.push_back(0);
         return returnVector;
     }
 
@@ -441,9 +441,17 @@ std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_pre
     auto lowerBound = std::lower_bound(streetNamesAndIDs.begin(), streetNamesAndIDs.end(), prefixPair, streetPairComparer);
     auto upperBound = std::upper_bound(streetNamesAndIDs.begin(), streetNamesAndIDs.end(), endPair, streetPairComparer);
 
-    auto pointer = lowerBound;
-
     std::vector<StreetIdx> returnVector;
+
+    if (lowerBound != streetNamesAndIDs.end()) {
+        for (int i = 0; i < startString.size(); i++) {
+            if (((*lowerBound).first)[i] != startString[i]) {
+                return returnVector;
+            }
+        }
+    }
+
+    auto pointer = lowerBound;
 
     while(1) {
         returnVector.push_back(pointer->second);
@@ -453,6 +461,7 @@ std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_pre
         }
     }
 
+    std::cout << "Function exiting" << std::endl;
     return returnVector;
 }
 
@@ -732,7 +741,7 @@ void populateOSMWaylengths() {
 // Written by Rohan
 void populateStreetNamesVector() {
     streetNamesAndIDs.resize(getNumStreets());
-    std::vector<int> ids = {180, 193, 763, 20800, 22256, 665, 1798, 10494, 13672, 3251, 6730, 19168, 3160, 310, 2579, 6428, 20611, 225, 10438, 20803, 21567, 21008};
+    // std::vector<int> ids = {180, 193, 763, 20800, 22256, 665, 1798, 10494, 13672, 3251, 6730, 19168, 3160, 310, 2579, 6428, 20611, 225, 10438, 20803, 21567, 21008};
     for (int i = 0; i < getNumStreets(); i++) {
         std::string streetName = getStreetName(i);
 

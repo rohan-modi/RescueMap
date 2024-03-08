@@ -39,7 +39,7 @@
           </packing>
         </child>
         <child>
-          <!-- n-columns=3 n-rows=10 -->
+          <!-- n-columns=4 n-rows=10 -->
           <object class="GtkGrid" id="InnerGrid">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
@@ -201,6 +201,18 @@
                 <property name="left-attach">0</property>
                 <property name="top-attach">9</property>
                 <property name="width">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="InfoBox">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes">label</property>
+              </object>
+              <packing>
+                <property name="left-attach">3</property>
+                <property name="top-attach">0</property>
+                <property name="height">10</property>
               </packing>
             </child>
             <child>
