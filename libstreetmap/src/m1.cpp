@@ -47,6 +47,28 @@ struct Intersection_data {
    ezgl::point2d position;
    std::string name;
 };
+/*
+Cities:
+beijing_china
+boston_usa
+cape-town_south-africa
+golden-horseshoe_canada
+hamilton_canada
+hong-kong_china
+iceland
+interlaken_switzerland
+kyiv_ukraine
+london_england
+new-delhi_india
+new-york_usa
+rio-de-janeiro_brazil
+saint-helena
+singapore
+sydney_australia
+tehran_iran
+tokyo_japan
+toronto_canada
+*/
 
 // ==================================== Declare global variables ====================================
 std::vector<std::vector<StreetSegmentIdx>> streetSegmentsOfIntersections;
@@ -430,7 +452,6 @@ std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_pre
 
     if (startString == "") {
         std::vector<StreetIdx> returnVector;
-        returnVector.push_back(0);
         return returnVector;
     }
 
@@ -438,7 +459,7 @@ std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_pre
         startString[i] = std::tolower(startString[i]);
     }
     std::string endString = startString;
-    endString[endString.size() - 1] = static_cast<char>(endString[endString.size() - 1] + 1);
+    endString[endString.size() - 1] = static_cast<unsigned char>(endString[endString.size() - 1] + 1);
 
     std::pair<std::string, int> prefixPair = {startString, 0};
     std::pair<std::string, int> endPair = {endString, 0};
@@ -446,9 +467,17 @@ std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_pre
     auto lowerBound = std::lower_bound(streetNamesAndIDs.begin(), streetNamesAndIDs.end(), prefixPair, streetPairComparer);
     auto upperBound = std::upper_bound(streetNamesAndIDs.begin(), streetNamesAndIDs.end(), endPair, streetPairComparer);
 
-    auto pointer = lowerBound;
-
     std::vector<StreetIdx> returnVector;
+
+    if (lowerBound != streetNamesAndIDs.end()) {
+        for (int i = 0; i < startString.size(); i++) {
+            if (((*lowerBound).first)[i] != startString[i]) {
+                return returnVector;
+            }
+        }
+    }
+
+    auto pointer = lowerBound;
 
     while(1) {
         returnVector.push_back(pointer->second);
@@ -457,7 +486,6 @@ std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_pre
             break;
         }
     }
-
     return returnVector;
 }
 
@@ -745,6 +773,7 @@ void populateOSMWaylengths() {
 // Written by Rohan
 void populateStreetNamesVector() {
     streetNamesAndIDs.resize(getNumStreets());
+    // std::vector<int> ids = {180, 193, 763, 20800, 22256, 665, 1798, 10494, 13672, 3251, 6730, 19168, 3160, 310, 2579, 6428, 20611, 225, 10438, 20803, 21567, 21008};
     for (int i = 0; i < getNumStreets(); i++) {
         std::string streetName = getStreetName(i);
 
@@ -757,6 +786,11 @@ void populateStreetNamesVector() {
 
         streetNamesAndIDs[i].first = streetName;
         streetNamesAndIDs[i].second = i;
+        // for (int k = 0; k < ids.size(); k++) {
+        //     if (i == ids[k]) {
+        //         std::cout << "Street: " << streetName << " ID: " << i << std::endl;
+        //     }
+        // }
     }
     std::sort(streetNamesAndIDs.begin(), streetNamesAndIDs.end());
 }
