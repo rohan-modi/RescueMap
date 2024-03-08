@@ -20,6 +20,7 @@
  */
 
 #include <cmath>
+#include <sstream>
 #include <chrono>
 #include "m1.h"
 #include "m2.h"
@@ -56,6 +57,7 @@ void draw_POI(ezgl::renderer *g);
 ezgl::point2d latlon_to_point(LatLon position);
 void draw_features(ezgl::renderer *g);
 void set_feature_color(ezgl::renderer *g, int feature_id);
+void act_on_mouse_click(ezgl::application* app, GdkEventButton* event, double x, double y);
 
 float x_from_lon(float lon);
 float y_from_lat(float lat);
@@ -101,7 +103,7 @@ void drawMap() {
    application.add_canvas("MainCanvas", draw_main_canvas, initial_world);
 
    // Run the application
-   application.run(initial_setup, nullptr, nullptr, nullptr);
+   application.run(initial_setup, act_on_mouse_click, nullptr, nullptr);
 
 }
 
@@ -351,3 +353,22 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
    g_signal_connect(secondBox, "activate", G_CALLBACK(secondTextEntered), findButtonPointer);
    g_signal_connect(findButton, "clicked", G_CALLBACK(findIntersections), findButtonPointer);
 }
+
+
+void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, double x, double y) {
+   std::cout << "Mouse clicked at (" << x << "," << y << ")\n";
+
+   LatLon position = LatLon(lat_from_y(y), lon_from_x(x));
+   int inter_id = findClosestIntersection(position);
+
+   std::stringstream closestIntersection;
+   closestIntersection << "Intersection selected: " << intersections[inter_id].name;
+   app->update_message(closestIntersection.str());
+   app->refresh_drawing();
+}
+
+
+
+
+
+
