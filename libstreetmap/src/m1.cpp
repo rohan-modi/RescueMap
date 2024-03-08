@@ -418,7 +418,6 @@ std::vector<IntersectionIdx> findIntersectionsOfTwoStreets(std::pair<StreetIdx, 
 // The global variable is a vector of pairs, a custom comparator helper function was written for the binary search, implemented below (streetPairComparer)
 // Written by Rohan
 std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_prefix) {
-    std::cout << "Function entered" << std::endl;
     std::string startString = street_prefix;
 
     std::string::iterator endPosition = std::remove(startString.begin(), startString.end(), ' ');
@@ -460,8 +459,6 @@ std::vector<StreetIdx> findStreetIdsFromPartialStreetName(std::string street_pre
             break;
         }
     }
-
-    std::cout << "Function exiting" << std::endl;
     return returnVector;
 }
 
