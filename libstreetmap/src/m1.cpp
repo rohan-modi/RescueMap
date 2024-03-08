@@ -39,6 +39,7 @@ std::vector<std::pair<std::string, int>> streetNamesAndIDs;
 std::vector<double> segmentTravelTimes;
 std::vector<std::vector<int>> streetSegments;
 std::unordered_map<OSMID, const OSMNode*> OSMNodeByID;
+std::unordered_map<OSMID, const OSMWay*> OSMWayByID;
 std::unordered_map<OSMID, double> OSMWaylengths;
 
 
@@ -49,6 +50,7 @@ void populateStreetNamesVector();
 void populateOSMNodeByID();
 void populateOSMWaylengths();
 void populateSegmentsOfStreets();
+void populateOSMWayByID();
 
 // ==================================== Declare helper functions ====================================
 inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2);
@@ -545,12 +547,14 @@ std::string getOSMNodeTagValue(OSMID osm_id, std::string key) {
 
     for (int j = 0; j < getTagCount(node); j++) {
         tagPair = getTagPair(node, j);
+        std::cout<<tagPair.first << std::endl;
         if (tagPair.first == key) {
             return tagPair.second;
         }
     }
     return "";
 }
+
 
 
 
@@ -611,6 +615,7 @@ bool loadMap(std::string map_streets_database_filename) {
     
     populateSegmentTravelTimes();
     populateOSMNodeByID();
+    populateOSMWayByID();
     populateOSMWaylengths();
 
     load_successful = check1 && check2; //Make sure this is updated to reflect whether
@@ -652,6 +657,12 @@ void closeMap() {
 void populateOSMNodeByID() {
     for (int i = 0; i < getNumberOfNodes(); i++) {
         OSMNodeByID[(getNodeByIndex(i)->id())] = getNodeByIndex(i);
+    }
+}
+
+void populateOSMWayByID() {
+    for (int i = 0; i < getNumberOfWays(); i++) {
+        OSMWayByID[(getWayByIndex(i)->id())] = getWayByIndex(i);
     }
 }
 
