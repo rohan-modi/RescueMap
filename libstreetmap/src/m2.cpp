@@ -37,7 +37,7 @@ struct Intersection_data {
    std::string name;
    bool highlight = false;
 };
-std::vector<Intersection_data> intersections;
+extern std::vector<Intersection_data> intersections;
 extern std::vector<std::vector<int>> streetSegments;
 extern std::vector<std::pair<std::string, int>> streetNamesAndIDs;
 
@@ -436,8 +436,6 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
    GObject* firstBox = application->get_object("Street1");
    GObject* secondBox = application->get_object("Street2");
    GObject* findButton = application->get_object("FindIntersections");
-   GObject* dropDown1 = application->get_object("Street1Options");
-   GObject* dropDown2 = application->get_object("Street2Options");
    std::vector<std::string> startingChoice = {"No Current Options"};
    application->create_combo_box_text("Street1Options", 1, 11, 2, 1, menuCallBack1, startingChoice);
    application->create_combo_box_text("Street2Options", 1, 12, 2, 1, menuCallBack2, startingChoice);
