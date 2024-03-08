@@ -37,9 +37,6 @@ struct Intersection_data {
    std::string name;
    bool highlight = false;
 };
-extern std::vector<Intersection_data> intersections;
-extern std::vector<std::vector<int>> streetSegments;
-extern std::vector<std::pair<std::string, int>> streetNamesAndIDs;
 
 struct Map_bounds {
    double max_lat;
@@ -48,14 +45,13 @@ struct Map_bounds {
    double min_lon;
 };
 
+extern std::vector<Intersection_data> intersections;
+extern std::vector<std::vector<int>> streetSegments;
+extern std::vector<std::pair<std::string, int>> streetNamesAndIDs;
 extern std::vector<std::vector<int>> streetSegments;
 extern std::unordered_map<OSMID, const OSMNode*> OSMWayByID;
-extern std::vector<Intersection_data> intersections;
-
 extern Map_bounds mapBounds;
-
 double viewPortArea;
-
 extern float cos_latavg;
 
 

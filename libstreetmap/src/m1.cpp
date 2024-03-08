@@ -46,6 +46,7 @@ struct Map_bounds {
 struct Intersection_data {
    ezgl::point2d position;
    std::string name;
+   bool highlight = false;
 };
 /*
 Cities:
