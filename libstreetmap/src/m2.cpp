@@ -182,6 +182,32 @@ void draw_features(ezgl::renderer *g){
 
 }
 
+void set_feature_color(ezgl::renderer *g, int feature_id){
+   switch(getFeatureType(feature_id)){
+      case UNKNOWN:
+      case BUILDING:
+         g->set_color(217, 217, 217);
+         break;
+      case PARK:
+      case GREENSPACE:
+      case GOLFCOURSE:
+         g->set_color(192, 250, 218);
+         break;
+      case BEACH:
+         g->set_color(247, 236, 186);
+         break;
+      case LAKE:
+      case RIVER:
+      case STREAM:
+      case GLACIER:
+         g->set_color(158, 226, 255);
+         break;
+      default:
+         g->set_color(217, 217, 217);
+      break;
+   }
+}
+
 
 void initializeIntersections() {
    mapBounds.max_lat = getIntersectionPosition(0).latitude();
