@@ -122,9 +122,10 @@ void draw_intersections(ezgl::renderer *g){
       float height = width;
 
       if (intersections[inter_id].highlight) {
-         g->set_color(ezgl::RED);
+         g->set_color(ezgl::BLUE);
+         g->draw_rectangle({x - 500, y - 500}, {x + 500, y + 500});
       } else {
-         g->set_color(ezgl::BLACK);
+         g->set_color(ezgl::RED);
       }
 
       g->fill_rectangle({x, y}, {x + width, y + height});
@@ -263,11 +264,13 @@ float lat_from_y(float y) {
    return y / kEarthRadiusInMeters / kDegreeToRadian;
 }
 
-ezgl::point2d latlon_to_point(LatLon position){
+ezgl::point2d latlon_to_point(LatLon position) {
    float x = kEarthRadiusInMeters * kDegreeToRadian * position.longitude() * cos_latavg;
    float y = kEarthRadiusInMeters * kDegreeToRadian * position.latitude();
 
    return(ezgl::point2d(x,y));
+}
+
 struct buttonData findButtonData;
 
 void firstTextEntered(GtkEntry* textBox, buttonData* myStruct) {
@@ -312,7 +315,7 @@ void findIntersections(GtkButton* /*button*/, buttonData* myStruct) {
    } else {
       std::cout << "Street names incomplete" << std::endl;
    }
-
+   myStruct->application->refresh_drawing();
 }
 
 void initial_setup(ezgl::application* application, bool /*new_window*/) {

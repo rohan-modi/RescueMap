@@ -745,11 +745,11 @@ void populateStreetNamesVector() {
 
         streetNamesAndIDs[i].first = streetName;
         streetNamesAndIDs[i].second = i;
-        for (int k = 0; k < ids.size(); k++) {
-            if (i == ids[k]) {
-                std::cout << "Street: " << streetName << " ID: " << i << std::endl;
-            }
-        }
+        // for (int k = 0; k < ids.size(); k++) {
+        //     if (i == ids[k]) {
+        //         std::cout << "Street: " << streetName << " ID: " << i << std::endl;
+        //     }
+        // }
     }
     std::sort(streetNamesAndIDs.begin(), streetNamesAndIDs.end());
 }
