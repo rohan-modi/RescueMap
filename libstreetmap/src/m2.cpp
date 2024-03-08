@@ -151,6 +151,37 @@ void draw_streets(ezgl::renderer *g){
    std::cout << "draw_streets took " << wallClock.count() <<" seconds" << std::endl;
 }
 
+void draw_features(ezgl::renderer *g){
+   auto startTime = std::chrono::high_resolution_clock::now();
+    int points; 
+
+    for(int feature_id = 0; feature_id < getNumFeatures(); feature_id++){
+        points = getNumFeaturePoints(feature_id);
+
+
+      if(points > 1 && getFeaturePoint(0, feature_id) == getFeaturePoint(points-1, feature_id)){
+            std::vector<ezgl::point2d> featureBoundaries;
+            for(int point_index = 0; point_index < points;point_index++){
+                  ezgl::point2d point = latlon_to_point(getFeaturePoint(point_index, feature_id));
+                  featureBoundaries.push_back(point);
+            }
+         set_feature_color(g,feature_id);
+         g->fill_poly(featureBoundaries);
+            
+      } else if(points > 1){
+         for(int point_index = 1; point_index < points;point_index++){
+                  set_feature_color(g,feature_id);
+                  g->draw_line(latlon_to_point(getFeaturePoint(point_index-1, feature_id)),latlon_to_point(getFeaturePoint(point_index, feature_id)));
+         }
+
+      }
+    }
+   auto currTime = std::chrono::high_resolution_clock::now();
+   auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
+   std::cout << "draw_features took " << wallClock.count() <<" seconds" << std::endl;
+
+}
+
 
 void initializeIntersections() {
    mapBounds.max_lat = getIntersectionPosition(0).latitude();
