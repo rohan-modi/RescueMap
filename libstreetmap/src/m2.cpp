@@ -115,7 +115,6 @@ struct buttonData {
    std::string string1;
    std::string string2;
    ezgl::application* application;
-   // GObject* infoBox;
 };
 
 void initial_setup(ezgl::application *application, bool new_window);
@@ -170,18 +169,16 @@ void draw_intersections(ezgl::renderer *g){
    g->set_color(ezgl::RED);
    for (IntersectionIdx inter_id = 0; inter_id < intersections.size(); inter_id++) {
 
-      float width = 5;
-      float height = width;
-
+      float intersectionRadius = 5;
       
       if (intersections[inter_id].highlight) {
-         g->fill_arc(intersections[inter_id].position,width, 0, 360);
+         g->fill_arc(intersections[inter_id].position, intersectionRadius, 0, 360);
       }
       
    }
    auto currTime = std::chrono::high_resolution_clock::now();
    auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
-   std::cout << "draw_intersections took " << wallClock.count() <<" seconds" << std::endl;
+   std::cout << "draw_intersections took " << wallClock.count() << " seconds" << std::endl;
 }
 
 void draw_streets(ezgl::renderer *g){
@@ -346,8 +343,6 @@ void menuCallBack1(GtkComboBoxText* /*box*/, ezgl::application* application) {
       GtkComboBoxText* textBox = (GtkComboBoxText*) application->find_widget("Street1Options");
       if (gtk_combo_box_text_get_active_text(textBox)) {
          const gchar* myString = gtk_combo_box_text_get_active_text(textBox);
-         std::string asString;
-         asString.assign(myString);
          if ((strcmp(myString, "Name Complete") != 0) && (strcmp(myString, "No Matches") != 0)) {
             GtkEntry* labelBox = (GtkEntry*) application->find_widget("Street1");
             gtk_entry_set_text(labelBox, myString);
@@ -361,8 +356,6 @@ void menuCallBack2(GtkComboBoxText* /*box*/, ezgl::application* application) {
       GtkComboBoxText* textBox = (GtkComboBoxText*) application->find_widget("Street2Options");
       if (gtk_combo_box_text_get_active_text(textBox)) {
          const gchar* myString = gtk_combo_box_text_get_active_text(textBox);
-         std::string asString;
-         asString.assign(myString);
          if ((strcmp(myString, "Name Complete") != 0) && (strcmp(myString, "No Matches") != 0)) {
             GtkEntry* labelBox = (GtkEntry*) application->find_widget("Street2");
             gtk_entry_set_text(labelBox, myString);
@@ -406,9 +399,14 @@ void findIntersections(GtkButton* /*button*/, buttonData* myStruct) {
          for (int i = 0; i < intersections_.size(); i++) {
             intersections[intersections_[i]].highlight = true;
          }
+         if (intersections_.size() != 0) {
+            float x = intersections[intersections_[0]].position.x;
+            float y = intersections[intersections_[0]].position.y;
+            int zoomBoxSize = 250;
+            ezgl::renderer* g = myStruct->application->get_renderer();
+            g->set_visible_world(ezgl::rectangle({x-zoomBoxSize, y-zoomBoxSize}, {x+zoomBoxSize, y+zoomBoxSize}));
+         }
       }
-   } else {
-      myStruct->application->create_popup_message("Incorrect Street Names", "There were no streets found matching the provided names");
    }
    myStruct->application->refresh_drawing();
 }
