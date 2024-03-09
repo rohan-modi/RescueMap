@@ -427,7 +427,6 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
    g_signal_connect(firstBox, "activate", G_CALLBACK(firstTextEntered), findButtonPointer);
    g_signal_connect(secondBox, "activate", G_CALLBACK(secondTextEntered), findButtonPointer);
    g_signal_connect(findButton, "clicked", G_CALLBACK(findIntersections), findButtonPointer);
-   //g_signal_connect(mapBox, "changed", G_CALLBACK(map_selection_changed), nullptr);
 
    setupComplete = true;
 }
