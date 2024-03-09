@@ -115,6 +115,7 @@ struct buttonData {
    std::string string1;
    std::string string2;
    ezgl::application* application;
+   // GObject* infoBox;
 };
 
 void initial_setup(ezgl::application *application, bool new_window);
@@ -167,15 +168,20 @@ void draw_main_canvas (ezgl::renderer *g) {
 void draw_intersections(ezgl::renderer *g){
    auto startTime = std::chrono::high_resolution_clock::now();
    g->set_color(ezgl::RED);
-   int intersectionRadius = 10;
    for (IntersectionIdx inter_id = 0; inter_id < intersections.size(); inter_id++) {
+
+      float width = 5;
+      float height = width;
+
+      
       if (intersections[inter_id].highlight) {
-         g->fill_arc(intersections[inter_id].position, intersectionRadius, 0, 360);
+         g->fill_arc(intersections[inter_id].position,width, 0, 360);
       }
+      
    }
    auto currTime = std::chrono::high_resolution_clock::now();
    auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
-   std::cout << "draw_intersections took " << wallClock.count() << " seconds" << std::endl;
+   std::cout << "draw_intersections took " << wallClock.count() <<" seconds" << std::endl;
 }
 
 void draw_streets(ezgl::renderer *g){
@@ -401,16 +407,6 @@ void findIntersections(GtkButton* /*button*/, buttonData* myStruct) {
             intersections[intersections_[i]].highlight = true;
          }
       }
-
-      if (intersections_.size() != 0) {
-         float x = intersections[intersections_[0]].position.x;
-         float y = intersections[intersections_[0]].position.y;
-         int zoomBoxSize = 250;
-         ezgl::renderer* g = myStruct->application->get_renderer();
-         g->set_visible_world(ezgl::rectangle({x-zoomBoxSize, y-zoomBoxSize}, {x+zoomBoxSize, y+zoomBoxSize}));
-      }
-      
-
    } else {
       myStruct->application->create_popup_message("Incorrect Street Names", "There were no streets found matching the provided names");
    }
@@ -435,6 +431,7 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
 
    setupComplete = true;
 }
+
 
 void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, double x, double y) {
    std::cout << "Mouse clicked at (" << x << "," << y << ")\n";
