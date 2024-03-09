@@ -201,10 +201,18 @@ void populateSegmentsdata() {
 
             if((int)(segment.numCurvePoints/2) == point_index)
 
-                if(findDistanceBetweenTwoPointsxy(lastDrawn, curr) > 40 && findDistanceBetweenTwoPointsxy(end, curr) > 40 && getStreetName(segment.streetID) != "<unknown>"){
+                if(findDistanceBetweenTwoPointsxy(lastDrawn, curr) > 70 || findDistanceBetweenTwoPointsxy(end, curr) > 70 && getStreetName(segment.streetID) != "<unknown>"){
                     if(findDistanceBetweenTwoPointsxy(prev, curr)>50){
                     name_data name; 
-                    name.name = getStreetName(segment.streetID);
+                    std::string streetName = getStreetName(segment.streetID);
+                    if(segment.oneWay){
+                        if(prev.x>curr.x){
+                            streetName = "> " + streetName + " >";
+                        }
+                        else
+                            streetName = "< " + streetName + " <";
+                    }
+                    name.name = streetName;
                     name.position = findMidPoint(prev, curr);
                     name.angle = findAngle(prev, curr);
                     name.type = tag;
@@ -217,9 +225,17 @@ void populateSegmentsdata() {
         curr = latlon_to_pointm1(getIntersectionPosition(segment.to));
         points_data.push_back(curr);
         
-        if(findDistanceBetweenTwoPointsxy(prev, curr) > 40 && getStreetName(segment.streetID) != "<unknown>"){
+        if(findDistanceBetweenTwoPointsxy(prev, curr) > 50 && getStreetName(segment.streetID) != "<unknown>"){
             name_data name; 
-            name.name = getStreetName(segment.streetID);
+            std::string streetName = getStreetName(segment.streetID);
+            if(segment.oneWay){
+                if(prev.x>curr.x){
+                    streetName = "< " + streetName + " <";
+                }
+                else
+                    streetName = "> " + streetName + " >";
+            }
+            name.name = streetName;
             name.position = findMidPoint(prev, curr);
             name.angle = findAngle(prev, curr);
             name.type = tag;
