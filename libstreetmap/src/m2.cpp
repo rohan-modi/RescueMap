@@ -94,7 +94,6 @@ extern std::vector<feature_data> features;
 extern std::vector<std::string> mapNames;
 bool darkMode;
 
-
 // Declare helper functions
 void draw_main_canvas (ezgl::renderer *g);
 void initializeIntersections();
@@ -107,6 +106,7 @@ void set_feature_color(ezgl::renderer *g, int feature_id);
 bool set_segment_color(ezgl::renderer *g, std::string streetType);
 void act_on_mouse_click(ezgl::application* app, GdkEventButton* event, double x, double y);
 gboolean change_dark_switch(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::application* application);
+void fillMapDropDown(ezgl::application* application);
 
 float x_from_lon(float lon);
 float y_from_lat(float lat);
@@ -114,16 +114,10 @@ float y_from_lat(float lat);
 float lon_from_x(float x);
 float lat_from_y(float y);
 
-struct buttonData {
-   std::string string1;
-   std::string string2;
-   ezgl::application* application;
-};
-
 void initial_setup(ezgl::application *application, bool new_window);
-void firstTextEntered(GtkEntry* textBox, buttonData* myStruct);
-void secondTextEntered(GtkEntry* textBox, buttonData* myStruct);
-void findIntersections(GtkButton* button, buttonData* myStruct);
+void firstTextEntered(GtkEntry* textBox, ezgl::application* application);
+void secondTextEntered(GtkEntry* textBox, ezgl::application* application);
+void findIntersections(GtkButton* button, ezgl::application* application);
 std::string processString(std::string inputString);
 void menuCallBack1(GtkComboBoxText* /*box*/, ezgl::application* application);
 void menuCallBack2(GtkComboBoxText* /*box*/, ezgl::application* application);
@@ -172,7 +166,7 @@ void draw_intersections(ezgl::renderer *g){
    auto startTime = std::chrono::high_resolution_clock::now();
    g->set_color(ezgl::RED);
    for (IntersectionIdx inter_id = 0; inter_id < intersections.size(); inter_id++) {
-      float intersectionRadius = 5;
+      float intersectionRadius = 10;
       
       if (intersections[inter_id].highlight) {
          g->fill_arc(intersections[inter_id].position, intersectionRadius, 0, 360);
@@ -294,17 +288,7 @@ ezgl::point2d latlon_to_point(LatLon position) {
    return(ezgl::point2d(x,y));
 }
 
-struct buttonData findButtonData;
 bool setupComplete = false;
-
-std::string processString(std::string inputString) {
-   std::string::iterator endPosition = std::remove(inputString.begin(), inputString.end(), ' ');
-   inputString.erase(endPosition, inputString.end());
-   for (int j = 0; j < inputString.size(); j++) {
-      inputString[j] = std::tolower(inputString[j]);
-   }
-   return inputString;
-}
 
 void updateOptions(std::string boxName, std::string streetName, ezgl::application* application) {
    std::vector<StreetIdx> ids = findStreetIdsFromPartialStreetName(streetName);
@@ -320,31 +304,39 @@ void updateOptions(std::string boxName, std::string streetName, ezgl::applicatio
       options.erase(lastUniqueElement, options.end());
    }
    const char* charVersion = boxName.c_str();
-   application->change_combo_box_text_options(charVersion, options);
+   GtkComboBoxText* textBoxText = (GtkComboBoxText*) application->find_widget(charVersion);
+   gtk_combo_box_text_remove_all(textBoxText);
+   for (int i = 0; i < options.size(); i++) {
+      const char* optionCharVersion = (options[i]).c_str();
+      gtk_combo_box_text_append_text(textBoxText, optionCharVersion);
+   }
+   GtkComboBox* textBox = (GtkComboBox*) application->find_widget(charVersion);
+   gtk_combo_box_popup(textBox);
 }
 
-void firstTextEntered(GtkEntry* textBox, buttonData* myStruct) {
+void firstTextEntered(GtkEntry* textBox, ezgl::application* application) {
    const gchar* text = gtk_entry_get_text(textBox);
-   std::string streetString = processString(text);
-   myStruct->string1 = streetString;
-   updateOptions("Street1Options", streetString, myStruct->application);
+   std::string streetString = text;
+   updateOptions("Street1Options", streetString, application);
 }
 
-void secondTextEntered(GtkEntry* textBox, buttonData* myStruct) {
+void secondTextEntered(GtkEntry* textBox, ezgl::application* application) {
    const gchar* text = gtk_entry_get_text(textBox);
-   std::string streetString = processString(text);
-   myStruct->string2 = streetString;
-   updateOptions("Street2Options", streetString, myStruct->application);
+   std::string streetString = text;
+   updateOptions("Street2Options", streetString, application);
 }
 
 void menuCallBack1(GtkComboBoxText* /*box*/, ezgl::application* application) {
+   std::cout << "Menu called back" << std::endl;
    if (setupComplete) {
       GtkComboBoxText* textBox = (GtkComboBoxText*) application->find_widget("Street1Options");
       if (gtk_combo_box_text_get_active_text(textBox)) {
          const gchar* myString = gtk_combo_box_text_get_active_text(textBox);
-         if ((strcmp(myString, "Name Complete") != 0) && (strcmp(myString, "No Matches") != 0)) {
+         std::cout << "Chosen menu item is " << myString << std::endl;
+         if (strcmp(myString, "No Matches") != 0) {
             GtkEntry* labelBox = (GtkEntry*) application->find_widget("Street1");
             gtk_entry_set_text(labelBox, myString);
+            gtk_combo_box_text_remove_all(textBox);
          }
       }
    }
@@ -358,18 +350,19 @@ void menuCallBack2(GtkComboBoxText* /*box*/, ezgl::application* application) {
          if ((strcmp(myString, "Name Complete") != 0) && (strcmp(myString, "No Matches") != 0)) {
             GtkEntry* labelBox = (GtkEntry*) application->find_widget("Street2");
             gtk_entry_set_text(labelBox, myString);
+            gtk_combo_box_text_remove_all(textBox);
          }
       }
    }
 }
 
-void findIntersections(GtkButton* /*button*/, buttonData* myStruct) {
-   GtkEntry* streetNameBox1 = (GtkEntry*) myStruct->application->find_widget("Street1");
-   GtkEntry* streetNameBox2 = (GtkEntry*) myStruct->application->find_widget("Street2");
+void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
+   GtkEntry* streetNameBox1 = (GtkEntry*) application->find_widget("Street1");
+   GtkEntry* streetNameBox2 = (GtkEntry*) application->find_widget("Street2");
    std::string street1 = gtk_entry_get_text(streetNameBox1);
    std::string street2 = gtk_entry_get_text(streetNameBox2);
 
-   myStruct->application->update_message(street1 + street2);
+   application->update_message(street1 + street2);
 
    std::pair<StreetIdx, StreetIdx> streetPair;
 
@@ -377,7 +370,7 @@ void findIntersections(GtkButton* /*button*/, buttonData* myStruct) {
    std::vector<StreetIdx> secondResults = findStreetIdsFromPartialStreetName(street2);
 
    if (firstResults.size() == 0 || secondResults.size() == 0) {
-      myStruct->application->create_popup_message("Incorrect Street Names", "There were no streets found matching the provided names");
+      application->create_popup_message("Incorrect Street Names", "There were no streets found matching the provided names");
       return;
    }
 
@@ -397,42 +390,40 @@ void findIntersections(GtkButton* /*button*/, buttonData* myStruct) {
             float x = intersections[intersections_[0]].position.x;
             float y = intersections[intersections_[0]].position.y;
             int zoomBoxSize = 250;
-            ezgl::renderer* g = myStruct->application->get_renderer();
+            ezgl::renderer* g = application->get_renderer();
             g->set_visible_world(ezgl::rectangle({x-zoomBoxSize, y-zoomBoxSize}, {x+zoomBoxSize, y+zoomBoxSize}));            
             gtk_entry_set_text(streetNameBox1, charVersionStreet1);
             gtk_entry_set_text(streetNameBox2, charVersionStreet2);
-            updateOptions("Street1Options", foundStreet1, myStruct->application);
-            updateOptions("Street2Options", foundStreet2, myStruct->application);
-            myStruct->application->refresh_drawing();
+            application->refresh_drawing();
             return;
          }
       }
    }
-   myStruct->application->create_popup_message("No Intersections Found", "The provided streets do not intersect.");
+   application->create_popup_message("No Intersections Found", "The provided streets do not intersect.");
 }
 
 void initial_setup(ezgl::application* application, bool /*new_window*/) {
    application->update_message("MAP THING");
+
    GObject* firstBox = application->get_object("Street1");
    GObject* secondBox = application->get_object("Street2");
    GObject* findButton = application->get_object("FindIntersections");
+   GObject* dropDown1 = application->get_object("Street1Options");
+   GObject* dropDown2 = application->get_object("Street2Options");
+   GObject* dropDown3 = application->get_object("MapSelection");
    GObject* darkSwitch = application->get_object("DarkMode");
-   std::vector<std::string> startingChoice = {"No Current Options"};
-   application->create_combo_box_text("Street1Options", 1, 11, 2, 1, menuCallBack1, startingChoice);
-   application->create_combo_box_text("Street2Options", 1, 12, 2, 1, menuCallBack2, startingChoice);
-   application->create_label(13, "Select Map:");
-   application->create_combo_box_text("MapSelection", 0, 14, 3, 1, map_selection_changed, mapNames);
 
-   findButtonData.application = application;
-   buttonData* findButtonPointer = &findButtonData;
+   g_signal_connect(firstBox, "activate", G_CALLBACK(firstTextEntered), application);
+   g_signal_connect(secondBox, "activate", G_CALLBACK(secondTextEntered), application);
+   g_signal_connect(findButton, "clicked", G_CALLBACK(findIntersections), application);
+   g_signal_connect(darkSwitch, "state-set", G_CALLBACK(change_dark_switch), application);
+   g_signal_connect(dropDown1, "changed", G_CALLBACK(menuCallBack1), application);
+   g_signal_connect(dropDown2, "changed", G_CALLBACK(menuCallBack2), application);
+   g_signal_connect(dropDown3, "changed", G_CALLBACK(map_selection_changed), application);
+
+   fillMapDropDown(application);
 
    darkMode = false;
-
-   g_signal_connect(firstBox, "activate", G_CALLBACK(firstTextEntered), findButtonPointer);
-   g_signal_connect(secondBox, "activate", G_CALLBACK(secondTextEntered), findButtonPointer);
-   g_signal_connect(findButton, "clicked", G_CALLBACK(findIntersections), findButtonPointer);
-   g_signal_connect(darkSwitch, "state-set", G_CALLBACK(change_dark_switch), application);
-
    setupComplete = true;
 }
 
@@ -507,4 +498,13 @@ gboolean change_dark_switch(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::
 
    // GTK's usual callback is now called to update the switch visually
    return false;
+}
+
+void fillMapDropDown(ezgl::application* application) {
+   const char* charVersion = "MapSelection";
+   GtkComboBoxText* menu = (GtkComboBoxText*) application->find_widget(charVersion);
+   for (int i = 0; i < mapNames.size(); i++) {
+      const char* mapNameCharVersion = (mapNames[i]).c_str();
+      gtk_combo_box_text_append_text(menu, mapNameCharVersion);
+   }
 }
