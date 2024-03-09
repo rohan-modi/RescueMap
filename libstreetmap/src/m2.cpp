@@ -371,7 +371,7 @@ bool set_segment_color(ezgl::renderer *g, std::string streetType){
    }else if (streetType == "secondary"||streetType == "secondary_link"){
       if(viewPortArea > 100000000)
          return false;
-      g->set_color(157, 157, 157);
+      darkMode ? g->set_color(107, 107, 107) : g->set_color(157, 157, 157);
       g->set_line_width(line_width-1);
    }else {
       if(viewPortArea > 10000000)
@@ -652,3 +652,21 @@ void fillMapDropDown(ezgl::application* application) {
       gtk_combo_box_text_append_text(menu, mapNameCharVersion);
    }
 }
+
+// Loops through all POIs and calls findDistanceBetweenTwoPoints to check its distance
+// Tracks the closest POI by POIIdx and tracks the smallest distance
+// Writen by Jonathan
+POIIdx findClickablePOI(LatLon my_position) {
+    POIIdx closestPOI = 0;
+    double minDistance = findDistanceBetweenTwoPoints(my_position, getPOIPosition(0));
+
+    for (int POI_idx = 0; POI_idx < getNumPointsOfInterest(); POI_idx++) {
+        if (findDistanceBetweenTwoPoints(my_position, getPOIPosition(POI_idx)) < minDistance) {
+            minDistance = findDistanceBetweenTwoPoints(my_position, getPOIPosition(POI_idx));
+            closestPOI = POI_idx;
+        }
+    }
+    return closestPOI;
+}
+
+
