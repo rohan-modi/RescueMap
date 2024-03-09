@@ -70,12 +70,21 @@ struct feature_data {
     int type;
 };
 
+struct segment_data{
+    std::vector<ezgl::point2d> points;
+    bool oneWay;        // if true, then can only travel in from->to direction
+    float speedLimit;        // in m/s
+    StreetIdx streetID;     // index of street this segment belongs to
+    std::string name;
+    std::string OSMtag; //type of segment
+};
+
 extern std::vector<Intersection_data> intersections;
 extern std::vector<std::vector<int>> streetSegments;
 extern std::vector<std::pair<std::string, int>> streetNamesAndIDs;
 extern std::vector<std::vector<int>> streetSegments;
-extern std::unordered_map<OSMID, const OSMNode*> OSMWayByID;
 extern Map_bounds mapBounds;
+extern std::vector<segment_data> street_segments;
 double viewPortArea;
 extern float cos_latavg;
 
@@ -93,8 +102,7 @@ void draw_POI(ezgl::renderer *g);
 ezgl::point2d latlon_to_point(LatLon position);
 void draw_features(ezgl::renderer *g);
 void set_feature_color(ezgl::renderer *g, int feature_id);
-void set_segment_color(ezgl::renderer *g, int segment_id, ezgl::point2d point1, ezgl::point2d point2);
-std::string getOSMWayTagValue(OSMID osm_id, std::string key);
+bool set_segment_color(ezgl::renderer *g, std::string streetType);
 void act_on_mouse_click(ezgl::application* app, GdkEventButton* event, double x, double y);
 
 float x_from_lon(float lon);
@@ -179,25 +187,17 @@ void draw_intersections(ezgl::renderer *g){
 void draw_streets(ezgl::renderer *g){
    auto startTime = std::chrono::high_resolution_clock::now();
 
-   for(int segment_id = 0; segment_id < getNumStreetSegments(); segment_id++){
-      if(getStreetSegmentInfo(segment_id).numCurvePoints > 0){
-         LatLon point1 = getIntersectionPosition(getStreetSegmentInfo(segment_id).from);
-         LatLon point2;
-         for(int part_id = 0; part_id < getStreetSegmentInfo(segment_id).numCurvePoints; part_id++){
-            point2 = getStreetSegmentCurvePoint(part_id, segment_id);
-            set_segment_color(g,segment_id, latlon_to_point(point1), latlon_to_point(point2));
-            
-            point1 = point2;
-         }
-         point2 = getIntersectionPosition(getStreetSegmentInfo(segment_id).to);
-         set_segment_color(g,segment_id, latlon_to_point(point1), latlon_to_point(point2));
+
+   for(int segment_id = 0; segment_id < street_segments.size(); segment_id++){
+      if(set_segment_color(g, street_segments[segment_id].OSMtag))
+      for(int point_index = 1; point_index < street_segments[segment_id].points.size();point_index++){
+            g->draw_line(street_segments[segment_id].points[point_index-1],street_segments[segment_id].points[point_index]);
          
-      } else{
-         LatLon point1 = getIntersectionPosition(getStreetSegmentInfo(segment_id).from);
-         LatLon point2 = getIntersectionPosition(getStreetSegmentInfo(segment_id).to);
-         set_segment_color(g,segment_id,latlon_to_point(point1), latlon_to_point(point2));
       }
    }
+
+   
+
    auto currTime = std::chrono::high_resolution_clock::now();
    auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
    std::cout << "draw_streets took " << wallClock.count() <<" seconds" << std::endl;
@@ -228,13 +228,7 @@ void draw_features(ezgl::renderer *g){
 }
 
 
-void set_segment_color(ezgl::renderer *g, int segment_id, ezgl::point2d point1, ezgl::point2d point2){
-
-
-   StreetSegmentInfo segment = getStreetSegmentInfo(segment_id);
-
-   std::string key = "highway";
-   std::string streetType = getOSMWayTagValue(segment.wayOSMID, key);
+bool set_segment_color(ezgl::renderer *g, std::string streetType){
 
    if(streetType == "motorway"||streetType == "motorway_link"||streetType == "trunk"||streetType == "trunk_link"){
       g->set_color(255, 195, 187);
@@ -244,11 +238,11 @@ void set_segment_color(ezgl::renderer *g, int segment_id, ezgl::point2d point1, 
       g->set_line_width(1);
    }else {
       if(viewPortArea > 1000000)
-         return;
+         return false;
       g->set_color(187, 187, 187);
       g->set_line_width(2);
    }
-   g->draw_line(point1, point2);
+   return true;
 }
 
 void set_feature_color(ezgl::renderer *g, int feature_id){
@@ -300,28 +294,6 @@ ezgl::point2d latlon_to_point(LatLon position) {
    float y = kEarthRadiusInMeters * kDegreeToRadian * position.latitude();
 
    return(ezgl::point2d(x,y));
-}
-
-std::string getOSMWayTagValue(OSMID osm_id, std::string key) {
-    const OSMNode* way;
-    std::pair<std::string, std::string> tagPair;
-
-    auto iterator = OSMWayByID.find(osm_id);
-
-    if (iterator == OSMWayByID.end()) {
-        return "";
-    }
-
-    way = iterator->second;
-
-    for (int j = 0; j < getTagCount(way); j++) {
-        tagPair = getTagPair(way, j);
-
-        if (tagPair.first == key) {
-            return tagPair.second;
-        }
-    }
-    return "";
 }
 
 struct buttonData findButtonData;

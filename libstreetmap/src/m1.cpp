@@ -49,6 +49,40 @@ struct Intersection_data {
    bool highlight = false;
 };
 
+struct closed_feature_data {
+    std::vector<ezgl::point2d> bounds;
+    std::string name;
+    double area;
+    int index;
+    int type;
+    bool operator < (const closed_feature_data& struc) const{
+        return (area > struc.area);
+    }
+};
+
+struct line_feature_data {
+    std::vector<ezgl::point2d> bounds;
+    std::string name;
+    int size;
+    int type;
+    int index;
+};
+
+struct feature_data {
+    ezgl::point2d position;
+    int index;
+    int type;
+};
+
+struct segment_data{
+    std::vector<ezgl::point2d> points;
+    bool oneWay;        // if true, then can only travel in from->to direction
+    float speedLimit;        // in m/s
+    StreetIdx streetID;     // index of street this segment belongs to
+    std::string name;
+    std::string OSMtag; //type of segment
+};
+
 /*
 Cities:
 beijing_china
@@ -82,6 +116,12 @@ std::unordered_map<OSMID, const OSMNode*> OSMNodeByID;
 std::unordered_map<OSMID, const OSMWay*> OSMWayByID;
 std::unordered_map<OSMID, double> OSMWaylengths;
 std::vector<Intersection_data> intersections;
+std::vector<closed_feature_data> closedFeatures;
+std::vector<line_feature_data> lineFeatures;
+std::vector<feature_data> features;
+std::vector<segment_data> street_segments;
+
+
 float cos_latavg;
 
 
@@ -94,92 +134,17 @@ void populateOSMWaylengths();
 void populateSegmentsOfStreets();
 void populateOSMWayByID();
 void initializeIntersections();
-
+void populateFeatures();
 // ==================================== Declare helper functions ====================================
 inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2);
 std::pair<double, double> latLontoCartesian(LatLon point_1, double latavg);
 ezgl::point2d latlon_to_pointm1(LatLon position);
+std::string getOSMWayTagValue(OSMID osm_id, std::string key);
 
 //Migrating M2 Functions to Load map
 
-void populateFeatures();
-struct closed_feature_data {
-    std::vector<ezgl::point2d> bounds;
-    std::string name;
-    double area;
-    int index;
-    int type;
-    bool operator < (const closed_feature_data& struc) const{
-        return (area > struc.area);
-    }
-};
 
-struct line_feature_data {
-    std::vector<ezgl::point2d> bounds;
-    std::string name;
-    int size;
-    int type;
-    int index;
-};
 
-struct feature_data {
-    ezgl::point2d position;
-    int index;
-    int type;
-};
-
-std::vector<closed_feature_data> closedFeatures;
-std::vector<line_feature_data> lineFeatures;
-std::vector<feature_data> features;
-
-void populateFeatures(){
-    int points; 
-
-    for(int feature_id = 0; feature_id < getNumFeatures(); feature_id++){
-        points = getNumFeaturePoints(feature_id);
-      if(points > 1 && getFeaturePoint(0, feature_id) == getFeaturePoint(points-1, feature_id)){
-            std::vector<ezgl::point2d> featureBoundaries;
-            for(int point_index = 0; point_index < points;point_index++){
-                  ezgl::point2d point = latlon_to_pointm1(getFeaturePoint(point_index, feature_id));
-                  featureBoundaries.push_back(point);
-            }
-            closed_feature_data data;
-            data.bounds = featureBoundaries;
-            data.index = feature_id;
-            data.area = findFeatureArea(feature_id);
-            data.name = getFeatureName(feature_id);
-            data.type = getFeatureType(feature_id);
-            
-            closedFeatures.push_back(data);
-            
-      } else if(points > 1){
-         std::vector<ezgl::point2d> featurePoints;
-            for(int point_index = 0; point_index < points;point_index++){
-                  ezgl::point2d point = latlon_to_pointm1(getFeaturePoint(point_index, feature_id));
-                  featurePoints.push_back(point);
-            }
-
-            line_feature_data data;
-            data.bounds = featurePoints;
-            data.index = feature_id;
-            data.size = points;
-            data.name = getFeatureName(feature_id);
-            data.type = getFeatureType(feature_id);
-
-            lineFeatures.push_back(data);
-
-      }
-      else{
-            feature_data data;
-            data.position = latlon_to_pointm1(getFeaturePoint(0, feature_id));
-            data.type = getFeatureType(feature_id);
-
-            features.push_back(data);
-      }
-    }
-
-    std::sort(closedFeatures.begin(), closedFeatures.end());
-}
 
 
 
@@ -729,7 +694,6 @@ bool loadMap(std::string map_streets_database_filename) {
     std::string osmMapName = mapName.replace(mapName.find(".streets"), 8, ".osm");
 
     bool check2 = loadOSMDatabaseBIN(osmMapName);
-    populateSegmentsOfStreets();
 
     for (int i = 0; i < streetSegmentsOfIntersections.size(); i++) {
         streetSegmentsOfIntersections[i].clear();
@@ -740,14 +704,17 @@ bool loadMap(std::string map_streets_database_filename) {
     streetNamesAndIDs.clear();
     segmentTravelTimes.clear();
     OSMNodeByID.clear();
+    initializeIntersections();
 
+    populateOSMWayByID();
+    populateSegmentsOfStreets();
     populateStreetSegmentsAndIntersectionsVectors();
     populateStreetNamesVector();
     populateSegmentTravelTimes();
     populateOSMNodeByID();
-    populateOSMWayByID();
+    
     populateOSMWaylengths();
-    initializeIntersections();
+    
     populateFeatures();
 
     load_successful = check1 && check2; //Make sure this is updated to reflect whether
@@ -825,6 +792,24 @@ void populateSegmentsOfStreets() {
     int max = getNumStreetSegments();
     for(int i = 0; i< max; i++){
         streetSegments[getStreetSegmentInfo(i).streetID].push_back(i);
+
+        std::vector<ezgl::point2d> points_data;
+        points_data.push_back(latlon_to_pointm1(getIntersectionPosition(getStreetSegmentInfo(i).from)));
+        for(int point_index = 0; point_index < getStreetSegmentInfo(i).numCurvePoints; point_index++){
+            points_data.push_back(latlon_to_pointm1(getStreetSegmentCurvePoint(point_index, i)));
+        }
+        points_data.push_back(latlon_to_pointm1(getIntersectionPosition(getStreetSegmentInfo(i).to)));
+        
+        segment_data data;
+        data.points = points_data;
+        data.oneWay = getStreetSegmentInfo(i).oneWay;
+        data.speedLimit = getStreetSegmentInfo(i).speedLimit;
+        data.streetID = getStreetSegmentInfo(i).streetID;
+        data.name = getStreetName(data.streetID);
+        std::string key = "highway";
+        data.OSMtag = getOSMWayTagValue(getStreetSegmentInfo(i).wayOSMID, key);
+        
+        street_segments.push_back(data);
     }
 }
 
@@ -939,6 +924,55 @@ void initializeIntersections() {
 
 }
 
+void populateFeatures(){
+    int points; 
+
+    for(int feature_id = 0; feature_id < getNumFeatures(); feature_id++){
+        points = getNumFeaturePoints(feature_id);
+      if(points > 1 && getFeaturePoint(0, feature_id) == getFeaturePoint(points-1, feature_id)){
+            std::vector<ezgl::point2d> featureBoundaries;
+            for(int point_index = 0; point_index < points;point_index++){
+                  ezgl::point2d point = latlon_to_pointm1(getFeaturePoint(point_index, feature_id));
+                  featureBoundaries.push_back(point);
+            }
+            closed_feature_data data;
+            data.bounds = featureBoundaries;
+            data.index = feature_id;
+            data.area = findFeatureArea(feature_id);
+            data.name = getFeatureName(feature_id);
+            data.type = getFeatureType(feature_id);
+            
+            closedFeatures.push_back(data);
+            
+      } else if(points > 1){
+         std::vector<ezgl::point2d> featurePoints;
+            for(int point_index = 0; point_index < points;point_index++){
+                  ezgl::point2d point = latlon_to_pointm1(getFeaturePoint(point_index, feature_id));
+                  featurePoints.push_back(point);
+            }
+
+            line_feature_data data;
+            data.bounds = featurePoints;
+            data.index = feature_id;
+            data.size = points;
+            data.name = getFeatureName(feature_id);
+            data.type = getFeatureType(feature_id);
+
+            lineFeatures.push_back(data);
+
+      }
+      else{
+            feature_data data;
+            data.position = latlon_to_pointm1(getFeaturePoint(0, feature_id));
+            data.type = getFeatureType(feature_id);
+
+            features.push_back(data);
+      }
+    }
+
+    std::sort(closedFeatures.begin(), closedFeatures.end());
+}
+
 // Converts LatLon to cartesian coordinates
 // Written by Kevin and Jonathan
 std::pair<double, double> latLontoCartesian(LatLon point_1, double latavg){ 
@@ -954,5 +988,27 @@ ezgl::point2d latlon_to_pointm1(LatLon position){
    float y = kEarthRadiusInMeters * kDegreeToRadian * position.latitude();
 
    return(ezgl::point2d(x,y));
+}
+
+std::string getOSMWayTagValue(OSMID osm_id, std::string key) {
+    const OSMWay* way;
+    std::pair<std::string, std::string> tagPair;
+
+    auto iterator = OSMWayByID.find(osm_id);
+
+    if (iterator == OSMWayByID.end()) {
+        return "";
+    }
+
+    way = iterator->second;
+
+    for (int j = 0; j < getTagCount(way); j++) {
+        tagPair = getTagPair(way, j);
+
+        if (tagPair.first == key) {
+            return tagPair.second;
+        }
+    }
+    return "";
 }
 
