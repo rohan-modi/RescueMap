@@ -168,13 +168,11 @@ void draw_intersections(ezgl::renderer *g){
    auto startTime = std::chrono::high_resolution_clock::now();
    g->set_color(ezgl::RED);
    for (IntersectionIdx inter_id = 0; inter_id < intersections.size(); inter_id++) {
-
       float intersectionRadius = 5;
       
       if (intersections[inter_id].highlight) {
          g->fill_arc(intersections[inter_id].position, intersectionRadius, 0, 360);
       }
-      
    }
    auto currTime = std::chrono::high_resolution_clock::now();
    auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
@@ -184,7 +182,6 @@ void draw_intersections(ezgl::renderer *g){
 void draw_streets(ezgl::renderer *g){
    auto startTime = std::chrono::high_resolution_clock::now();
 
-
    for(int segment_id = 0; segment_id < street_segments.size(); segment_id++){
       if(set_segment_color(g, street_segments[segment_id].OSMtag))
       for(int point_index = 1; point_index < street_segments[segment_id].points.size();point_index++){
@@ -192,8 +189,6 @@ void draw_streets(ezgl::renderer *g){
          
       }
    }
-
-   
 
    auto currTime = std::chrono::high_resolution_clock::now();
    auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
@@ -365,8 +360,13 @@ void menuCallBack2(GtkComboBoxText* /*box*/, ezgl::application* application) {
 }
 
 void findIntersections(GtkButton* /*button*/, buttonData* myStruct) {
-   std::string street1 = myStruct->string1;
-   std::string street2 = myStruct->string2;
+   GtkEntry* streetNameBox1 = (GtkEntry*) myStruct->application->find_widget("Street1");
+   GtkEntry* streetNameBox2 = (GtkEntry*) myStruct->application->find_widget("Street2");
+   std::string street1 = gtk_entry_get_text(streetNameBox1);
+   std::string street2 = gtk_entry_get_text(streetNameBox2);
+
+   // std::string street1 = myStruct->string1;
+   // std::string street2 = myStruct->string2;
    myStruct->application->update_message(street1 + street2);
 
    std::pair<StreetIdx, StreetIdx> streetPair;
