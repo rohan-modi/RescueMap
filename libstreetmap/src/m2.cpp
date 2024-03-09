@@ -382,8 +382,13 @@ void findIntersections(GtkButton* /*button*/, buttonData* myStruct) {
          streetPair.first = firstResults[i];
          streetPair.second = secondResults[j];
          std::vector<IntersectionIdx> intersections_ = findIntersectionsOfTwoStreets(streetPair);
-         std::cout << "Testing " << getStreetName(firstResults[i]) << " and " << getStreetName(secondResults[j]) << std::endl;
          if (intersections_.size() != 0) {
+            std::string foundStreet1 = getStreetName(streetPair.first);
+            std::string foundStreet2 = getStreetName(streetPair.second);
+            std::cout << "Strings are " << foundStreet1 << " and " << foundStreet2 << std::endl;
+            const gchar* charVersionStreet1 = foundStreet1.c_str();
+            const gchar* charVersionStreet2 = foundStreet2.c_str();
+            std::cout << "Then strings are " << charVersionStreet1 << " and " << charVersionStreet2 << std::endl;
             for (int k = 0; k < intersections_.size(); k++) {
                intersections[intersections_[k]].highlight = true;
             }
@@ -391,7 +396,9 @@ void findIntersections(GtkButton* /*button*/, buttonData* myStruct) {
             float y = intersections[intersections_[0]].position.y;
             int zoomBoxSize = 250;
             ezgl::renderer* g = myStruct->application->get_renderer();
-            g->set_visible_world(ezgl::rectangle({x-zoomBoxSize, y-zoomBoxSize}, {x+zoomBoxSize, y+zoomBoxSize}));
+            g->set_visible_world(ezgl::rectangle({x-zoomBoxSize, y-zoomBoxSize}, {x+zoomBoxSize, y+zoomBoxSize}));            
+            gtk_entry_set_text(streetNameBox1, charVersionStreet1);
+            gtk_entry_set_text(streetNameBox2, charVersionStreet2);
             myStruct->application->refresh_drawing();
             return;
          }
