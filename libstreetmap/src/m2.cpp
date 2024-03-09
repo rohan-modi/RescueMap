@@ -460,12 +460,10 @@ void secondTextEntered(GtkEntry* textBox, ezgl::application* application) {
 }
 
 void menuCallBack1(GtkComboBoxText* /*box*/, ezgl::application* application) {
-   std::cout << "Menu called back" << std::endl;
    if (setupComplete) {
       GtkComboBoxText* textBox = (GtkComboBoxText*) application->find_widget("Street1Options");
       if (gtk_combo_box_text_get_active_text(textBox)) {
          const gchar* myString = gtk_combo_box_text_get_active_text(textBox);
-         std::cout << "Chosen menu item is " << myString << std::endl;
          if (strcmp(myString, "No Matches") != 0) {
             GtkEntry* labelBox = (GtkEntry*) application->find_widget("Street1");
             gtk_entry_set_text(labelBox, myString);
@@ -582,8 +580,6 @@ void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, doubl
       app->refresh_drawing();
    }
 }
-
-
 
 void map_selection_changed(GtkComboBoxText* /*box*/, ezgl::application* application) {
    if (setupComplete) {
