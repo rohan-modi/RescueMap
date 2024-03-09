@@ -192,8 +192,8 @@ void draw_main_canvas (ezgl::renderer *g) {
    }
    
    draw_features(g);
-   draw_intersections(g);
    draw_streets(g);
+   draw_intersections(g);
 }
 
 void setWorldScale(ezgl::renderer *g){
