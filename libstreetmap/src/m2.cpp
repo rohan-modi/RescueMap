@@ -45,6 +45,31 @@ struct Map_bounds {
    double min_lon;
 };
 
+struct closed_feature_data {
+    std::vector<ezgl::point2d> bounds;
+    std::string name;
+    double area;
+    int index;
+    int type;
+    bool operator < (const closed_feature_data& struc) const{
+        return (area > struc.area);
+    }
+};
+
+struct line_feature_data {
+    std::vector<ezgl::point2d> bounds;
+    std::string name;
+    int size;
+    int type;
+    int index;
+};
+
+struct feature_data {
+    ezgl::point2d position;
+    int index;
+    int type;
+};
+
 extern std::vector<Intersection_data> intersections;
 extern std::vector<std::vector<int>> streetSegments;
 extern std::vector<std::pair<std::string, int>> streetNamesAndIDs;
@@ -53,6 +78,10 @@ extern std::unordered_map<OSMID, const OSMNode*> OSMWayByID;
 extern Map_bounds mapBounds;
 double viewPortArea;
 extern float cos_latavg;
+
+extern std::vector<closed_feature_data> closedFeatures;
+extern std::vector<line_feature_data> lineFeatures;
+extern std::vector<feature_data> features;
 
 
 // Declare helper functions
@@ -123,36 +152,29 @@ void draw_main_canvas (ezgl::renderer *g) {
    std::cout << g->get_visible_world().area() << std::endl;
    viewPortArea = g->get_visible_world().area();
    draw_features(g);
-   //draw_intersections(g);
+   draw_intersections(g);
    draw_streets(g);
    
 }
 
-// void draw_intersections(ezgl::renderer *g){
-//    auto startTime = std::chrono::high_resolution_clock::now();
-//    g->set_color(ezgl::RED);
-//    for (IntersectionIdx inter_id = 0; inter_id < intersections.size(); inter_id++) {
-//       float x = x_from_lon(intersections[inter_id].position.longitude());
-//       float y = y_from_lat(intersections[inter_id].position.latitude());
+void draw_intersections(ezgl::renderer *g){
+   auto startTime = std::chrono::high_resolution_clock::now();
+   g->set_color(ezgl::RED);
+   for (IntersectionIdx inter_id = 0; inter_id < intersections.size(); inter_id++) {
 
-//       float width = 5;
-//       float height = width;
+      float width = 5;
+      float height = width;
 
-//       g->fill_rectangle({x, y}, {x + width, y + height});
-      // if (intersections[inter_id].highlight) {
-      //    g->set_color(ezgl::BLUE);
-      //    g->draw_rectangle({x - 500, y - 500}, {x + 500, y + 500});
-      // } else {
-      //    g->set_color(ezgl::RED);
-      // }
-
-      // g->fill_rectangle({x, y}, {x + width, y + height});
-
-//    }
-//    auto currTime = std::chrono::high_resolution_clock::now();
-//    auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
-//    std::cout << "draw_intersections took " << wallClock.count() <<" seconds" << std::endl;
-// }
+      
+      if (intersections[inter_id].highlight) {
+         g->fill_arc(intersections[inter_id].position,width, 0, 360);
+      }
+      
+   }
+   auto currTime = std::chrono::high_resolution_clock::now();
+   auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
+   std::cout << "draw_intersections took " << wallClock.count() <<" seconds" << std::endl;
+}
 
 void draw_streets(ezgl::renderer *g){
    auto startTime = std::chrono::high_resolution_clock::now();
@@ -183,33 +205,23 @@ void draw_streets(ezgl::renderer *g){
 
 void draw_features(ezgl::renderer *g){
    auto startTime = std::chrono::high_resolution_clock::now();
-    int points; 
-
-    for(int feature_id = 0; feature_id < getNumFeatures(); feature_id++){
-        points = getNumFeaturePoints(feature_id);
-
-
-      if(points > 1 && getFeaturePoint(0, feature_id) == getFeaturePoint(points-1, feature_id)){
-            std::vector<ezgl::point2d> featureBoundaries;
-            for(int point_index = 0; point_index < points;point_index++){
-                  ezgl::point2d point = latlon_to_point(getFeaturePoint(point_index, feature_id));
-                  featureBoundaries.push_back(point);
-            }
-         set_feature_color(g,feature_id);
-         if(viewPortArea > 500000 && findFeatureArea(feature_id) > 6000){
-            g->fill_poly(featureBoundaries);
-         } else if (viewPortArea <= 500000){
-            g->fill_poly(featureBoundaries);
-         }
-            
-      } else if(points > 1){
-         for(int point_index = 1; point_index < points;point_index++){
-                  set_feature_color(g,feature_id);
-                  g->draw_line(latlon_to_point(getFeaturePoint(point_index-1, feature_id)),latlon_to_point(getFeaturePoint(point_index, feature_id)));
-         }
-
+    
+    
+    for(int feature_index = 0; feature_index < closedFeatures.size(); feature_index++){
+      if(closedFeatures[feature_index].area > 100000){ //REPLACE WITH SCALE 
+         set_feature_color(g,closedFeatures[feature_index].type);
+         g->fill_poly(closedFeatures[feature_index].bounds);
+       
       }
     }
+
+    for(int feature_index = 0; feature_index < lineFeatures.size(); feature_index++){
+      for(int point_index = 1; point_index < lineFeatures[feature_index].bounds.size();point_index++){
+         set_feature_color(g,lineFeatures[feature_index].type);
+         g->draw_line(lineFeatures[feature_index].bounds[point_index-1],lineFeatures[feature_index].bounds[point_index]);
+      }
+    }
+    
    auto currTime = std::chrono::high_resolution_clock::now();
    auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
    std::cout << "draw_features took " << wallClock.count() <<" seconds" << std::endl;
@@ -231,7 +243,7 @@ void set_segment_color(ezgl::renderer *g, int segment_id, ezgl::point2d point1, 
       g->set_color(157, 157, 157);
       g->set_line_width(1);
    }else {
-      if(viewPortArea > 500000)
+      if(viewPortArea > 1000000)
          return;
       g->set_color(187, 187, 187);
       g->set_line_width(2);
@@ -241,7 +253,7 @@ void set_segment_color(ezgl::renderer *g, int segment_id, ezgl::point2d point1, 
 
 void set_feature_color(ezgl::renderer *g, int feature_id){
    g->set_line_width(1);
-   switch(getFeatureType(feature_id)){
+   switch(feature_id){
       case UNKNOWN:
       case BUILDING:
          g->set_color(217, 217, 217);
@@ -455,6 +467,7 @@ void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, doubl
 
    std::stringstream closestIntersection;
    closestIntersection << "Selected: " << intersections[inter_id].name;
+   std::cout << "That sucks" << std::endl;
    app->update_message(closestIntersection.str());
    app->refresh_drawing();
 }
