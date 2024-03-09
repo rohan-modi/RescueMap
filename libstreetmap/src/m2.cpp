@@ -91,6 +91,8 @@ extern float cos_latavg;
 extern std::vector<closed_feature_data> closedFeatures;
 extern std::vector<line_feature_data> lineFeatures;
 extern std::vector<feature_data> features;
+extern std::vector<std::string> mapNames;
+
 
 
 // Declare helper functions
