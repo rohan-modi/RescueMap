@@ -365,8 +365,6 @@ void findIntersections(GtkButton* /*button*/, buttonData* myStruct) {
    std::string street1 = gtk_entry_get_text(streetNameBox1);
    std::string street2 = gtk_entry_get_text(streetNameBox2);
 
-   // std::string street1 = myStruct->string1;
-   // std::string street2 = myStruct->string2;
    myStruct->application->update_message(street1 + street2);
 
    std::pair<StreetIdx, StreetIdx> streetPair;
@@ -374,38 +372,27 @@ void findIntersections(GtkButton* /*button*/, buttonData* myStruct) {
    std::vector<StreetIdx> firstResults = findStreetIdsFromPartialStreetName(street1);
    std::vector<StreetIdx> secondResults = findStreetIdsFromPartialStreetName(street2);
 
-   bool anyResult = true;
-
-   if (firstResults.size() == 0) {
+   if (firstResults.size() == 0 || secondResults.size() == 0) {
       myStruct->application->create_popup_message("Incorrect Street Names", "There were no streets found matching the provided names");
       return;
-   } else {
-      streetPair.first = firstResults[0];
-      anyResult = true;
    }
 
-   if (secondResults.size() == 0) {
-      myStruct->application->create_popup_message("Incorrect Street Names", "There were no streets found matching the provided names");
-   } else {
-      streetPair.second = secondResults[0];
-      anyResult = true;
-   }
+   streetPair.first = firstResults[0];
+   streetPair.second = secondResults[0];
 
-   if (anyResult) {
-      std::vector<IntersectionIdx> intersections_ = findIntersectionsOfTwoStreets(streetPair);
-      if (intersections_.size() == 0) {
-         myStruct->application->create_popup_message("No Intersections Found", "The street names provided do not intersect, check for spelling.");
-      } else {
-         for (int i = 0; i < intersections_.size(); i++) {
-            intersections[intersections_[i]].highlight = true;
-         }
-         if (intersections_.size() != 0) {
-            float x = intersections[intersections_[0]].position.x;
-            float y = intersections[intersections_[0]].position.y;
-            int zoomBoxSize = 250;
-            ezgl::renderer* g = myStruct->application->get_renderer();
-            g->set_visible_world(ezgl::rectangle({x-zoomBoxSize, y-zoomBoxSize}, {x+zoomBoxSize, y+zoomBoxSize}));
-         }
+   std::vector<IntersectionIdx> intersections_ = findIntersectionsOfTwoStreets(streetPair);
+   if (intersections_.size() == 0) {
+      myStruct->application->create_popup_message("No Intersections Found", "The street names provided do not intersect, check for spelling.");
+   } else {
+      for (int i = 0; i < intersections_.size(); i++) {
+         intersections[intersections_[i]].highlight = true;
+      }
+      if (intersections_.size() != 0) {
+         float x = intersections[intersections_[0]].position.x;
+         float y = intersections[intersections_[0]].position.y;
+         int zoomBoxSize = 250;
+         ezgl::renderer* g = myStruct->application->get_renderer();
+         g->set_visible_world(ezgl::rectangle({x-zoomBoxSize, y-zoomBoxSize}, {x+zoomBoxSize, y+zoomBoxSize}));
       }
    }
    myStruct->application->refresh_drawing();
