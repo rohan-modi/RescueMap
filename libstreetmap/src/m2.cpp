@@ -122,6 +122,7 @@ void act_on_mouse_click(ezgl::application* app, GdkEventButton* event, double x,
 int findDistanceBetweenTwoPointsxy(ezgl::point2d point_1, ezgl::point2d point_2);
 gboolean change_dark_switch(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::application* application);
 void fillMapDropDown(ezgl::application* application);
+double findAngle360(ezgl::point2d point_1, ezgl::point2d point_2);
 
 float x_from_lon(float lon);
 float y_from_lat(float lat);
@@ -291,7 +292,6 @@ void draw_streets(ezgl::renderer *g){
 
 void draw_features(ezgl::renderer *g){
    auto startTime = std::chrono::high_resolution_clock::now();
-   int temp = 0;
 
     for(int feature_index = 0; feature_index < closedFeatures.size(); feature_index++){
       if(checkContains(closedFeatures[feature_index].maxx, closedFeatures[feature_index].minx, closedFeatures[feature_index].maxy, closedFeatures[feature_index].miny)){
