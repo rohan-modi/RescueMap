@@ -92,7 +92,7 @@ extern std::vector<closed_feature_data> closedFeatures;
 extern std::vector<line_feature_data> lineFeatures;
 extern std::vector<feature_data> features;
 extern std::vector<std::string> mapNames;
-
+bool darkMode;
 
 
 // Declare helper functions
@@ -106,6 +106,7 @@ void draw_features(ezgl::renderer *g);
 void set_feature_color(ezgl::renderer *g, int feature_id);
 bool set_segment_color(ezgl::renderer *g, std::string streetType);
 void act_on_mouse_click(ezgl::application* app, GdkEventButton* event, double x, double y);
+gboolean change_dark_switch(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::application* application);
 
 float x_from_lon(float lon);
 float y_from_lat(float lat);
@@ -228,15 +229,15 @@ void draw_features(ezgl::renderer *g){
 bool set_segment_color(ezgl::renderer *g, std::string streetType){
 
    if(streetType == "motorway"||streetType == "motorway_link"||streetType == "trunk"||streetType == "trunk_link"){
-      g->set_color(255, 195, 187);
+      darkMode ? g->set_color(205, 145, 137) : g->set_color(255, 195, 187);
       g->set_line_width(1);
    }else if (streetType == "primary"||streetType == "primary_link"){
-      g->set_color(157, 157, 157);
+      darkMode ? g->set_color(107, 107, 107) : g->set_color(157, 157, 157);
       g->set_line_width(1);
    }else {
       if(viewPortArea > 1000000)
          return false;
-      g->set_color(187, 187, 187);
+      darkMode ? g->set_color(137, 137, 137) : g->set_color(187, 187, 187);
       g->set_line_width(2);
    }
    return true;
@@ -247,24 +248,24 @@ void set_feature_color(ezgl::renderer *g, int feature_id){
    switch(feature_id){
       case UNKNOWN:
       case BUILDING:
-         g->set_color(217, 217, 217);
+         darkMode ? g->set_color(167, 167, 167) : g->set_color(217, 217, 217);
          break;
       case PARK:
       case GREENSPACE:
       case GOLFCOURSE:
-         g->set_color(192, 250, 218);
+         darkMode ? g->set_color(142, 200, 168) : g->set_color(192, 250, 218);
          break;
       case BEACH:
-         g->set_color(247, 236, 186);
+         darkMode ? g->set_color(197, 186, 136) : g->set_color(247, 236, 186);
          break;
       case LAKE:
       case RIVER:
       case STREAM:
       case GLACIER:
-         g->set_color(158, 226, 255);
+         darkMode ? g->set_color(108, 176, 205) : g->set_color(158, 226, 255);
          break;
       default:
-         g->set_color(217, 217, 217);
+         darkMode ? g->set_color(167, 167, 167) : g->set_color(217, 217, 217);
       break;
    }
 }
@@ -415,6 +416,7 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
    GObject* firstBox = application->get_object("Street1");
    GObject* secondBox = application->get_object("Street2");
    GObject* findButton = application->get_object("FindIntersections");
+   GObject* darkSwitch = application->get_object("DarkMode");
    std::vector<std::string> startingChoice = {"No Current Options"};
    application->create_combo_box_text("Street1Options", 1, 11, 2, 1, menuCallBack1, startingChoice);
    application->create_combo_box_text("Street2Options", 1, 12, 2, 1, menuCallBack2, startingChoice);
@@ -424,9 +426,12 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
    findButtonData.application = application;
    buttonData* findButtonPointer = &findButtonData;
 
+   darkMode = false;
+
    g_signal_connect(firstBox, "activate", G_CALLBACK(firstTextEntered), findButtonPointer);
    g_signal_connect(secondBox, "activate", G_CALLBACK(secondTextEntered), findButtonPointer);
    g_signal_connect(findButton, "clicked", G_CALLBACK(findIntersections), findButtonPointer);
+   g_signal_connect(darkSwitch, "state-set", G_CALLBACK(change_dark_switch), application);
 
    setupComplete = true;
 }
@@ -471,12 +476,9 @@ void map_selection_changed(GtkComboBoxText* /*box*/, ezgl::application* applicat
       if (gtk_combo_box_text_get_active_text(gtk_combo_box_text)) {      
          std::string new_map_name = gtk_combo_box_text_get_active_text(gtk_combo_box_text);
          std::string new_path = "/cad2/ece297s/public/maps/" + new_map_name;
-
          std::cout << new_path << std::endl;
 
-
          new_path = new_path + ".streets.bin";
-
          std::cout << new_path << std::endl;
 
          std::cout << "Closing map\n";         
@@ -495,4 +497,14 @@ void map_selection_changed(GtkComboBoxText* /*box*/, ezgl::application* applicat
 }
 
 
+gboolean change_dark_switch(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::application* application) {
+   
+   // Update darkMode global variable based on the switch being on or off
+   darkMode = switch_state;
 
+   //Force a redraw to reflect the new dark mode state
+   application->refresh_drawing();
+
+   // GTK's usual callback is now called to update the switch visually
+   return false;
+}
