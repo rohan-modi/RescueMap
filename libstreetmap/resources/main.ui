@@ -9,7 +9,7 @@
     <property name="default-width">800</property>
     <property name="default-height">600</property>
     <child>
-      <!-- n-columns=3 n-rows=3 -->
+      <!-- n-columns=3 n-rows=2 -->
       <object class="GtkGrid" id="OuterGrid">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
@@ -23,19 +23,6 @@
           <packing>
             <property name="left-attach">0</property>
             <property name="top-attach">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkStatusbar" id="StatusBar">
-            <property name="visible">True</property>
-            <property name="can-focus">False</property>
-            <property name="orientation">vertical</property>
-            <property name="spacing">2</property>
-          </object>
-          <packing>
-            <property name="left-attach">0</property>
-            <property name="top-attach">1</property>
-            <property name="width">2</property>
           </packing>
         </child>
         <child>
@@ -272,13 +259,17 @@
           </packing>
         </child>
         <child>
-          <placeholder/>
-        </child>
-        <child>
-          <placeholder/>
-        </child>
-        <child>
-          <placeholder/>
+          <object class="GtkStatusbar" id="StatusBar">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="orientation">vertical</property>
+            <property name="spacing">2</property>
+          </object>
+          <packing>
+            <property name="left-attach">0</property>
+            <property name="top-attach">1</property>
+            <property name="width">2</property>
+          </packing>
         </child>
         <child>
           <placeholder/>

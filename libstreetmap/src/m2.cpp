@@ -126,6 +126,7 @@ void findIntersections(GtkButton* button, buttonData* myStruct);
 std::string processString(std::string inputString);
 void menuCallBack1(GtkComboBoxText* /*box*/, ezgl::application* application);
 void menuCallBack2(GtkComboBoxText* /*box*/, ezgl::application* application);
+void map_selection_changed(GtkComboBoxText* /*box*/, ezgl::application* application);
 void updateOptions(std::string boxName, std::string streetName, ezgl::application* application);
 
 void drawMap() {
@@ -417,6 +418,8 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
    std::vector<std::string> startingChoice = {"No Current Options"};
    application->create_combo_box_text("Street1Options", 1, 11, 2, 1, menuCallBack1, startingChoice);
    application->create_combo_box_text("Street2Options", 1, 12, 2, 1, menuCallBack2, startingChoice);
+   application->create_label(13, "Select Map:");
+   application->create_combo_box_text("MapSelection", 0, 14, 3, 1, map_selection_changed, mapNames);
 
    findButtonData.application = application;
    buttonData* findButtonPointer = &findButtonData;
@@ -424,6 +427,7 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
    g_signal_connect(firstBox, "activate", G_CALLBACK(firstTextEntered), findButtonPointer);
    g_signal_connect(secondBox, "activate", G_CALLBACK(secondTextEntered), findButtonPointer);
    g_signal_connect(findButton, "clicked", G_CALLBACK(findIntersections), findButtonPointer);
+   //g_signal_connect(mapBox, "changed", G_CALLBACK(map_selection_changed), nullptr);
 
    setupComplete = true;
 }
@@ -441,3 +445,46 @@ void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, doubl
    app->update_message(closestIntersection.str());
    app->refresh_drawing();
 }
+
+
+
+void map_selection_changed(GtkComboBoxText* /*box*/, ezgl::application* application) {
+   if (setupComplete) {
+
+      // Steps:
+      // closeMap
+      // loadMap
+      // change coordinates
+      // refresh
+
+      // Cast to GtkComboBox
+      GtkComboBoxText* gtk_combo_box_text = GTK_COMBO_BOX_TEXT(application->find_widget("MapSelection"));
+      
+      if (gtk_combo_box_text_get_active_text(gtk_combo_box_text)) {      
+         std::string new_map_name = gtk_combo_box_text_get_active_text(gtk_combo_box_text);
+         std::string new_path = "/cad2/ece297s/public/maps/" + new_map_name;
+
+         std::cout << new_path << std::endl;
+
+
+         new_path = new_path + ".streets.bin";
+
+         std::cout << new_path << std::endl;
+
+         std::cout << "Closing map\n";         
+         closeMap();
+
+         bool load_success = loadMap(new_path);
+         load_success ? std::cout << "Successfully loaded map" << std::endl : std::cerr << "Failed to load map" << std::endl;
+
+         ezgl::rectangle new_world({x_from_lon(mapBounds.min_lon), y_from_lat(mapBounds.min_lat)},
+                                 {x_from_lon(mapBounds.max_lon), y_from_lat(mapBounds.max_lat)});
+         application->change_canvas_world_coordinates("MainCanvas", new_world);
+         application->refresh_drawing();
+         application->create_popup_message("Load Complete", "Your new map is finished loading!");
+      }
+   }
+}
+
+
+
