@@ -435,14 +435,23 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
 void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, double x, double y) {
    std::cout << "Mouse clicked at (" << x << "," << y << ")\n";
 
+   // Convert mouse click coordinates (xy) to LatLon to determine closest intersection
    LatLon position = LatLon(lat_from_y(y), lon_from_x(x));
    int inter_id = findClosestIntersection(position);
 
-   std::stringstream closestIntersection;
-   closestIntersection << "Selected: " << intersections[inter_id].name;
-   std::cout << "That sucks" << std::endl;
-   app->update_message(closestIntersection.str());
-   app->refresh_drawing();
+   // Only highlight and display intersection if clicked within close proximity
+   if (findDistanceBetweenTwoPoints(position, getIntersectionPosition(inter_id)) < 8) {
+      // Change the visibility of the selected intersection
+      intersections[inter_id].highlight = !intersections[inter_id].highlight;
+
+      // Output intersection name informationi
+      std::stringstream closestIntersection;
+      closestIntersection << "Selected: " << intersections[inter_id].name;
+      app->update_message(closestIntersection.str());
+
+      // Refresh map drawing
+      app->refresh_drawing();
+   }
 }
 
 
