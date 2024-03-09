@@ -18,6 +18,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include <filesystem>
 #include <iostream>
 #include <cmath>
 #include "m1.h"
@@ -120,7 +121,7 @@ std::vector<closed_feature_data> closedFeatures;
 std::vector<line_feature_data> lineFeatures;
 std::vector<feature_data> features;
 std::vector<segment_data> street_segments;
-
+std::vector<std::string> mapNames;
 
 float cos_latavg;
 
@@ -135,6 +136,8 @@ void populateSegmentsdata();
 void populateOSMWayByID();
 void initializeIntersections();
 void populateFeatures();
+void populateMapNames();
+
 // ==================================== Declare helper functions ====================================
 inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2);
 std::pair<double, double> latLontoCartesian(LatLon point_1, double latavg);
@@ -716,6 +719,8 @@ bool loadMap(std::string map_streets_database_filename) {
     
     populateFeatures();
 
+    populateMapNames();
+
     load_successful = check1 && check2; //Make sure this is updated to reflect whether
                             //loading the map succeeded or failed
 
@@ -1035,3 +1040,28 @@ std::string getOSMWayTagValue(OSMID osm_id, std::string key) {
     return "";
 }
 
+void populateMapNames() {
+    std::string path = "/cad2/ece297s/public/maps/";
+    
+    // Filter through every file located in the directory of the given path
+    for (const auto & entry : std::filesystem::directory_iterator(path)) {
+        
+        // Retrieve the file name
+        std::string fileName = entry.path();
+
+        // Check if the file name contains ".streets.bin"
+        if (fileName.find(".streets.bin") != std::string::npos) {
+            // Remove path components to extract the city name of the map
+            // Assumed that the city name for a map region is identical for all of
+            // its data files (OSM data, streets data, xml data, etc.)
+            fileName = fileName.replace(fileName.find("/cad2/ece297s/public/maps/"), 26, "");
+            fileName = fileName.replace(fileName.find(".streets.bin"), 12, "");
+
+            // Add the city name to the global vector of city names
+            mapNames.push_back(fileName);
+        }
+    }
+
+    // Sort vector of city names for alphabetical order
+    std::sort(mapNames.begin(), mapNames.end());
+}
