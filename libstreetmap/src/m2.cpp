@@ -51,6 +51,11 @@ struct closed_feature_data {
     double area;
     int index;
     int type;
+    double minx;
+    double maxx;
+    double miny;
+    double maxy;
+
     bool operator < (const closed_feature_data& struc) const{
         return (area > struc.area);
     }
@@ -78,6 +83,12 @@ struct segment_data{
     std::string name;
     std::string OSMtag; //type of segment
 };
+struct name_data{
+    ezgl::point2d position;
+    std::string name;
+    double angle;
+    std::string type;
+};
 
 extern std::vector<Intersection_data> intersections;
 extern std::vector<std::vector<int>> streetSegments;
@@ -87,10 +98,12 @@ extern Map_bounds mapBounds;
 extern std::vector<segment_data> street_segments;
 double viewPortArea;
 extern float cos_latavg;
+extern std::vector<name_data> streetNames;
 
 extern std::vector<closed_feature_data> closedFeatures;
 extern std::vector<line_feature_data> lineFeatures;
 extern std::vector<feature_data> features;
+int line_width; 
 
 
 // Declare helper functions
@@ -104,12 +117,15 @@ void draw_features(ezgl::renderer *g);
 void set_feature_color(ezgl::renderer *g, int feature_id);
 bool set_segment_color(ezgl::renderer *g, std::string streetType);
 void act_on_mouse_click(ezgl::application* app, GdkEventButton* event, double x, double y);
+int findDistanceBetweenTwoPointsxy(ezgl::point2d point_1, ezgl::point2d point_2);
 
 float x_from_lon(float lon);
 float y_from_lat(float lat);
 
 float lon_from_x(float x);
 float lat_from_y(float y);
+
+ezgl::rectangle world;
 
 struct buttonData {
    std::string string1;
@@ -155,14 +171,24 @@ void drawMap() {
 
 }
 
-
+void setWorldScale(ezgl::renderer *g);
 void draw_main_canvas (ezgl::renderer *g) {
-   std::cout << g->get_visible_world().area() << std::endl;
+   std::cout << world.top_left().x << std::endl;
+   std::cout << world.top_left().y << std::endl;
    viewPortArea = g->get_visible_world().area();
+   world = g->get_visible_world();
+   setWorldScale(g);
    draw_features(g);
    draw_intersections(g);
    draw_streets(g);
-   
+}
+
+void setWorldScale(ezgl::renderer *g){
+   double factor = g->get_visible_screen().width()/g->get_visible_world().width();
+   line_width = ((factor+0.13)*10);
+   if(line_width > 11){
+      line_width = 11;
+   }
 }
 
 void draw_intersections(ezgl::renderer *g){
@@ -184,19 +210,70 @@ void draw_intersections(ezgl::renderer *g){
    std::cout << "draw_intersections took " << wallClock.count() <<" seconds" << std::endl;
 }
 
+bool checkContains(double maxx, double minx, double maxy, double miny);
+
+double findAngle360(ezgl::point2d point_1, ezgl::point2d point_2){
+   double x, y;
+      x = point_2.x - point_1.x;
+      y = point_2.y - point_1.y;
+   double radian = std::atan2(y, x);
+
+   double degrees = radian *(180/M_PI);
+   if(degrees< 0)
+      degrees += 360;
+
+   return degrees;
+}
+
+
 void draw_streets(ezgl::renderer *g){
    auto startTime = std::chrono::high_resolution_clock::now();
 
-
    for(int segment_id = 0; segment_id < street_segments.size(); segment_id++){
-      if(set_segment_color(g, street_segments[segment_id].OSMtag))
-      for(int point_index = 1; point_index < street_segments[segment_id].points.size();point_index++){
-            g->draw_line(street_segments[segment_id].points[point_index-1],street_segments[segment_id].points[point_index]);
-         
+      
+      if(set_segment_color(g, street_segments[segment_id].OSMtag)){
+
+         int points = street_segments[segment_id].points.size();
+
+            ezgl::point2d prev = street_segments[segment_id].points[0];
+            ezgl::point2d curr = street_segments[segment_id].points[points-1];
+            double minx = prev.x;
+            double maxx = curr.x;
+            double miny = prev.y;
+            double maxy = curr.y;
+            if(prev.x > curr.x){
+               minx = curr.x;
+               maxx = prev.x;
+            }
+            if(prev.y > curr.y){
+               miny = curr.y;
+               maxy = prev.y;
+            }
+         if(checkContains(maxx, minx, maxy, miny))
+         for(int point_index = 1; point_index < street_segments[segment_id].points.size();point_index++){
+            set_segment_color(g, street_segments[segment_id].OSMtag);
+               g->draw_line(street_segments[segment_id].points[point_index-1],street_segments[segment_id].points[point_index]);
+
+               
+         }
       }
    }
+   if(viewPortArea < 250000)
+   for(int i = 0; i < streetNames.size(); i++){
+      if(world.contains(streetNames[i].position)){
+         g->set_color(ezgl::BLACK);
+         g->set_font_size(9);
+         g->set_text_rotation(streetNames[i].angle);
+         g->draw_text(streetNames[i].position, streetNames[i].name);
+      }
+   }   
 
-   
+   // if(street_segments[segment_id].oneWay&&viewPortArea < 250000){
+   //                g->set_color(ezgl::BLACK);
+   //                g->set_font_size(9);
+   //                g->set_text_rotation(findAngle360(street_segments[segment_id].points[point_index-1],street_segments[segment_id].points[point_index]));
+   //                g->draw_text(street_segments[segment_id].points[point_index-1], ">");
+   //             }
 
    auto currTime = std::chrono::high_resolution_clock::now();
    auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
@@ -205,13 +282,18 @@ void draw_streets(ezgl::renderer *g){
 
 void draw_features(ezgl::renderer *g){
    auto startTime = std::chrono::high_resolution_clock::now();
-    
-    
+   int temp = 0;
+
     for(int feature_index = 0; feature_index < closedFeatures.size(); feature_index++){
-      if(closedFeatures[feature_index].area > 100000){ //REPLACE WITH SCALE 
-         set_feature_color(g,closedFeatures[feature_index].type);
-         g->fill_poly(closedFeatures[feature_index].bounds);
-       
+      if(checkContains(closedFeatures[feature_index].maxx, closedFeatures[feature_index].minx, closedFeatures[feature_index].maxy, closedFeatures[feature_index].miny)){
+         if(closedFeatures[feature_index].area < 100000 && viewPortArea < 1000000){ //REPLACE WITH SCALE 
+            set_feature_color(g,closedFeatures[feature_index].type);
+            g->fill_poly(closedFeatures[feature_index].bounds);
+         } 
+         if(closedFeatures[feature_index].area > 100000){
+            set_feature_color(g,closedFeatures[feature_index].type);
+            g->fill_poly(closedFeatures[feature_index].bounds);
+         }
       }
     }
 
@@ -229,20 +311,52 @@ void draw_features(ezgl::renderer *g){
    std::cout << "draw_features took " << wallClock.count() <<" seconds" << std::endl;
 }
 
+bool checkContains(double maxx, double minx, double maxy, double miny){
+   ezgl::point2d bottom_right = world.bottom_right();
+   ezgl::point2d top_left = world.top_left();
+   if(world.contains(maxx, miny)||world.contains(minx, maxy)||world.contains(maxx, miny)||world.contains(minx, maxy)){
+      return true;
+   }
+   if(maxx > bottom_right.x && minx < top_left.x ){
+      return true;
+   }else if (miny < bottom_right.y && maxy > top_left.y ){
+      return true;
+   }
+
+   if(maxx < bottom_right.x && maxx > top_left.x ){
+      return true;
+   }else if (miny > bottom_right.y && miny < top_left.y ){
+      return true;
+   }
+
+   if(minx < bottom_right.x && minx > top_left.x ){
+      return true;
+   }else if (maxy > bottom_right.y && maxy < top_left.y ){
+      return true;
+   }
+   
+   return false;
+}
+
 
 bool set_segment_color(ezgl::renderer *g, std::string streetType){
 
    if(streetType == "motorway"||streetType == "motorway_link"||streetType == "trunk"||streetType == "trunk_link"){
       g->set_color(255, 195, 187);
-      g->set_line_width(1);
+      g->set_line_width(line_width);
    }else if (streetType == "primary"||streetType == "primary_link"){
       g->set_color(157, 157, 157);
-      g->set_line_width(1);
+      g->set_line_width(line_width-1);
+   }else if (streetType == "secondary"||streetType == "secondary_link"){
+      if(viewPortArea > 100000000)
+         return false;
+      g->set_color(157, 157, 157);
+      g->set_line_width(line_width-1);
    }else {
-      if(viewPortArea > 1000000)
+      if(viewPortArea > 10000000)
          return false;
       g->set_color(187, 187, 187);
-      g->set_line_width(2);
+      g->set_line_width(line_width-1);
    }
    return true;
 }

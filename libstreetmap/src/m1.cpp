@@ -55,6 +55,11 @@ struct closed_feature_data {
     double area;
     int index;
     int type;
+    double minx;
+    double maxx;
+    double miny;
+    double maxy;
+
     bool operator < (const closed_feature_data& struc) const{
         return (area > struc.area);
     }
@@ -140,8 +145,116 @@ inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const s
 std::pair<double, double> latLontoCartesian(LatLon point_1, double latavg);
 ezgl::point2d latlon_to_pointm1(LatLon position);
 std::string getOSMWayTagValue(OSMID osm_id, std::string key);
+ezgl::point2d findMidPoint(ezgl::point2d point1, ezgl::point2d point2);
+double findAngle(ezgl::point2d point_1, ezgl::point2d point_2);
+int findDistanceBetweenTwoPointsxy(ezgl::point2d point_1, ezgl::point2d point_2);
 
 //Migrating M2 Functions to Load map
+
+
+struct name_data{
+    ezgl::point2d position;
+    std::string name;
+    double angle;
+    std::string type;
+};
+
+std::vector<name_data> streetNames;
+
+void populateSegmentsdata() {
+    for(int i = 0; i < getNumStreets(); i++){
+        std::vector<int> row;
+        streetSegments.push_back(row);
+    }
+
+    segmentTravelTimes.resize(getNumStreetSegments());
+    
+
+    int max = getNumStreetSegments();
+    for(int i = 0; i< max; i++){
+        
+        // Get the StreetSegmentInfo struct associated with street_segment_id
+        StreetSegmentInfo segment = getStreetSegmentInfo(i);
+
+        // Compute time [s] = distance [m] / speed_limit [m/s]
+        segmentTravelTimes[i] = (findStreetSegmentLength(i) / segment.speedLimit);
+
+        streetSegments[segment.streetID].push_back(i);
+
+        std::vector<ezgl::point2d> points_data;
+
+        ezgl::point2d prev = latlon_to_pointm1(getIntersectionPosition(segment.from)); 
+        ezgl::point2d curr; 
+        std::string key = "highway";
+        std::string tag = getOSMWayTagValue(segment.wayOSMID, key);
+        points_data.push_back(prev);
+        for(int point_index = 0; point_index < segment.numCurvePoints; point_index++){
+            curr = latlon_to_pointm1(getStreetSegmentCurvePoint(point_index, i));
+            points_data.push_back(curr);
+            if((int)(segment.numCurvePoints/2) == point_index)
+            if(findDistanceBetweenTwoPointsxy(prev, curr) > 50 && getStreetName(segment.streetID) != "<unknown>"){
+                name_data name; 
+                name.name = getStreetName(segment.streetID);
+                name.position = findMidPoint(prev, curr);
+                name.angle = findAngle(prev, curr);
+                name.type = tag;
+                streetNames.push_back(name);
+            } 
+            prev = curr;
+        }
+        curr = latlon_to_pointm1(getIntersectionPosition(segment.to));
+        points_data.push_back(curr);
+        
+        if(findDistanceBetweenTwoPointsxy(prev, curr) > 50 && getStreetName(segment.streetID) != "<unknown>"){
+            name_data name; 
+            name.name = getStreetName(segment.streetID);
+            name.position = findMidPoint(prev, curr);
+            name.angle = findAngle(prev, curr);
+            name.type = tag;
+            streetNames.push_back(name);
+        }
+        segment_data data;
+        data.points = points_data;
+        data.oneWay = segment.oneWay;
+        data.speedLimit = segment.speedLimit;
+        data.streetID = segment.streetID;
+        data.name = getStreetName(data.streetID);
+        data.OSMtag = tag;
+        
+        street_segments.push_back(data);
+    }
+}
+
+ezgl::point2d findMidPoint(ezgl::point2d point1, ezgl::point2d point2){
+   return(ezgl::point2d((point1.x+point2.x)/2,(point1.y+point2.y)/2));
+}
+
+
+
+double findAngle(ezgl::point2d point_1, ezgl::point2d point_2){
+   double x, y;
+
+   if(point_1.x < point_2.x){
+      x = point_2.x - point_1.x;
+      y = point_2.y - point_1.y;
+   }else{
+      x = point_1.x - point_2.x;
+      y = point_1.y - point_2.y;
+   }
+
+   double radian = std::atan2(y, x);
+
+   double degrees = radian *(180/M_PI);
+   if(degrees< 0)
+      degrees += 360;
+
+   return degrees;
+}
+
+int findDistanceBetweenTwoPointsxy(ezgl::point2d point_1, ezgl::point2d point_2) {
+    // Return the distance by the Pythagoras theorem: d = sqrt((y2 - y1)^2, (x2 - x1)^2) [m]
+    return sqrt(pow(point_2.y - point_1.y, 2) + pow(point_2.x - point_1.x, 2));
+}
 
 
 
@@ -766,45 +879,45 @@ void populateOSMWayByID() {
 
 // Written by Kevin
 // Segment loop to populate segment related data structures
-void populateSegmentsdata() {
-    for(int i = 0; i < getNumStreets(); i++){
-        std::vector<int> row;
-        streetSegments.push_back(row);
-    }
+// void populateSegmentsdata() {
+//     for(int i = 0; i < getNumStreets(); i++){
+//         std::vector<int> row;
+//         streetSegments.push_back(row);
+//     }
 
-    segmentTravelTimes.resize(getNumStreetSegments());
+//     segmentTravelTimes.resize(getNumStreetSegments());
     
 
-    int max = getNumStreetSegments();
-    for(int i = 0; i< max; i++){
+//     int max = getNumStreetSegments();
+//     for(int i = 0; i< max; i++){
 
-        // Get the StreetSegmentInfo struct associated with street_segment_id
-        StreetSegmentInfo segment = getStreetSegmentInfo(i);
+//         // Get the StreetSegmentInfo struct associated with street_segment_id
+//         StreetSegmentInfo segment = getStreetSegmentInfo(i);
 
-        // Compute time [s] = distance [m] / speed_limit [m/s]
-        segmentTravelTimes[i] = (findStreetSegmentLength(i) / segment.speedLimit);
+//         // Compute time [s] = distance [m] / speed_limit [m/s]
+//         segmentTravelTimes[i] = (findStreetSegmentLength(i) / segment.speedLimit);
 
-        streetSegments[segment.streetID].push_back(i);
+//         streetSegments[segment.streetID].push_back(i);
 
-        std::vector<ezgl::point2d> points_data;
-        points_data.push_back(latlon_to_pointm1(getIntersectionPosition(segment.from)));
-        for(int point_index = 0; point_index < segment.numCurvePoints; point_index++){
-            points_data.push_back(latlon_to_pointm1(getStreetSegmentCurvePoint(point_index, i)));
-        }
-        points_data.push_back(latlon_to_pointm1(getIntersectionPosition(segment.to)));
+//         std::vector<ezgl::point2d> points_data;
+//         points_data.push_back(latlon_to_pointm1(getIntersectionPosition(segment.from)));
+//         for(int point_index = 0; point_index < segment.numCurvePoints; point_index++){
+//             points_data.push_back(latlon_to_pointm1(getStreetSegmentCurvePoint(point_index, i)));
+//         }
+//         points_data.push_back(latlon_to_pointm1(getIntersectionPosition(segment.to)));
         
-        segment_data data;
-        data.points = points_data;
-        data.oneWay = segment.oneWay;
-        data.speedLimit = segment.speedLimit;
-        data.streetID = segment.streetID;
-        data.name = getStreetName(data.streetID);
-        std::string key = "highway";
-        data.OSMtag = getOSMWayTagValue(segment.wayOSMID, key);
+//         segment_data data;
+//         data.points = points_data;
+//         data.oneWay = segment.oneWay;
+//         data.speedLimit = segment.speedLimit;
+//         data.streetID = segment.streetID;
+//         data.name = getStreetName(data.streetID);
+//         std::string key = "highway";
+//         data.OSMtag = getOSMWayTagValue(segment.wayOSMID, key);
         
-        street_segments.push_back(data);
-    }
-}
+//         street_segments.push_back(data);
+//     }
+// }
 
 // Written by Kevin
 // calculates way distances through summing distance of way nodes
@@ -953,14 +1066,38 @@ void populateFeatures(){
     for(int feature_id = 0; feature_id < getNumFeatures(); feature_id++){
         points = getNumFeaturePoints(feature_id);
       if(points > 1 && getFeaturePoint(0, feature_id) == getFeaturePoint(points-1, feature_id)){
+            closed_feature_data data;
+
+            double tempmaxx = latlon_to_pointm1(getFeaturePoint(0, feature_id)).x;
+            double tempminx = tempmaxx;
+            double tempmaxy = latlon_to_pointm1(getFeaturePoint(0, feature_id)).y;
+            double tempminy = tempmaxy;
+            
             std::vector<ezgl::point2d> featureBoundaries;
             for(int point_index = 0; point_index < points;point_index++){
                   ezgl::point2d point = latlon_to_pointm1(getFeaturePoint(point_index, feature_id));
                   featureBoundaries.push_back(point);
+                  if(point.x < tempminx){
+                      tempminx = point.x;
+                  }else if(point.x > tempmaxx){
+                      tempmaxx = point.x;
+                  }
+
+                  if(point.y < tempminy){
+                      tempminy = point.y;
+                  }else if(point.y > tempmaxy){
+                      tempmaxy = point.y;
+                  }
             }
-            closed_feature_data data;
+            
+
+            
             data.bounds = featureBoundaries;
             data.index = feature_id;
+            data.maxx = tempmaxx;
+            data.minx = tempminx;
+            data.maxy = tempmaxy;
+            data.miny = tempminy;
             data.area = findFeatureArea(feature_id);
             data.name = getFeatureName(feature_id);
             data.type = getFeatureType(feature_id);
