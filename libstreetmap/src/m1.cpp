@@ -126,12 +126,12 @@ float cos_latavg;
 
 
 // ==================================== Declare functions to populate globals ====================================
-void populateSegmentTravelTimes();
-void populateStreetSegmentsAndIntersectionsVectors();
+
+void populateIntersectionData();
 void populateStreetNamesVector();
 void populateOSMNodeByID();
 void populateOSMWaylengths();
-void populateSegmentsOfStreets();
+void populateSegmentsdata();
 void populateOSMWayByID();
 void initializeIntersections();
 void populateFeatures();
@@ -644,7 +644,6 @@ std::string getOSMNodeTagValue(OSMID osm_id, std::string key) {
 
     for (int j = 0; j < getTagCount(node); j++) {
         tagPair = getTagPair(node, j);
-        std::cout<<tagPair.first << std::endl;
         if (tagPair.first == key) {
             return tagPair.second;
         }
@@ -704,13 +703,13 @@ bool loadMap(std::string map_streets_database_filename) {
     streetNamesAndIDs.clear();
     segmentTravelTimes.clear();
     OSMNodeByID.clear();
-    initializeIntersections();
 
+    populateIntersectionData();
     populateOSMWayByID();
-    populateSegmentsOfStreets();
-    populateStreetSegmentsAndIntersectionsVectors();
+    populateSegmentsdata();
+    
     populateStreetNamesVector();
-    populateSegmentTravelTimes();
+
     populateOSMNodeByID();
     
     populateOSMWaylengths();
@@ -765,49 +764,43 @@ void populateOSMWayByID() {
     }
 }
 
-// Written by Jonathan
-void populateSegmentTravelTimes() {
-    // Initialize the vector size to the number of street segments
-    segmentTravelTimes.resize(getNumStreetSegments());
-
-    // Compute the travel time for each street segment and populate the vector
-    for (StreetSegmentIdx idx = 0; idx < getNumStreetSegments(); ++idx) {
-        
-        // Get the StreetSegmentInfo struct associated with street_segment_id
-        StreetSegmentInfo segment = getStreetSegmentInfo(idx);
-
-        // Compute time [s] = distance [m] / speed_limit [m/s]
-        segmentTravelTimes[idx] = (findStreetSegmentLength(idx) / segment.speedLimit);
-    }
-}
-
 // Written by Kevin
-// loops through all street segments and pushes to vector of respective streetID associating the two together
-void populateSegmentsOfStreets() {
+// Segment loop to populate segment related data structures
+void populateSegmentsdata() {
     for(int i = 0; i < getNumStreets(); i++){
         std::vector<int> row;
         streetSegments.push_back(row);
     }
 
+    segmentTravelTimes.resize(getNumStreetSegments());
+    
+
     int max = getNumStreetSegments();
     for(int i = 0; i< max; i++){
-        streetSegments[getStreetSegmentInfo(i).streetID].push_back(i);
+
+        // Get the StreetSegmentInfo struct associated with street_segment_id
+        StreetSegmentInfo segment = getStreetSegmentInfo(i);
+
+        // Compute time [s] = distance [m] / speed_limit [m/s]
+        segmentTravelTimes[i] = (findStreetSegmentLength(i) / segment.speedLimit);
+
+        streetSegments[segment.streetID].push_back(i);
 
         std::vector<ezgl::point2d> points_data;
-        points_data.push_back(latlon_to_pointm1(getIntersectionPosition(getStreetSegmentInfo(i).from)));
-        for(int point_index = 0; point_index < getStreetSegmentInfo(i).numCurvePoints; point_index++){
+        points_data.push_back(latlon_to_pointm1(getIntersectionPosition(segment.from)));
+        for(int point_index = 0; point_index < segment.numCurvePoints; point_index++){
             points_data.push_back(latlon_to_pointm1(getStreetSegmentCurvePoint(point_index, i)));
         }
-        points_data.push_back(latlon_to_pointm1(getIntersectionPosition(getStreetSegmentInfo(i).to)));
+        points_data.push_back(latlon_to_pointm1(getIntersectionPosition(segment.to)));
         
         segment_data data;
         data.points = points_data;
-        data.oneWay = getStreetSegmentInfo(i).oneWay;
-        data.speedLimit = getStreetSegmentInfo(i).speedLimit;
-        data.streetID = getStreetSegmentInfo(i).streetID;
+        data.oneWay = segment.oneWay;
+        data.speedLimit = segment.speedLimit;
+        data.streetID = segment.streetID;
         data.name = getStreetName(data.streetID);
         std::string key = "highway";
-        data.OSMtag = getOSMWayTagValue(getStreetSegmentInfo(i).wayOSMID, key);
+        data.OSMtag = getOSMWayTagValue(segment.wayOSMID, key);
         
         street_segments.push_back(data);
     }
@@ -850,11 +843,6 @@ void populateStreetNamesVector() {
 
         streetNamesAndIDs[i].first = streetName;
         streetNamesAndIDs[i].second = i;
-        // for (int k = 0; k < ids.size(); k++) {
-        //     if (i == ids[k]) {
-        //         std::cout << "Street: " << streetName << " ID: " << i << std::endl;
-        //     }
-        // }
     }
     std::sort(streetNamesAndIDs.begin(), streetNamesAndIDs.end());
 }
@@ -870,13 +858,41 @@ inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const s
 // Loops through intersections and adds all street segments tangent to it to the corresponding vector
 // Then adds that intersection id to the indices of the second vector to populate both simultaneously
 // Written by Rohan
-void populateStreetSegmentsAndIntersectionsVectors() {
+void populateIntersectionData() {
     int numberOfStreetSegments;
     StreetSegmentIdx streetSegmentID;
     StreetIdx streetID;
     streetSegmentsOfIntersections.resize(getNumIntersections());
     intersectionsOfStreets_.resize(getNumStreets());
+
+
+    double max_lat = getIntersectionPosition(0).latitude();
+    double min_lat = max_lat;
+    double max_lon = getIntersectionPosition(0).longitude();
+    double min_lon = max_lon;
+    
+    std::vector<LatLon> intersectionsTemp;
+    intersections.resize(getNumIntersections());
+
+
+
     for (int i = 0; i < getNumIntersections(); i++) {
+
+        intersectionsTemp.push_back(getIntersectionPosition(i));
+        intersections[i].name = getIntersectionName(i);
+
+        max_lat = std::max(max_lat, intersectionsTemp[i].latitude());
+        min_lat = std::min(min_lat, intersectionsTemp[i].latitude());
+        max_lon = std::max(max_lon, intersectionsTemp[i].longitude());
+        min_lon = std::min(min_lon, intersectionsTemp[i].longitude());
+
+
+
+
+
+
+
+
         numberOfStreetSegments = getNumIntersectionStreetSegment(i);
         for (int j = 0; j < numberOfStreetSegments; j++) {
             streetSegmentID = getIntersectionStreetSegment(j, i);
@@ -889,28 +905,7 @@ void populateStreetSegmentsAndIntersectionsVectors() {
             }
         }
     }
-}
-
-
-void initializeIntersections() {
-   double max_lat = getIntersectionPosition(0).latitude();
-   double min_lat = max_lat;
-   double max_lon = getIntersectionPosition(0).longitude();
-   double min_lon = max_lon;
-   
-   std::vector<LatLon> intersectionsTemp;
-   intersections.resize(getNumIntersections());
-
-   for (int inter_id = 0; inter_id < getNumIntersections(); inter_id++) {
-      intersectionsTemp.push_back(getIntersectionPosition(inter_id));
-      intersections[inter_id].name = getIntersectionName(inter_id);
-
-      max_lat = std::max(max_lat, intersectionsTemp[inter_id].latitude());
-      min_lat = std::min(min_lat, intersectionsTemp[inter_id].latitude());
-      max_lon = std::max(max_lon, intersectionsTemp[inter_id].longitude());
-      min_lon = std::min(min_lon, intersectionsTemp[inter_id].longitude());
-   }
-   cos_latavg = cos((min_lat + max_lat) * kDegreeToRadian / 2);
+    cos_latavg = cos((min_lat + max_lat) * kDegreeToRadian / 2);
 
    for (int inter_id = 0; inter_id < getNumIntersections(); inter_id++) {
        intersections[inter_id].position = latlon_to_pointm1(intersectionsTemp[inter_id]);
@@ -919,10 +914,38 @@ void initializeIntersections() {
     mapBounds.min_lat = min_lat;
     mapBounds.max_lon = max_lon;
     mapBounds.min_lon = min_lon;
-
-    std::cout<< cos_latavg << std::endl;
-
 }
+
+
+// void initializeIntersections() {
+//    double max_lat = getIntersectionPosition(0).latitude();
+//    double min_lat = max_lat;
+//    double max_lon = getIntersectionPosition(0).longitude();
+//    double min_lon = max_lon;
+   
+//    std::vector<LatLon> intersectionsTemp;
+//    intersections.resize(getNumIntersections());
+
+//    for (int inter_id = 0; inter_id < getNumIntersections(); inter_id++) {
+//       intersectionsTemp.push_back(getIntersectionPosition(inter_id));
+//       intersections[inter_id].name = getIntersectionName(inter_id);
+
+//       max_lat = std::max(max_lat, intersectionsTemp[inter_id].latitude());
+//       min_lat = std::min(min_lat, intersectionsTemp[inter_id].latitude());
+//       max_lon = std::max(max_lon, intersectionsTemp[inter_id].longitude());
+//       min_lon = std::min(min_lon, intersectionsTemp[inter_id].longitude());
+//    }
+//    cos_latavg = cos((min_lat + max_lat) * kDegreeToRadian / 2);
+
+//    for (int inter_id = 0; inter_id < getNumIntersections(); inter_id++) {
+//        intersections[inter_id].position = latlon_to_pointm1(intersectionsTemp[inter_id]);
+//    }
+//     mapBounds.max_lat = max_lat;
+//     mapBounds.min_lat = min_lat;
+//     mapBounds.max_lon = max_lon;
+//     mapBounds.min_lon = min_lon;
+
+// }
 
 void populateFeatures(){
     int points; 

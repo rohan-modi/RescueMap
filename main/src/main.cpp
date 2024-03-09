@@ -32,6 +32,29 @@ constexpr int BAD_ARGUMENTS_EXIT_CODE = 2;  //Invalid command-line usage
 //The default map to load if none is specified
 std::string default_map_path = "/cad2/ece297s/public/maps/toronto_canada.streets.bin";
 
+/*
+Cities:
+beijing_china
+boston_usa
+cape-town_south-africa
+golden-horseshoe_canada
+hamilton_canada
+hong-kong_china
+iceland
+interlaken_switzerland
+kyiv_ukraine
+london_england
+new-delhi_india
+new-york_usa
+rio-de-janeiro_brazil
+saint-helena
+singapore
+sydney_australia
+tehran_iran
+tokyo_japan
+toronto_canada
+*/
+
 
 // The start routine of your program (main) when you are running your standalone
 // mapper program. This main routine is *never called* when you are running 

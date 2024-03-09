@@ -215,6 +215,8 @@ void draw_features(ezgl::renderer *g){
       }
     }
 
+
+   if(viewPortArea < 10000000)
     for(int feature_index = 0; feature_index < lineFeatures.size(); feature_index++){
       for(int point_index = 1; point_index < lineFeatures[feature_index].bounds.size();point_index++){
          set_feature_color(g,lineFeatures[feature_index].type);
@@ -233,7 +235,7 @@ bool set_segment_color(ezgl::renderer *g, std::string streetType){
    if(streetType == "motorway"||streetType == "motorway_link"||streetType == "trunk"||streetType == "trunk_link"){
       g->set_color(255, 195, 187);
       g->set_line_width(1);
-   }else if (streetType == "secondary"||streetType == "secondary_link"||streetType == "primary"||streetType == "primary_link"){
+   }else if (streetType == "primary"||streetType == "primary_link"){
       g->set_color(157, 157, 157);
       g->set_line_width(1);
    }else {
