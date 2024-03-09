@@ -307,13 +307,13 @@ void updateOptions(std::string boxName, std::string streetName, ezgl::applicatio
    std::vector<std::string> options;
    if (ids.size() == 0) {
       options.push_back("No Matches");
-   } else if (ids.size() == 1) {
-      options.push_back("Name Complete");
    } else {
       options.resize(ids.size());
       for (int i = 0; i < ids.size(); i++) {
          options[i] = getStreetName(ids[i]);
       }
+      auto lastUniqueElement = std::unique(options.begin(), options.end());
+      options.erase(lastUniqueElement, options.end());
    }
    const char* charVersion = boxName.c_str();
    application->change_combo_box_text_options(charVersion, options);
@@ -385,10 +385,8 @@ void findIntersections(GtkButton* /*button*/, buttonData* myStruct) {
          if (intersections_.size() != 0) {
             std::string foundStreet1 = getStreetName(streetPair.first);
             std::string foundStreet2 = getStreetName(streetPair.second);
-            std::cout << "Strings are " << foundStreet1 << " and " << foundStreet2 << std::endl;
             const gchar* charVersionStreet1 = foundStreet1.c_str();
             const gchar* charVersionStreet2 = foundStreet2.c_str();
-            std::cout << "Then strings are " << charVersionStreet1 << " and " << charVersionStreet2 << std::endl;
             for (int k = 0; k < intersections_.size(); k++) {
                intersections[intersections_[k]].highlight = true;
             }
@@ -399,6 +397,8 @@ void findIntersections(GtkButton* /*button*/, buttonData* myStruct) {
             g->set_visible_world(ezgl::rectangle({x-zoomBoxSize, y-zoomBoxSize}, {x+zoomBoxSize, y+zoomBoxSize}));            
             gtk_entry_set_text(streetNameBox1, charVersionStreet1);
             gtk_entry_set_text(streetNameBox2, charVersionStreet2);
+            updateOptions("Street1Options", foundStreet1, myStruct->application);
+            updateOptions("Street2Options", foundStreet2, myStruct->application);
             myStruct->application->refresh_drawing();
             return;
          }
