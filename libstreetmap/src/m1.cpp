@@ -706,6 +706,15 @@ bool loadMap(std::string map_streets_database_filename) {
     streetNamesAndIDs.clear();
     segmentTravelTimes.clear();
     OSMNodeByID.clear();
+    mapNames.clear();
+    OSMWayByID.clear();
+    OSMWaylengths.clear();
+    intersections.clear();
+    closedFeatures.clear();
+    lineFeatures.clear();
+    features.clear();
+    street_segments.clear();
+    
 
     populateIntersectionData();
     populateOSMWayByID();
