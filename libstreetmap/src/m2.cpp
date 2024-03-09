@@ -377,25 +377,27 @@ void findIntersections(GtkButton* /*button*/, buttonData* myStruct) {
       return;
    }
 
-   streetPair.first = firstResults[0];
-   streetPair.second = secondResults[0];
-
-   std::vector<IntersectionIdx> intersections_ = findIntersectionsOfTwoStreets(streetPair);
-   if (intersections_.size() == 0) {
-      myStruct->application->create_popup_message("No Intersections Found", "The street names provided do not intersect, check for spelling.");
-   } else {
-      for (int i = 0; i < intersections_.size(); i++) {
-         intersections[intersections_[i]].highlight = true;
-      }
-      if (intersections_.size() != 0) {
-         float x = intersections[intersections_[0]].position.x;
-         float y = intersections[intersections_[0]].position.y;
-         int zoomBoxSize = 250;
-         ezgl::renderer* g = myStruct->application->get_renderer();
-         g->set_visible_world(ezgl::rectangle({x-zoomBoxSize, y-zoomBoxSize}, {x+zoomBoxSize, y+zoomBoxSize}));
+   for (int i = 0; i < firstResults.size(); i++) {
+      for (int j = 0; j < secondResults.size(); j++) {
+         streetPair.first = firstResults[i];
+         streetPair.second = secondResults[j];
+         std::vector<IntersectionIdx> intersections_ = findIntersectionsOfTwoStreets(streetPair);
+         std::cout << "Testing " << getStreetName(firstResults[i]) << " and " << getStreetName(secondResults[j]) << std::endl;
+         if (intersections_.size() != 0) {
+            for (int k = 0; k < intersections_.size(); k++) {
+               intersections[intersections_[k]].highlight = true;
+            }
+            float x = intersections[intersections_[0]].position.x;
+            float y = intersections[intersections_[0]].position.y;
+            int zoomBoxSize = 250;
+            ezgl::renderer* g = myStruct->application->get_renderer();
+            g->set_visible_world(ezgl::rectangle({x-zoomBoxSize, y-zoomBoxSize}, {x+zoomBoxSize, y+zoomBoxSize}));
+            myStruct->application->refresh_drawing();
+            return;
+         }
       }
    }
-   myStruct->application->refresh_drawing();
+   myStruct->application->create_popup_message("No Intersections Found", "The provided streets do not intersect.");
 }
 
 void initial_setup(ezgl::application* application, bool /*new_window*/) {
