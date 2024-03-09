@@ -184,28 +184,37 @@ void populateSegmentsdata() {
         std::vector<ezgl::point2d> points_data;
 
         ezgl::point2d prev = latlon_to_pointm1(getIntersectionPosition(segment.from)); 
+        ezgl::point2d lastDrawn = prev;
         ezgl::point2d curr; 
+        ezgl::point2d end = latlon_to_pointm1(getIntersectionPosition(segment.to));
+
         std::string key = "highway";
         std::string tag = getOSMWayTagValue(segment.wayOSMID, key);
         points_data.push_back(prev);
         for(int point_index = 0; point_index < segment.numCurvePoints; point_index++){
+
             curr = latlon_to_pointm1(getStreetSegmentCurvePoint(point_index, i));
             points_data.push_back(curr);
+
             if((int)(segment.numCurvePoints/2) == point_index)
-            if(findDistanceBetweenTwoPointsxy(prev, curr) > 50 && getStreetName(segment.streetID) != "<unknown>"){
-                name_data name; 
-                name.name = getStreetName(segment.streetID);
-                name.position = findMidPoint(prev, curr);
-                name.angle = findAngle(prev, curr);
-                name.type = tag;
-                streetNames.push_back(name);
-            } 
-            prev = curr;
+
+                if(findDistanceBetweenTwoPointsxy(lastDrawn, curr) > 40 && findDistanceBetweenTwoPointsxy(end, curr) > 40 && getStreetName(segment.streetID) != "<unknown>"){
+                    if(findDistanceBetweenTwoPointsxy(prev, curr)>50){
+                    name_data name; 
+                    name.name = getStreetName(segment.streetID);
+                    name.position = findMidPoint(prev, curr);
+                    name.angle = findAngle(prev, curr);
+                    name.type = tag;
+                    streetNames.push_back(name);
+                    lastDrawn = findMidPoint(prev, curr);
+                    }
+                } 
+                prev = curr;
         }
         curr = latlon_to_pointm1(getIntersectionPosition(segment.to));
         points_data.push_back(curr);
         
-        if(findDistanceBetweenTwoPointsxy(prev, curr) > 50 && getStreetName(segment.streetID) != "<unknown>"){
+        if(findDistanceBetweenTwoPointsxy(prev, curr) > 40 && getStreetName(segment.streetID) != "<unknown>"){
             name_data name; 
             name.name = getStreetName(segment.streetID);
             name.position = findMidPoint(prev, curr);
