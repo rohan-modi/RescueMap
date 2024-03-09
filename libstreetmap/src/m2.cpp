@@ -188,7 +188,7 @@ void draw_main_canvas (ezgl::renderer *g) {
    if (darkMode) {
       // Draw a dark rectangle that covers the entire main drawing area
       ezgl::rectangle visible_world = g->get_visible_world();
-      g->set_color(60, 60, 70);
+      g->set_color(60, 60, 70); 
       g->fill_rectangle(visible_world);
    }
    

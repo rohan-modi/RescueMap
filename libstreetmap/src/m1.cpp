@@ -205,16 +205,19 @@ void populateSegmentsdata() {
                     if(findDistanceBetweenTwoPointsxy(prev, curr)>50){
                     name_data name; 
                     std::string streetName = getStreetName(segment.streetID);
+                    double angle = findAngle(prev, curr);
                     if(segment.oneWay){
-                        if(prev.x>curr.x){
+                        if(prev.x>curr.x)
+                            streetName = "< " + streetName + " <";
+                        else {
                             streetName = "> " + streetName + " >";
                         }
-                        else
-                            streetName = "< " + streetName + " <";
+                        if(angle > 90.0)
+                            angle +=180;
                     }
                     name.name = streetName;
                     name.position = findMidPoint(prev, curr);
-                    name.angle = findAngle(prev, curr);
+                    name.angle = angle;
                     name.type = tag;
                     streetNames.push_back(name);
                     lastDrawn = findMidPoint(prev, curr);
@@ -228,16 +231,20 @@ void populateSegmentsdata() {
         if(findDistanceBetweenTwoPointsxy(prev, curr) > 50 && getStreetName(segment.streetID) != "<unknown>"){
             name_data name; 
             std::string streetName = getStreetName(segment.streetID);
+            double angle = findAngle(prev, curr);
+            std::cout<<angle<<std::endl;
             if(segment.oneWay){
-                if(prev.x>curr.x){
+                if(prev.x>curr.x)
                     streetName = "< " + streetName + " <";
-                }
-                else
+                else {
                     streetName = "> " + streetName + " >";
+                }
+                if(angle > 90.0)
+                    angle +=180;
             }
             name.name = streetName;
             name.position = findMidPoint(prev, curr);
-            name.angle = findAngle(prev, curr);
+            name.angle = angle;
             name.type = tag;
             streetNames.push_back(name);
         }
@@ -262,7 +269,7 @@ ezgl::point2d findMidPoint(ezgl::point2d point1, ezgl::point2d point2){
 double findAngle(ezgl::point2d point_1, ezgl::point2d point_2){
    double x, y;
 
-   if(point_1.x < point_2.x){
+   if(point_1.y < point_2.y){
       x = point_2.x - point_1.x;
       y = point_2.y - point_1.y;
    }else{
