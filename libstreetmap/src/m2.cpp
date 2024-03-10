@@ -126,6 +126,7 @@ gboolean change_dark_switch(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::
 void fillMapDropDown(ezgl::application* application);
 double findAngle360(ezgl::point2d point_1, ezgl::point2d point_2);
 void drawPOIs(ezgl::renderer *g);
+void setWorldScale(ezgl::renderer *g);
 
 float x_from_lon(float lon);
 float y_from_lat(float lat);
@@ -176,7 +177,6 @@ void drawMap() {
    application.run(initial_setup, act_on_mouse_click, nullptr, nullptr);
 }
 
-void setWorldScale(ezgl::renderer *g);
 void draw_main_canvas (ezgl::renderer *g) {
 
    viewPortArea = g->get_visible_world().area();

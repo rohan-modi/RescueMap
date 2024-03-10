@@ -606,8 +606,8 @@ double findFeatureArea(FeatureIdx feature_id) {
 
         double latavg = 0.0;
 
-        for(int i = 0; i < points; i++){
-            latavg += getFeaturePoint(i, feature_id).latitude();
+        for(int point_index = 0; point_index < points; point_index++){
+            latavg += getFeaturePoint(point_index, feature_id).latitude();
         }
 
         latavg = latavg/points;
@@ -795,6 +795,8 @@ void populateOSMNodeByID() {
     }
 }
 
+//populates OSMWaybyID vector to associate OSM ways to OSMwayID
+//written by kevin
 void populateOSMWayByID() {
     for (int i = 0; i < getNumberOfWays(); i++) {
         OSMWayByID[(getWayByIndex(i)->id())] = getWayByIndex(i);
@@ -997,6 +999,9 @@ void populateIntersectionData() {
     mapBounds.min_lon = min_lon;
 }
 
+//populates feature vector with feature strucs based on closed, line and point features
+//finds max and min values of closed struct for speed optimization in draw
+//written by Kevin
 void populateFeatures(){
     int points; 
 
@@ -1083,6 +1088,8 @@ std::pair<double, double> latLontoCartesian(LatLon point_1, double latavg){
     return {x1,y1};
 }
 
+//converts latlon coordinates to ezgl::point2d coordinates
+//written by kevin
 ezgl::point2d latlon_to_pointm1(LatLon position){
    float x = kEarthRadiusInMeters * kDegreeToRadian * position.longitude() * cos_latavg;
    float y = kEarthRadiusInMeters * kDegreeToRadian * position.latitude();
@@ -1090,6 +1097,8 @@ ezgl::point2d latlon_to_pointm1(LatLon position){
    return(ezgl::point2d(x,y));
 }
 
+//gets OSMWay tag value from OSM id with OSMway by ID
+//written by Kevin
 std::string getOSMWayTagValue(OSMID osm_id, std::string key) {
     const OSMWay* way;
     std::pair<std::string, std::string> tagPair;
@@ -1138,12 +1147,14 @@ void populateMapNames() {
     std::sort(mapNames.begin(), mapNames.end());
 }
 
+//Finds mid point between two ezgl::point2d
+//written by Kevin
 ezgl::point2d findMidPoint(ezgl::point2d point1, ezgl::point2d point2){
    return(ezgl::point2d((point1.x+point2.x)/2,(point1.y+point2.y)/2));
 }
 
-
-
+//finds angle between x axis and line based on two ezgl::point2d
+//written by Kevin
 double findAngle(ezgl::point2d point_1, ezgl::point2d point_2){
    double x, y;
 
@@ -1164,6 +1175,8 @@ double findAngle(ezgl::point2d point_1, ezgl::point2d point_2){
    return degrees;
 }
 
+//finds distance between two ezgl::point2d
+//written by Kevin
 int findDistanceBetweenTwoPointsxy(ezgl::point2d point_1, ezgl::point2d point_2) {
     // Return the distance by the Pythagoras theorem: d = sqrt((y2 - y1)^2, (x2 - x1)^2) [m]
     return sqrt(pow(point_2.y - point_1.y, 2) + pow(point_2.x - point_1.x, 2));
