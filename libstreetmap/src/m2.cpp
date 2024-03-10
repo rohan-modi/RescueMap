@@ -583,6 +583,10 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
 
 
 void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, double x, double y) {
+   const float INTERSECTION_CLICK_PROXIMITY = 6;
+   const float POI_CLICK_PROXIMITY = 2;
+    
+
    std::cout << "Mouse clicked at (" << x << "," << y << ")\n";
 
    // Convert mouse click coordinates (xy) to LatLon to determine closest intersection
@@ -591,7 +595,7 @@ void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, doubl
    int poi_id = findClickablePOI(position);
 
    // Only highlight and display intersection if clicked within close proximity
-   if (findDistanceBetweenTwoPoints(position, getIntersectionPosition(inter_id)) < 8) {
+   if (findDistanceBetweenTwoPoints(position, getIntersectionPosition(inter_id)) < INTERSECTION_CLICK_PROXIMITY) {
       // Change the visibility of the selected intersection
       intersections[inter_id].highlight = !intersections[inter_id].highlight;
 
@@ -604,7 +608,7 @@ void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, doubl
       app->refresh_drawing();
    }
 
-   else if (findDistanceBetweenTwoPoints(position, getPOIPosition(poi_id)) < 6) {
+   else if (findDistanceBetweenTwoPoints(position, getPOIPosition(poi_id)) < POI_CLICK_PROXIMITY) {
       
       // Output intersection name information
       std::stringstream closestPOI;
