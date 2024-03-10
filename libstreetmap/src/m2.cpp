@@ -321,7 +321,6 @@ void draw_features(ezgl::renderer *g){
       }
     }
 
-
    if(viewPortArea < 10000000)
     for(int feature_index = 0; feature_index < lineFeatures.size(); feature_index++){
       for(int point_index = 1; point_index < lineFeatures[feature_index].bounds.size();point_index++){

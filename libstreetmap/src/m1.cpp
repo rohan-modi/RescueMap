@@ -133,6 +133,7 @@ std::vector<feature_data> features;
 std::vector<segment_data> street_segments;
 std::vector<std::string> mapNames;
 std::vector<name_data> streetNames;
+std::vector<ezgl::point2d> POIlocations;
 
 float cos_latavg;
 
@@ -148,6 +149,7 @@ void populateOSMWayByID();
 void initializeIntersections();
 void populateFeatures();
 void populateMapNames();
+void populatePOILocations();
 
 // ==================================== Declare helper functions ====================================
 inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2);
@@ -157,19 +159,6 @@ std::string getOSMWayTagValue(OSMID osm_id, std::string key);
 ezgl::point2d findMidPoint(ezgl::point2d point1, ezgl::point2d point2);
 double findAngle(ezgl::point2d point_1, ezgl::point2d point_2);
 int findDistanceBetweenTwoPointsxy(ezgl::point2d point_1, ezgl::point2d point_2);
-
-//Migrating M2 Functions to Load map
-
-std::vector<ezgl::point2d> POIlocations;
-
-void populatePOILocations();
-
-void populatePOILocations(){
-    for(int i = 0; i < getNumPointsOfInterest(); i++){
-        POIlocations.push_back(latlon_to_pointm1(getPOIPosition(i)));
-    }
-}
-
 
 
 // ==================================== Implementation of m1 functions ====================================
@@ -735,6 +724,7 @@ bool loadMap(std::string map_streets_database_filename) {
     lineFeatures.clear();
     features.clear();
     street_segments.clear();
+    POIlocations.clear();
     
 
     populateIntersectionData();
@@ -777,6 +767,16 @@ void closeMap() {
     streetSegments.clear();
     streetNamesAndIDs.clear();
     segmentTravelTimes.clear();
+    OSMNodeByID.clear();
+    mapNames.clear();
+    OSMWayByID.clear();
+    OSMWaylengths.clear();
+    intersections.clear();
+    closedFeatures.clear();
+    lineFeatures.clear();
+    features.clear();
+    street_segments.clear();
+    POIlocations.clear();
 
     closeOSMDatabase();
     closeStreetDatabase();
@@ -839,7 +839,7 @@ void populateSegmentsdata() {
             points_data.push_back(curr);
                 if((findDistanceBetweenTwoPointsxy(lastDrawn, curr) > 80)){
                     if((findDistanceBetweenTwoPointsxy(end, curr) > 60) && (getStreetName(segment.streetID) != "<unknown>")){
-                        if(findDistanceBetweenTwoPointsxy(prev, curr)>50){
+                        if(findDistanceBetweenTwoPointsxy(prev, curr)>30){
                         name_data name; 
                         std::string streetName = getStreetName(segment.streetID);
                         double angle = findAngle(prev, curr);
@@ -866,7 +866,7 @@ void populateSegmentsdata() {
         curr = latlon_to_pointm1(getIntersectionPosition(segment.to));
         points_data.push_back(curr);
         
-        if(findDistanceBetweenTwoPointsxy(prev, curr) > 50 && getStreetName(segment.streetID) != "<unknown>"){
+        if(findDistanceBetweenTwoPointsxy(prev, curr) > 30 && getStreetName(segment.streetID) != "<unknown>"){
             name_data name; 
             std::string streetName = getStreetName(segment.streetID);
             double angle = findAngle(prev, curr);
@@ -1067,6 +1067,12 @@ void populateFeatures(){
     std::sort(closedFeatures.begin(), closedFeatures.end());
 }
 
+void populatePOILocations(){
+    for(int i = 0; i < getNumPointsOfInterest(); i++){
+        POIlocations.push_back(latlon_to_pointm1(getPOIPosition(i)));
+    }
+}
+
 // Converts LatLon to cartesian coordinates
 // Written by Kevin and Jonathan
 std::pair<double, double> latLontoCartesian(LatLon point_1, double latavg){ 
@@ -1162,3 +1168,4 @@ int findDistanceBetweenTwoPointsxy(ezgl::point2d point_1, ezgl::point2d point_2)
     // Return the distance by the Pythagoras theorem: d = sqrt((y2 - y1)^2, (x2 - x1)^2) [m]
     return sqrt(pow(point_2.y - point_1.y, 2) + pow(point_2.x - point_1.x, 2));
 }
+
