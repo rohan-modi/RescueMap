@@ -30,7 +30,7 @@
 #include "StreetsDatabaseAPI.h"
 #include <thread>
 
-// Declare global variables
+// ==================================== Declare strucs ====================================
 
 struct Intersection_data {
    ezgl::point2d position;
@@ -89,29 +89,27 @@ struct name_data{
    double angle;
    std::string type;
 };
-
+// ==================================== Declare global variables ====================================
 extern std::vector<Intersection_data> intersections;
 extern std::vector<std::vector<int>> streetSegments;
 extern std::vector<std::pair<std::string, int>> streetNamesAndIDs;
 extern std::vector<std::vector<int>> streetSegments;
 extern Map_bounds mapBounds;
 extern std::vector<segment_data> street_segments;
-double viewPortArea;
 extern float cos_latavg;
 extern std::vector<name_data> streetNames;
-
 extern std::vector<closed_feature_data> closedFeatures;
 extern std::vector<line_feature_data> lineFeatures;
 extern std::vector<feature_data> features;
 extern std::vector<ezgl::point2d> POIlocations;
+extern std::vector<std::string> mapNames;
 int line_width;
 bool setupComplete = false;
-
-extern std::vector<std::string> mapNames;
+double viewPortArea;
 bool darkMode;
 ezgl::rectangle world;
 
-// Declare helper functions
+// ==================================== Declare Helper Functions ====================================
 void draw_main_canvas (ezgl::renderer *g);
 bool checkContains(double maxx, double minx, double maxy, double miny);
 void initializeIntersections();
@@ -130,15 +128,11 @@ void fillMapDropDown(ezgl::application* application);
 double findAngle360(ezgl::point2d point_1, ezgl::point2d point_2);
 void drawPOIs(ezgl::renderer *g);
 void setWorldScale(ezgl::renderer *g);
-
 float x_from_lon(float lon);
 float y_from_lat(float lat);
-
 float lon_from_x(float x);
 float lat_from_y(float y);
-
 POIIdx findClickablePOI(LatLon my_position);
-
 void initial_setup(ezgl::application *application, bool new_window);
 void firstTextEntered(GtkEntry* textBox, ezgl::application* application);
 void secondTextEntered(GtkEntry* textBox, ezgl::application* application);
@@ -198,6 +192,7 @@ void draw_main_canvas(ezgl::renderer *g) {
       drawPOIs(g);
 }
 
+// ==================================== Draw Functions ====================================
 // Get screen dimensions and calculate placement of scale bar
 // Draw scale bar and write text box beneath for size
 // Change colour from black to white if in dark mode
@@ -236,28 +231,17 @@ void drawScaleBar(ezgl::renderer* g) {
    g->draw_line(barPoint3, barPoint4);
 }
 
-//sets world scale based on screen and world width
-//written by kevin
-void setWorldScale(ezgl::renderer *g){
-   double factor = g->get_visible_screen().width()/g->get_visible_world().width();
-   line_width = ((factor+0.13)*10);
-   if(line_width > 11){
-      line_width = 11;
-   }
-}
-
 //draws poi from loaded data struc
 //written by kevin
 void drawPOIs(ezgl::renderer *g){
    g->set_color(ezgl::RED);
-   std::cout<<"dar"<<std::endl;
    for(int POI_index = 0; POI_index < POIlocations.size(); POI_index++){
       g->fill_arc(POIlocations[POI_index], 1, 0, 360);
       
    }
 }
 
-
+//draws all highlighted intersections
 void draw_intersections(ezgl::renderer *g){
    auto startTime = std::chrono::high_resolution_clock::now();
    g->set_color(ezgl::RED);
@@ -271,21 +255,6 @@ void draw_intersections(ezgl::renderer *g){
    auto currTime = std::chrono::high_resolution_clock::now();
    auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
    std::cout << "draw_intersections took " << wallClock.count() << " seconds" << std::endl;
-}
-
-//finds Angle from 0-360 degrees based on tow point2d
-//written by Kevin
-double findAngle360(ezgl::point2d point_1, ezgl::point2d point_2){
-   double x, y;
-      x = point_2.x - point_1.x;
-      y = point_2.y - point_1.y;
-   double radian = std::atan2(y, x);
-
-   double degrees = radian *(180/M_PI);
-   if(degrees< 0)
-      degrees += 360;
-
-   return degrees;
 }
 
 //draws streets and street names only if visible on screen
@@ -364,6 +333,34 @@ void draw_features(ezgl::renderer *g){
    auto currTime = std::chrono::high_resolution_clock::now();
    auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
    std::cout << "draw_features took " << wallClock.count() <<" seconds" << std::endl;
+}
+
+// ==================================== Helper Functions ====================================
+
+//sets world scale based on screen and world width
+//written by kevin
+void setWorldScale(ezgl::renderer *g){
+   double factor = g->get_visible_screen().width()/g->get_visible_world().width();
+   line_width = ((factor+0.13)*10);
+   if(line_width > 11){
+      line_width = 11;
+   }
+}
+
+
+//finds Angle from 0-360 degrees based on tow point2d
+//written by Kevin
+double findAngle360(ezgl::point2d point_1, ezgl::point2d point_2){
+   double x, y;
+      x = point_2.x - point_1.x;
+      y = point_2.y - point_1.y;
+   double radian = std::atan2(y, x);
+
+   double degrees = radian *(180/M_PI);
+   if(degrees< 0)
+      degrees += 360;
+
+   return degrees;
 }
 
 //checks if part of a feature of road will pass through the visible viewport
