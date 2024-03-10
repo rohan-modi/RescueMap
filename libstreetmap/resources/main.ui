@@ -311,7 +311,7 @@
                   </packing>
                 </child>
                 <child type="overlay">
-                  <!-- n-columns=4 n-rows=12 -->
+                  <!-- n-columns=4 n-rows=14 -->
                   <object class="GtkGrid" id="MainGrid">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
@@ -497,6 +497,30 @@
                         <property name="top-attach">11</property>
                         <property name="width">3</property>
                       </packing>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
                     </child>
                     <child>
                       <placeholder/>
