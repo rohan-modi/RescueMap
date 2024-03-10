@@ -179,7 +179,6 @@ void drawMap() {
 
    // Run the application
    application.run(initial_setup, act_on_mouse_click, nullptr, nullptr);
-
 }
 
 void setWorldScale(ezgl::renderer *g);
@@ -582,10 +581,16 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
 }
 
 
+// The function act_on_mouse_click determines how to respond to user input upon mouse click.
+// There are two possible responses to mouse clicks: clicking on intersection, or POI.
+// Upon clicking on screen, the function determines if the click was within proximity
+// of an intersection. If yes, it will highlight the intersection and display its name.
+// Upon clicking on screen, the function also determines if the click was within proximity
+// of a POI. If yes, it will create a pop-up message to display the POI information (name).
+// Written by Jonathan
 void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, double x, double y) {
    const float INTERSECTION_CLICK_PROXIMITY = 6;
    const float POI_CLICK_PROXIMITY = 2;
-    
 
    std::cout << "Mouse clicked at (" << x << "," << y << ")\n";
 
@@ -608,8 +613,8 @@ void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, doubl
       app->refresh_drawing();
    }
 
+   // Only create POI pop-up if clicked within close proximity
    else if (findDistanceBetweenTwoPoints(position, getPOIPosition(poi_id)) < POI_CLICK_PROXIMITY) {
-      
       // Output intersection name information
       std::stringstream closestPOI;
       closestPOI << getPOIName(poi_id);
@@ -620,10 +625,17 @@ void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, doubl
    }
 }
 
+// The function map_selection_changed is a callback function that responds to a change
+// in city map selection. The overall steps are as follows: close the current map, load
+// the new map, change the canvas coordinate system to adjust for the new map, and
+// refresh the drawing.
+// Global data structures are cleared in loadMap() and closeMap() functions in order to
+// prevent multiple city maps drawn at the same time.
+// Written by Jonathan
 void map_selection_changed(GtkComboBoxText* /*box*/, ezgl::application* application) {
    if (setupComplete) {
 
-      // Steps:
+      // STEPS:
       // closeMap
       // loadMap
       // change coordinates
@@ -655,7 +667,12 @@ void map_selection_changed(GtkComboBoxText* /*box*/, ezgl::application* applicat
    }
 }
 
-
+// The function change_dark_switch is a callback function that responds to a change in the dark mode switch.
+// Upon changing the switch, the global boolean variable darkMode is updated to reflect the new state.
+// All colour settings are already dependent on the global variable, so the only step required is to
+// refresh the drawing.
+// The function returns false to indicate that GTK should update the switch value visually.
+// Written by Jonathan
 gboolean change_dark_switch(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::application* application) {
    
    // Update darkMode global variable based on the switch being on or off
