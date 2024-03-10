@@ -499,18 +499,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="ScaleBar">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">|          |</property>
-                        <attributes>
-                          <attribute name="underline" value="True"/>
-                        </attributes>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">12</property>
-                      </packing>
+                      <placeholder/>
                     </child>
                     <child>
                       <placeholder/>

@@ -207,11 +207,24 @@ void drawScaleBar(ezgl::renderer* g) {
 
    double x = g->get_visible_world().left() + 30/factor;
    double y = g->get_visible_world().top() - 415/factor;
+   double barX1 = x - 18/factor;
+   double barX2 = x + 18/factor;
+   double barY1 = y + 7/factor;
+   double barY2 = y + 22/factor;
+   ezgl::point2d barPoint1 = {barX1, barY2};
+   ezgl::point2d barPoint2 = {barX1, barY1};
+   ezgl::point2d barPoint3 = {barX2, barY1};
+   ezgl::point2d barPoint4 = {barX2, barY2};
    ezgl::point2d drawPoint = {x, y};
    darkMode ? g->set_color(ezgl::WHITE) : g->set_color(ezgl::BLACK);
    g->set_font_size(12);
    g->set_text_rotation(0);
    g->draw_text(drawPoint, printString);
+   g->set_line_width(line_width/5);
+   g->draw_line(barPoint1, barPoint2);
+   g->draw_line(barPoint2, barPoint3);
+   g->draw_line(barPoint3, barPoint4);
+   std::cout << "Line width: " << line_width << std::endl;
 }
 
 void setWorldScale(ezgl::renderer *g){
@@ -220,23 +233,6 @@ void setWorldScale(ezgl::renderer *g){
    if(line_width > 11){
       line_width = 11;
    }
-   std::cout << "World size: " << g->get_visible_world().width() << std::endl;
-   std::cout << "Also world size: " << g->get_visible_screen().width() << std::endl;
-   std::cout << "Ratio: " << g->get_visible_screen().width()/g->get_visible_world().width() << std::endl;
-
-   int distance = 37/factor;
-   std::string distanceString = std::to_string(distance);
-   std::string printString = distanceString + "m";
-
-   double x = g->get_visible_world().left() + 30/factor;
-   double y = g->get_visible_world().top() - 415/factor;
-   ezgl::point2d drawPoint = {x, y};
-   std::cout << "Label Point: " << drawPoint.x << " " << drawPoint.y << std::endl;
-   std::cout << printString << std::endl;
-   g->set_color(ezgl::BLACK);
-   g->set_font_size(12);
-   g->set_text_rotation(0);
-   g->draw_text(drawPoint, printString);
 }
 
 void drawPOIs(ezgl::renderer *g){
