@@ -132,6 +132,9 @@ float y_from_lat(float lat);
 float lon_from_x(float x);
 float lat_from_y(float y);
 
+POIIdx findClickablePOI(LatLon my_position);
+
+
 ezgl::rectangle world;
 
 struct buttonData {
@@ -532,6 +535,11 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
             const gchar* charVersionStreet2 = foundStreet2.c_str();
             for (int k = 0; k < intersections_.size(); k++) {
                intersections[intersections_[k]].highlight = true;
+
+               // Output intersection name information
+               std::stringstream closestIntersection;
+               closestIntersection << "Selected: " << intersections[intersections_[k]].name;
+               application->update_message(closestIntersection.str());
             }
             float x = intersections[intersections_[0]].position.x;
             float y = intersections[intersections_[0]].position.y;
@@ -580,16 +588,28 @@ void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, doubl
    // Convert mouse click coordinates (xy) to LatLon to determine closest intersection
    LatLon position = LatLon(lat_from_y(y), lon_from_x(x));
    int inter_id = findClosestIntersection(position);
+   int poi_id = findClickablePOI(position);
 
    // Only highlight and display intersection if clicked within close proximity
    if (findDistanceBetweenTwoPoints(position, getIntersectionPosition(inter_id)) < 8) {
       // Change the visibility of the selected intersection
       intersections[inter_id].highlight = !intersections[inter_id].highlight;
 
-      // Output intersection name informationi
+      // Output intersection name information
       std::stringstream closestIntersection;
       closestIntersection << "Selected: " << intersections[inter_id].name;
       app->update_message(closestIntersection.str());
+
+      // Refresh map drawing
+      app->refresh_drawing();
+   }
+
+   else if (findDistanceBetweenTwoPoints(position, getPOIPosition(poi_id)) < 6) {
+      
+      // Output intersection name information
+      std::stringstream closestPOI;
+      closestPOI << getPOIName(poi_id);
+      app->create_popup_message("POI Selected", closestPOI.str().c_str());
 
       // Refresh map drawing
       app->refresh_drawing();
