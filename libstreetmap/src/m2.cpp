@@ -578,7 +578,7 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
 }
 
 void initial_setup(ezgl::application* application, bool /*new_window*/) {
-   application->update_message("MAP THING");
+   application->update_message("WELCOME TO MAPPER CD-031");
 
    GObject* firstBox = application->get_object("Street1");
    GObject* secondBox = application->get_object("Street2");
