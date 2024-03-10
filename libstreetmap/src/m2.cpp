@@ -149,6 +149,7 @@ void menuCallBack2(GtkComboBoxText* /*box*/, ezgl::application* application);
 void map_selection_changed(GtkComboBoxText* /*box*/, ezgl::application* application);
 void updateOptions(std::string boxName, std::string streetName, ezgl::application* application);
 void drawScaleBar(ezgl::renderer* g);
+bool checkContains(double maxx, double minx, double maxy, double miny);
 
 void drawMap() {
    // Set up the ezgl graphics window and hand control to it, as shown in the 
@@ -227,6 +228,8 @@ void drawScaleBar(ezgl::renderer* g) {
    std::cout << "Line width: " << line_width << std::endl;
 }
 
+//sets world scale based on screen and world width
+//written by kevin
 void setWorldScale(ezgl::renderer *g){
    double factor = g->get_visible_screen().width()/g->get_visible_world().width();
    line_width = ((factor+0.13)*10);
@@ -235,6 +238,8 @@ void setWorldScale(ezgl::renderer *g){
    }
 }
 
+//draws poi from loaded data struc
+//written by kevin
 void drawPOIs(ezgl::renderer *g){
    g->set_color(ezgl::RED);
    std::cout<<"dar"<<std::endl;
@@ -243,6 +248,7 @@ void drawPOIs(ezgl::renderer *g){
       
    }
 }
+
 
 void draw_intersections(ezgl::renderer *g){
    auto startTime = std::chrono::high_resolution_clock::now();
@@ -259,8 +265,8 @@ void draw_intersections(ezgl::renderer *g){
    std::cout << "draw_intersections took " << wallClock.count() << " seconds" << std::endl;
 }
 
-bool checkContains(double maxx, double minx, double maxy, double miny);
-
+//finds Angle from 0-360 degrees based on tow point2d
+//written by Kevin
 double findAngle360(ezgl::point2d point_1, ezgl::point2d point_2){
    double x, y;
       x = point_2.x - point_1.x;
@@ -274,7 +280,8 @@ double findAngle360(ezgl::point2d point_1, ezgl::point2d point_2){
    return degrees;
 }
 
-
+//draws streets and street names only if visible on screen
+//written by Kevin
 void draw_streets(ezgl::renderer *g){
    auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -315,18 +322,13 @@ void draw_streets(ezgl::renderer *g){
       }
    }   
 
-   // if(street_segments[segment_id].oneWay&&viewPortArea < 250000){
-   //                g->set_color(ezgl::BLACK);
-   //                g->set_font_size(9);
-   //                g->set_text_rotation(findAngle360(street_segments[segment_id].points[point_index-1],street_segments[segment_id].points[point_index]));
-   //                g->draw_text(street_segments[segment_id].points[point_index-1], ">");
-   //             }
-
    auto currTime = std::chrono::high_resolution_clock::now();
    auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
    std::cout << "draw_streets took " << wallClock.count() <<" seconds" << std::endl;
 }
 
+//draws features from preloaded data strucs with closed and line features
+//written by Kevin
 void draw_features(ezgl::renderer *g){
    auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -356,6 +358,8 @@ void draw_features(ezgl::renderer *g){
    std::cout << "draw_features took " << wallClock.count() <<" seconds" << std::endl;
 }
 
+//checks if part of a feature of road will pass through the visible viewport
+//written by Kevin
 bool checkContains(double maxx, double minx, double maxy, double miny){
    ezgl::point2d bottom_right = world.bottom_right();
    ezgl::point2d top_left = world.top_left();
@@ -383,7 +387,8 @@ bool checkContains(double maxx, double minx, double maxy, double miny){
    return false;
 }
 
-
+//sets street segment color and line width based on street type
+//written by Kevin and Jonathan
 bool set_segment_color(ezgl::renderer *g, std::string streetType){
    if(streetType == "motorway"||streetType == "motorway_link"||streetType == "trunk"||streetType == "trunk_link"){
       darkMode ? g->set_color(205, 145, 137) : g->set_color(255, 195, 187);
@@ -405,6 +410,8 @@ bool set_segment_color(ezgl::renderer *g, std::string streetType){
    return true;
 }
 
+//sets feature color based on feature enum
+//written by Kevin
 void set_feature_color(ezgl::renderer *g, int feature_id){
    g->set_line_width(1);
    switch(feature_id){
@@ -458,7 +465,8 @@ float lon_from_x(float x) {
 float lat_from_y(float y) {
    return y / kEarthRadiusInMeters / kDegreeToRadian;
 }
-
+//converts latlon coordinates to point2d
+//written by Kevin
 ezgl::point2d latlon_to_point(LatLon position) {
    float x = kEarthRadiusInMeters * kDegreeToRadian * position.longitude() * cos_latavg;
    float y = kEarthRadiusInMeters * kDegreeToRadian * position.latitude();
@@ -467,6 +475,7 @@ ezgl::point2d latlon_to_point(LatLon position) {
 }
 
 bool setupComplete = false;
+
 
 void updateOptions(std::string boxName, std::string streetName, ezgl::application* application) {
    std::vector<StreetIdx> ids = findStreetIdsFromPartialStreetName(streetName);
