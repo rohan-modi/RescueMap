@@ -1121,6 +1121,12 @@ std::string getOSMWayTagValue(OSMID osm_id, std::string key) {
     return "";
 }
 
+
+// The function populateMapNames reads the public directory containing map data
+// to determine the possible city maps available for use. The function scans the
+// directory and parses the pathnames to populate a global vector containing 
+// strings for city map names. Then, it sorts the map names in alphabetical order.
+// Written by Jonathan
 void populateMapNames() {
     std::string path = "/cad2/ece297s/public/maps/";
     

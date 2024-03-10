@@ -435,19 +435,26 @@ void set_feature_color(ezgl::renderer *g, int feature_id){
    }
 }
 
-
+// Helper function to convert longitude to x-coordinate projection
+// Written by Jonathan
 float x_from_lon(float lon) {
    return kEarthRadiusInMeters * kDegreeToRadian * lon * cos_latavg;
 }
 
+// Helper function to convert latitude to y-coordinate projection
+// Written by Jonathan
 float y_from_lat(float lat) {
    return kEarthRadiusInMeters * kDegreeToRadian * lat;
 }
 
+// Helper function to convert x-coordinate projection to longitude
+// Written by Jonathan
 float lon_from_x(float x) {
    return x / kEarthRadiusInMeters / kDegreeToRadian / cos_latavg;
 }
 
+// Helper function to convert y-coordinate projection to latitude
+// Written by Jonathan
 float lat_from_y(float y) {
    return y / kEarthRadiusInMeters / kDegreeToRadian;
 }
