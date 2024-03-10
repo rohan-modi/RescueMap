@@ -103,6 +103,7 @@ extern std::vector<name_data> streetNames;
 extern std::vector<closed_feature_data> closedFeatures;
 extern std::vector<line_feature_data> lineFeatures;
 extern std::vector<feature_data> features;
+extern std::vector<ezgl::point2d> POIlocations;
 int line_width; 
 
 extern std::vector<std::string> mapNames;
@@ -123,6 +124,7 @@ int findDistanceBetweenTwoPointsxy(ezgl::point2d point_1, ezgl::point2d point_2)
 gboolean change_dark_switch(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::application* application);
 void fillMapDropDown(ezgl::application* application);
 double findAngle360(ezgl::point2d point_1, ezgl::point2d point_2);
+void drawPOIs(ezgl::renderer *g);
 
 float x_from_lon(float lon);
 float y_from_lat(float lat);
@@ -179,8 +181,7 @@ void drawMap() {
 
 void setWorldScale(ezgl::renderer *g);
 void draw_main_canvas (ezgl::renderer *g) {
-   std::cout << world.top_left().x << std::endl;
-   std::cout << world.top_left().y << std::endl;
+
    viewPortArea = g->get_visible_world().area();
    world = g->get_visible_world();
    setWorldScale(g);
@@ -192,9 +193,14 @@ void draw_main_canvas (ezgl::renderer *g) {
       g->fill_rectangle(visible_world);
    }
    
+   
+   
+   
    draw_features(g);
    draw_streets(g);
    draw_intersections(g);
+   if(viewPortArea < 200000)
+      drawPOIs(g);
 }
 
 void setWorldScale(ezgl::renderer *g){
@@ -202,6 +208,15 @@ void setWorldScale(ezgl::renderer *g){
    line_width = ((factor+0.13)*10);
    if(line_width > 11){
       line_width = 11;
+   }
+}
+
+void drawPOIs(ezgl::renderer *g){
+   g->set_color(ezgl::RED);
+   std::cout<<"dar"<<std::endl;
+   for(int POI_index = 0; POI_index < POIlocations.size(); POI_index++){
+      g->fill_arc(POIlocations[POI_index], 1, 0, 360);
+      
    }
 }
 
@@ -263,8 +278,6 @@ void draw_streets(ezgl::renderer *g){
          for(int point_index = 1; point_index < street_segments[segment_id].points.size();point_index++){
             set_segment_color(g, street_segments[segment_id].OSMtag);
                g->draw_line(street_segments[segment_id].points[point_index-1],street_segments[segment_id].points[point_index]);
-
-               
          }
       }
    }
@@ -349,7 +362,6 @@ bool checkContains(double maxx, double minx, double maxy, double miny){
 
 
 bool set_segment_color(ezgl::renderer *g, std::string streetType){
-
    if(streetType == "motorway"||streetType == "motorway_link"||streetType == "trunk"||streetType == "trunk_link"){
       darkMode ? g->set_color(205, 145, 137) : g->set_color(255, 195, 187);
       g->set_line_width(line_width);
@@ -390,6 +402,9 @@ void set_feature_color(ezgl::renderer *g, int feature_id){
       case STREAM:
       case GLACIER:
          darkMode ? g->set_color(108, 176, 205) : g->set_color(158, 226, 255);
+         break;
+      case ISLAND:
+         darkMode ? g->set_color(60, 60, 70) : g->set_color(255, 255, 255);
          break;
       default:
          darkMode ? g->set_color(167, 167, 167) : g->set_color(217, 217, 217);

@@ -88,7 +88,12 @@ struct segment_data{
     std::string name;
     std::string OSMtag; //type of segment
 };
-
+struct name_data{
+    ezgl::point2d position;
+    std::string name;
+    double angle;
+    std::string type;
+};
 /*
 Cities:
 beijing_china
@@ -127,6 +132,7 @@ std::vector<line_feature_data> lineFeatures;
 std::vector<feature_data> features;
 std::vector<segment_data> street_segments;
 std::vector<std::string> mapNames;
+std::vector<name_data> streetNames;
 
 float cos_latavg;
 
@@ -154,145 +160,15 @@ int findDistanceBetweenTwoPointsxy(ezgl::point2d point_1, ezgl::point2d point_2)
 
 //Migrating M2 Functions to Load map
 
+std::vector<ezgl::point2d> POIlocations;
 
-struct name_data{
-    ezgl::point2d position;
-    std::string name;
-    double angle;
-    std::string type;
-};
+void populatePOILocations();
 
-std::vector<name_data> streetNames;
-
-void populateSegmentsdata() {
-    for(int i = 0; i < getNumStreets(); i++){
-        std::vector<int> row;
-        streetSegments.push_back(row);
-    }
-
-    segmentTravelTimes.resize(getNumStreetSegments());
-    
-
-    int max = getNumStreetSegments();
-    for(int i = 0; i< max; i++){
-        
-        // Get the StreetSegmentInfo struct associated with street_segment_id
-        StreetSegmentInfo segment = getStreetSegmentInfo(i);
-
-        // Compute time [s] = distance [m] / speed_limit [m/s]
-        segmentTravelTimes[i] = (findStreetSegmentLength(i) / segment.speedLimit);
-
-        streetSegments[segment.streetID].push_back(i);
-
-        std::vector<ezgl::point2d> points_data;
-
-        ezgl::point2d prev = latlon_to_pointm1(getIntersectionPosition(segment.from)); 
-        ezgl::point2d lastDrawn = prev;
-        ezgl::point2d curr; 
-        ezgl::point2d end = latlon_to_pointm1(getIntersectionPosition(segment.to));
-
-        std::string key = "highway";
-        std::string tag = getOSMWayTagValue(segment.wayOSMID, key);
-        points_data.push_back(prev);
-        for(int point_index = 0; point_index < segment.numCurvePoints; point_index++){
-
-            curr = latlon_to_pointm1(getStreetSegmentCurvePoint(point_index, i));
-            points_data.push_back(curr);
-
-            if((int)(segment.numCurvePoints/2) == point_index)
-
-                if(findDistanceBetweenTwoPointsxy(lastDrawn, curr) > 70 || findDistanceBetweenTwoPointsxy(end, curr) > 70 && getStreetName(segment.streetID) != "<unknown>"){
-                    if(findDistanceBetweenTwoPointsxy(prev, curr)>50){
-                    name_data name; 
-                    std::string streetName = getStreetName(segment.streetID);
-                    double angle = findAngle(prev, curr);
-                    if(segment.oneWay){
-                        if(prev.x>curr.x)
-                            streetName = "< " + streetName + " <";
-                        else {
-                            streetName = "> " + streetName + " >";
-                        }
-                        if(angle > 90.0)
-                            angle +=180;
-                    }
-                    name.name = streetName;
-                    name.position = findMidPoint(prev, curr);
-                    name.angle = angle;
-                    name.type = tag;
-                    streetNames.push_back(name);
-                    lastDrawn = findMidPoint(prev, curr);
-                    }
-                } 
-                prev = curr;
-        }
-        curr = latlon_to_pointm1(getIntersectionPosition(segment.to));
-        points_data.push_back(curr);
-        
-        if(findDistanceBetweenTwoPointsxy(prev, curr) > 50 && getStreetName(segment.streetID) != "<unknown>"){
-            name_data name; 
-            std::string streetName = getStreetName(segment.streetID);
-            double angle = findAngle(prev, curr);
-            std::cout<<angle<<std::endl;
-            if(segment.oneWay){
-                if(prev.x>curr.x)
-                    streetName = "< " + streetName + " <";
-                else {
-                    streetName = "> " + streetName + " >";
-                }
-                if(angle > 90.0)
-                    angle +=180;
-            }
-            name.name = streetName;
-            name.position = findMidPoint(prev, curr);
-            name.angle = angle;
-            name.type = tag;
-            streetNames.push_back(name);
-        }
-        segment_data data;
-        data.points = points_data;
-        data.oneWay = segment.oneWay;
-        data.speedLimit = segment.speedLimit;
-        data.streetID = segment.streetID;
-        data.name = getStreetName(data.streetID);
-        data.OSMtag = tag;
-        
-        street_segments.push_back(data);
+void populatePOILocations(){
+    for(int i = 0; i < getNumPointsOfInterest(); i++){
+        POIlocations.push_back(latlon_to_pointm1(getPOIPosition(i)));
     }
 }
-
-ezgl::point2d findMidPoint(ezgl::point2d point1, ezgl::point2d point2){
-   return(ezgl::point2d((point1.x+point2.x)/2,(point1.y+point2.y)/2));
-}
-
-
-
-double findAngle(ezgl::point2d point_1, ezgl::point2d point_2){
-   double x, y;
-
-   if(point_1.y < point_2.y){
-      x = point_2.x - point_1.x;
-      y = point_2.y - point_1.y;
-   }else{
-      x = point_1.x - point_2.x;
-      y = point_1.y - point_2.y;
-   }
-
-   double radian = std::atan2(y, x);
-
-   double degrees = radian *(180/M_PI);
-   if(degrees< 0)
-      degrees += 360;
-
-   return degrees;
-}
-
-int findDistanceBetweenTwoPointsxy(ezgl::point2d point_1, ezgl::point2d point_2) {
-    // Return the distance by the Pythagoras theorem: d = sqrt((y2 - y1)^2, (x2 - x1)^2) [m]
-    return sqrt(pow(point_2.y - point_1.y, 2) + pow(point_2.x - point_1.x, 2));
-}
-
-
-
 
 
 
@@ -868,6 +744,8 @@ bool loadMap(std::string map_streets_database_filename) {
     populateStreetNamesVector();
 
     populateOSMNodeByID();
+
+    populatePOILocations();
     
     populateOSMWaylengths();
     
@@ -925,45 +803,99 @@ void populateOSMWayByID() {
 
 // Written by Kevin
 // Segment loop to populate segment related data structures
-// void populateSegmentsdata() {
-//     for(int i = 0; i < getNumStreets(); i++){
-//         std::vector<int> row;
-//         streetSegments.push_back(row);
-//     }
+void populateSegmentsdata() {
+    for(int i = 0; i < getNumStreets(); i++){
+        std::vector<int> row;
+        streetSegments.push_back(row);
+    }
 
-//     segmentTravelTimes.resize(getNumStreetSegments());
+    segmentTravelTimes.resize(getNumStreetSegments());
     
 
-//     int max = getNumStreetSegments();
-//     for(int i = 0; i< max; i++){
-
-//         // Get the StreetSegmentInfo struct associated with street_segment_id
-//         StreetSegmentInfo segment = getStreetSegmentInfo(i);
-
-//         // Compute time [s] = distance [m] / speed_limit [m/s]
-//         segmentTravelTimes[i] = (findStreetSegmentLength(i) / segment.speedLimit);
-
-//         streetSegments[segment.streetID].push_back(i);
-
-//         std::vector<ezgl::point2d> points_data;
-//         points_data.push_back(latlon_to_pointm1(getIntersectionPosition(segment.from)));
-//         for(int point_index = 0; point_index < segment.numCurvePoints; point_index++){
-//             points_data.push_back(latlon_to_pointm1(getStreetSegmentCurvePoint(point_index, i)));
-//         }
-//         points_data.push_back(latlon_to_pointm1(getIntersectionPosition(segment.to)));
+    int max = getNumStreetSegments();
+    for(int i = 0; i< max; i++){
         
-//         segment_data data;
-//         data.points = points_data;
-//         data.oneWay = segment.oneWay;
-//         data.speedLimit = segment.speedLimit;
-//         data.streetID = segment.streetID;
-//         data.name = getStreetName(data.streetID);
-//         std::string key = "highway";
-//         data.OSMtag = getOSMWayTagValue(segment.wayOSMID, key);
+        // Get the StreetSegmentInfo struct associated with street_segment_id
+        StreetSegmentInfo segment = getStreetSegmentInfo(i);
+
+        // Compute time [s] = distance [m] / speed_limit [m/s]
+        segmentTravelTimes[i] = (findStreetSegmentLength(i) / segment.speedLimit);
+
+        streetSegments[segment.streetID].push_back(i);
+
+        std::vector<ezgl::point2d> points_data;
+
+        ezgl::point2d prev = latlon_to_pointm1(getIntersectionPosition(segment.from)); 
+        ezgl::point2d lastDrawn = prev;
+        ezgl::point2d curr; 
+        ezgl::point2d end = latlon_to_pointm1(getIntersectionPosition(segment.to));
+
+        std::string key = "highway";
+        std::string tag = getOSMWayTagValue(segment.wayOSMID, key);
+        points_data.push_back(prev);
+        for(int point_index = 0; point_index < segment.numCurvePoints; point_index++){
+
+            curr = latlon_to_pointm1(getStreetSegmentCurvePoint(point_index, i));
+            points_data.push_back(curr);
+                if((findDistanceBetweenTwoPointsxy(lastDrawn, curr) > 80)){
+                    if((findDistanceBetweenTwoPointsxy(end, curr) > 60) && (getStreetName(segment.streetID) != "<unknown>")){
+                        if(findDistanceBetweenTwoPointsxy(prev, curr)>50){
+                        name_data name; 
+                        std::string streetName = getStreetName(segment.streetID);
+                        double angle = findAngle(prev, curr);
+                        if(segment.oneWay){
+                            if(prev.x>curr.x)
+                                streetName = "< " + streetName + " <";
+                            else {
+                                streetName = "> " + streetName + " >";
+                            }
+                            if(angle > 90.0)
+                                angle +=180;
+                        }
+                        name.name = streetName;
+                        name.position = findMidPoint(prev, curr);
+                        name.angle = angle;
+                        name.type = tag;
+                        streetNames.push_back(name);
+                        lastDrawn = findMidPoint(prev, curr);
+                        }
+                    } 
+                }
+                prev = curr;
+        }
+        curr = latlon_to_pointm1(getIntersectionPosition(segment.to));
+        points_data.push_back(curr);
         
-//         street_segments.push_back(data);
-//     }
-// }
+        if(findDistanceBetweenTwoPointsxy(prev, curr) > 50 && getStreetName(segment.streetID) != "<unknown>"){
+            name_data name; 
+            std::string streetName = getStreetName(segment.streetID);
+            double angle = findAngle(prev, curr);
+            if(segment.oneWay){
+                if(prev.x>curr.x)
+                    streetName = "< " + streetName + " <";
+                else {
+                    streetName = "> " + streetName + " >";
+                }
+                if(angle > 90.0)
+                    angle +=180;
+            }
+            name.name = streetName;
+            name.position = findMidPoint(prev, curr);
+            name.angle = angle;
+            name.type = tag;
+            streetNames.push_back(name);
+        }
+        segment_data data;
+        data.points = points_data;
+        data.oneWay = segment.oneWay;
+        data.speedLimit = segment.speedLimit;
+        data.streetID = segment.streetID;
+        data.name = getStreetName(data.streetID);
+        data.OSMtag = tag;
+        
+        street_segments.push_back(data);
+    }
+}
 
 // Written by Kevin
 // calculates way distances through summing distance of way nodes
@@ -1024,7 +956,6 @@ void populateIntersectionData() {
     streetSegmentsOfIntersections.resize(getNumIntersections());
     intersectionsOfStreets_.resize(getNumStreets());
 
-
     double max_lat = getIntersectionPosition(0).latitude();
     double min_lat = max_lat;
     double max_lon = getIntersectionPosition(0).longitude();
@@ -1032,8 +963,6 @@ void populateIntersectionData() {
     
     std::vector<LatLon> intersectionsTemp;
     intersections.resize(getNumIntersections());
-
-
 
     for (int i = 0; i < getNumIntersections(); i++) {
 
@@ -1044,13 +973,6 @@ void populateIntersectionData() {
         min_lat = std::min(min_lat, intersectionsTemp[i].latitude());
         max_lon = std::max(max_lon, intersectionsTemp[i].longitude());
         min_lon = std::min(min_lon, intersectionsTemp[i].longitude());
-
-
-
-
-
-
-
 
         numberOfStreetSegments = getNumIntersectionStreetSegment(i);
         for (int j = 0; j < numberOfStreetSegments; j++) {
@@ -1074,37 +996,6 @@ void populateIntersectionData() {
     mapBounds.max_lon = max_lon;
     mapBounds.min_lon = min_lon;
 }
-
-
-// void initializeIntersections() {
-//    double max_lat = getIntersectionPosition(0).latitude();
-//    double min_lat = max_lat;
-//    double max_lon = getIntersectionPosition(0).longitude();
-//    double min_lon = max_lon;
-   
-//    std::vector<LatLon> intersectionsTemp;
-//    intersections.resize(getNumIntersections());
-
-//    for (int inter_id = 0; inter_id < getNumIntersections(); inter_id++) {
-//       intersectionsTemp.push_back(getIntersectionPosition(inter_id));
-//       intersections[inter_id].name = getIntersectionName(inter_id);
-
-//       max_lat = std::max(max_lat, intersectionsTemp[inter_id].latitude());
-//       min_lat = std::min(min_lat, intersectionsTemp[inter_id].latitude());
-//       max_lon = std::max(max_lon, intersectionsTemp[inter_id].longitude());
-//       min_lon = std::min(min_lon, intersectionsTemp[inter_id].longitude());
-//    }
-//    cos_latavg = cos((min_lat + max_lat) * kDegreeToRadian / 2);
-
-//    for (int inter_id = 0; inter_id < getNumIntersections(); inter_id++) {
-//        intersections[inter_id].position = latlon_to_pointm1(intersectionsTemp[inter_id]);
-//    }
-//     mapBounds.max_lat = max_lat;
-//     mapBounds.min_lat = min_lat;
-//     mapBounds.max_lon = max_lon;
-//     mapBounds.min_lon = min_lon;
-
-// }
 
 void populateFeatures(){
     int points; 
@@ -1135,9 +1026,6 @@ void populateFeatures(){
                       tempmaxy = point.y;
                   }
             }
-            
-
-            
             data.bounds = featureBoundaries;
             data.index = feature_id;
             data.maxx = tempmaxx;
@@ -1242,4 +1130,35 @@ void populateMapNames() {
 
     // Sort vector of city names for alphabetical order
     std::sort(mapNames.begin(), mapNames.end());
+}
+
+ezgl::point2d findMidPoint(ezgl::point2d point1, ezgl::point2d point2){
+   return(ezgl::point2d((point1.x+point2.x)/2,(point1.y+point2.y)/2));
+}
+
+
+
+double findAngle(ezgl::point2d point_1, ezgl::point2d point_2){
+   double x, y;
+
+   if(point_1.y < point_2.y){
+      x = point_2.x - point_1.x;
+      y = point_2.y - point_1.y;
+   }else{
+      x = point_1.x - point_2.x;
+      y = point_1.y - point_2.y;
+   }
+
+   double radian = std::atan2(y, x);
+
+   double degrees = radian *(180/M_PI);
+   if(degrees< 0)
+      degrees += 360;
+
+   return degrees;
+}
+
+int findDistanceBetweenTwoPointsxy(ezgl::point2d point_1, ezgl::point2d point_2) {
+    // Return the distance by the Pythagoras theorem: d = sqrt((y2 - y1)^2, (x2 - x1)^2) [m]
+    return sqrt(pow(point_2.y - point_1.y, 2) + pow(point_2.x - point_1.x, 2));
 }
