@@ -208,7 +208,7 @@ void drawScaleBar(ezgl::renderer* g) {
    double x = g->get_visible_world().left() + 30/factor;
    double y = g->get_visible_world().top() - 415/factor;
    ezgl::point2d drawPoint = {x, y};
-   g->set_color(ezgl::BLACK);
+   darkMode ? g->set_color(ezgl::WHITE) : g->set_color(ezgl::BLACK);
    g->set_font_size(12);
    g->set_text_rotation(0);
    g->draw_text(drawPoint, printString);
