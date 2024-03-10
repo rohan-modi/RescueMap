@@ -1,23 +1,23 @@
-/* 
- * Copyright 2024 University of Toronto
- *
- * Permission is hereby granted, to use this software and associated 
- * documentation files (the "Software") in course work at the University 
- * of Toronto, or for personal use. Other uses are prohibited, in 
- * particular the distribution of the Software either publicly or to third 
- * parties.
- *
- * The above copyright notice and this permission notice shall be included in 
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
+// /* 
+//  * Copyright 2024 University of Toronto
+//  *
+//  * Permission is hereby granted, to use this software and associated 
+//  * documentation files (the "Software") in course work at the University 
+//  * of Toronto, or for personal use. Other uses are prohibited, in 
+//  * particular the distribution of the Software either publicly or to third 
+//  * parties.
+//  *
+//  * The above copyright notice and this permission notice shall be included in 
+//  * all copies or substantial portions of the Software.
+//  *
+//  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+//  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+//  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+//  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+//  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//  * SOFTWARE.
+//  */
 
 #include <cmath>
 #include <sstream>
@@ -120,6 +120,7 @@ void draw_features(ezgl::renderer *g);
 void set_feature_color(ezgl::renderer *g, int feature_id);
 bool set_segment_color(ezgl::renderer *g, std::string streetType);
 void act_on_mouse_click(ezgl::application* app, GdkEventButton* event, double x, double y);
+void act_on_key_press(ezgl::application *application, GdkEventKey *event, char *key_name);
 int findDistanceBetweenTwoPointsxy(ezgl::point2d point_1, ezgl::point2d point_2);
 gboolean change_dark_switch(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::application* application);
 void fillMapDropDown(ezgl::application* application);
@@ -137,13 +138,6 @@ POIIdx findClickablePOI(LatLon my_position);
 
 ezgl::rectangle world;
 
-struct buttonData {
-   std::string string1;
-   std::string string2;
-   ezgl::application* application;
-   // GObject* infoBox;
-};
-
 void initial_setup(ezgl::application *application, bool new_window);
 void firstTextEntered(GtkEntry* textBox, ezgl::application* application);
 void secondTextEntered(GtkEntry* textBox, ezgl::application* application);
@@ -153,6 +147,7 @@ void menuCallBack1(GtkComboBoxText* /*box*/, ezgl::application* application);
 void menuCallBack2(GtkComboBoxText* /*box*/, ezgl::application* application);
 void map_selection_changed(GtkComboBoxText* /*box*/, ezgl::application* application);
 void updateOptions(std::string boxName, std::string streetName, ezgl::application* application);
+void drawScaleBar(ezgl::renderer* g);
 
 void drawMap() {
    // Set up the ezgl graphics window and hand control to it, as shown in the 
@@ -195,14 +190,28 @@ void draw_main_canvas (ezgl::renderer *g) {
       g->fill_rectangle(visible_world);
    }
    
-   
-   
-   
    draw_features(g);
    draw_streets(g);
    draw_intersections(g);
+   drawScaleBar(g);
    if(viewPortArea < 200000)
       drawPOIs(g);
+}
+
+void drawScaleBar(ezgl::renderer* g) {
+   double factor = g->get_visible_screen().width()/g->get_visible_world().width();
+
+   int distance = 37/factor;
+   std::string distanceString = std::to_string(distance);
+   std::string printString = distanceString + "m";
+
+   double x = g->get_visible_world().left() + 30/factor;
+   double y = g->get_visible_world().top() - 415/factor;
+   ezgl::point2d drawPoint = {x, y};
+   g->set_color(ezgl::BLACK);
+   g->set_font_size(12);
+   g->set_text_rotation(0);
+   g->draw_text(drawPoint, printString);
 }
 
 void setWorldScale(ezgl::renderer *g){
@@ -211,6 +220,23 @@ void setWorldScale(ezgl::renderer *g){
    if(line_width > 11){
       line_width = 11;
    }
+   std::cout << "World size: " << g->get_visible_world().width() << std::endl;
+   std::cout << "Also world size: " << g->get_visible_screen().width() << std::endl;
+   std::cout << "Ratio: " << g->get_visible_screen().width()/g->get_visible_world().width() << std::endl;
+
+   int distance = 37/factor;
+   std::string distanceString = std::to_string(distance);
+   std::string printString = distanceString + "m";
+
+   double x = g->get_visible_world().left() + 30/factor;
+   double y = g->get_visible_world().top() - 415/factor;
+   ezgl::point2d drawPoint = {x, y};
+   std::cout << "Label Point: " << drawPoint.x << " " << drawPoint.y << std::endl;
+   std::cout << printString << std::endl;
+   g->set_color(ezgl::BLACK);
+   g->set_font_size(12);
+   g->set_text_rotation(0);
+   g->draw_text(drawPoint, printString);
 }
 
 void drawPOIs(ezgl::renderer *g){
@@ -709,5 +735,3 @@ POIIdx findClickablePOI(LatLon my_position) {
     }
     return closestPOI;
 }
-
-
