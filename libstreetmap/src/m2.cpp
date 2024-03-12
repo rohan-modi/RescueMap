@@ -108,6 +108,7 @@ bool setupComplete = false;
 double viewPortArea;
 bool darkMode;
 ezgl::rectangle world;
+bool userMode = 0;
 
 // ==================================== Declare Helper Functions ====================================
 void draw_main_canvas (ezgl::renderer *g);
@@ -128,6 +129,8 @@ void fillMapDropDown(ezgl::application* application);
 double findAngle360(ezgl::point2d point_1, ezgl::point2d point_2);
 void drawPOIs(ezgl::renderer *g);
 void setWorldScale(ezgl::renderer *g);
+gboolean changeUserMode(GtkSwitch* /*switch*/, gboolean switch_state);
+
 float x_from_lon(float lon);
 float y_from_lat(float lat);
 float lon_from_x(float x);
@@ -143,6 +146,7 @@ void menuCallBack2(GtkComboBoxText* /*box*/, ezgl::application* application);
 void map_selection_changed(GtkComboBoxText* /*box*/, ezgl::application* application);
 void updateOptions(std::string boxName, std::string streetName, ezgl::application* application);
 void drawScaleBar(ezgl::renderer* g);
+void redrawSwitchLabels(ezgl::application* application);
 
 void drawMap() {
    // Set up the ezgl graphics window and hand control to it, as shown in the 
@@ -207,7 +211,7 @@ void drawScaleBar(ezgl::renderer* g) {
 
    // Calculate points to draw at
    double x = g->get_visible_world().left() + 30/factor;
-   double y = g->get_visible_world().top() - 415/factor;
+   double y = g->get_visible_world().bottom() + 15/factor;
    double barX1 = x - 18/factor;
    double barX2 = x + 18/factor;
    double barY1 = y + 7/factor;
@@ -627,6 +631,11 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
    GObject* dropDown2 = application->get_object("Street2Options");
    GObject* dropDown3 = application->get_object("MapSelection");
    GObject* darkSwitch = application->get_object("DarkMode");
+   GObject* modeTypeSwitch = application->get_object("ModeSwitch");
+   // GObject* modeLabelWhite = application->get_object("UserModeSwitchLabelWhite");
+   // GObject* modeLabelBlack = application->get_object("UserModeSwitchLabelBlack");
+   // GObject* darkLabelWhite = application->get_object("DarkSwitchLabelWhite");
+   // GObject* darkLabelBlack = application->get_object("DarkSwitchLabelBlack");
 
    // Connect signals
    g_signal_connect(firstBox, "activate", G_CALLBACK(firstTextEntered), application);
@@ -636,6 +645,7 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
    g_signal_connect(dropDown1, "changed", G_CALLBACK(menuCallBack1), application);
    g_signal_connect(dropDown2, "changed", G_CALLBACK(menuCallBack2), application);
    g_signal_connect(dropDown3, "changed", G_CALLBACK(map_selection_changed), application);
+   g_signal_connect(modeTypeSwitch, "state-set", G_CALLBACK(changeUserMode), NULL);
 
    // Populate dropdown menu of map names
    fillMapDropDown(application);
@@ -742,6 +752,8 @@ gboolean change_dark_switch(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::
    // Update darkMode global variable based on the switch being on or off
    darkMode = switch_state;
 
+   //redrawSwitchLabels(application);
+
    //Force a redraw to reflect the new dark mode state
    application->refresh_drawing();
 
@@ -773,3 +785,35 @@ POIIdx findClickablePOI(LatLon my_position) {
     }
     return closestPOI;
 }
+
+
+gboolean changeUserMode(GtkSwitch* /*switch*/, gboolean switch_state) {
+   userMode = switch_state;
+   std::cout << "User mode is " << userMode << std::endl;
+   return false;
+}
+
+// void redrawSwitchLabels(ezgl::application* application) {
+//    GtkWidget* whiteUserModeLabel = (GtkWidget*) application->find_widget("UserModeSwitchLabelWhite");
+//    GtkWidget* blackUserModeLabel = (GtkWidget*) application->find_widget("UserModeSwitchLabelBlack");
+//    GtkWidget* whiteDarkModeLabel = (GtkWidget*) application->find_widget("DarkSwitchLabelWhite");
+//    GtkWidget* blackDarkModeLabel = (GtkWidget*) application->find_widget("DarkSwitchLabelBlack");
+//    GtkOverlay* overlay = (GtkOverlay*) application->find_widget("MapOverlay");
+//    if (darkMode == false) {
+//       std::cout << "Dark mode on" << std::endl;
+//       gtk_overlay_reorder_overlay(overlay, whiteUserModeLabel, -1);
+//       gtk_overlay_reorder_overlay(overlay, whiteDarkModeLabel, -1);
+//       gtk_overlay_reorder_overlay(overlay, blackUserModeLabel, 1);
+//       gtk_overlay_reorder_overlay(overlay, blackDarkModeLabel, 1);
+//       gtk_overlay_reorder_overlay(overlay, whiteUserModeLabel, 0);
+//       gtk_overlay_reorder_overlay(overlay, whiteDarkModeLabel, 0);
+//    } else {
+//       std::cout << "Dark mode on" << std::endl;
+//       gtk_overlay_reorder_overlay(overlay, blackUserModeLabel, -1);
+//       gtk_overlay_reorder_overlay(overlay, blackDarkModeLabel, -1);
+//       gtk_overlay_reorder_overlay(overlay, whiteUserModeLabel, 1);
+//       gtk_overlay_reorder_overlay(overlay, whiteDarkModeLabel, 1);
+//       gtk_overlay_reorder_overlay(overlay, blackUserModeLabel, 0);
+//       gtk_overlay_reorder_overlay(overlay, blackDarkModeLabel, 0);
+//    }
+// }
