@@ -89,6 +89,18 @@ struct name_data{
    double angle;
    std::string type;
 };
+
+struct POI_data{
+    ezgl::point2d position;
+    std::string name;
+
+};
+
+struct building_data{
+    ezgl::point2d position;
+    std::string levels;
+    std::string type;
+};
 // ==================================== Declare global variables ====================================
 extern std::vector<Intersection_data> intersections;
 extern std::vector<std::vector<int>> streetSegments;
@@ -101,8 +113,11 @@ extern std::vector<name_data> streetNames;
 extern std::vector<closed_feature_data> closedFeatures;
 extern std::vector<line_feature_data> lineFeatures;
 extern std::vector<feature_data> features;
-extern std::vector<ezgl::point2d> POIlocations;
 extern std::vector<std::string> mapNames;
+extern std::vector<POI_data> fire_hydrants;
+extern std::vector<POI_data> FIREfacilities;
+extern std::vector<POI_data> EMTfacilities;
+extern std::vector<building_data> buildings;
 int line_width;
 bool setupComplete = false;
 double viewPortArea;
@@ -115,7 +130,6 @@ bool checkContains(double maxx, double minx, double maxy, double miny);
 void initializeIntersections();
 void draw_intersections(ezgl::renderer *g);
 void draw_streets(ezgl::renderer *g);
-void draw_POI(ezgl::renderer *g);
 ezgl::point2d latlon_to_point(LatLon position);
 void draw_features(ezgl::renderer *g);
 void set_feature_color(ezgl::renderer *g, int feature_id);
@@ -143,6 +157,10 @@ void menuCallBack2(GtkComboBoxText* /*box*/, ezgl::application* application);
 void map_selection_changed(GtkComboBoxText* /*box*/, ezgl::application* application);
 void updateOptions(std::string boxName, std::string streetName, ezgl::application* application);
 void drawScaleBar(ezgl::renderer* g);
+std::pair<double, std::string> findClosestFireHydrant(LatLon my_position);
+//FOR TESTING USE
+
+
 
 void drawMap() {
    // Set up the ezgl graphics window and hand control to it, as shown in the 
@@ -235,9 +253,25 @@ void drawScaleBar(ezgl::renderer* g) {
 //written by kevin
 void drawPOIs(ezgl::renderer *g){
    g->set_color(ezgl::RED);
-   for(int POI_index = 0; POI_index < POIlocations.size(); POI_index++){
-      g->fill_arc(POIlocations[POI_index], 1, 0, 360);
-      
+   if(1){
+      for(int POI_index = 0; POI_index < FIREfacilities.size(); POI_index++){
+         g->set_font_size(15);
+         g->draw_text(ezgl::point2d(FIREfacilities[POI_index].position.x,FIREfacilities[POI_index].position.y+5), FIREfacilities[POI_index].name);
+         g->fill_arc(FIREfacilities[POI_index].position, 1, 0, 360);
+      }
+
+      for(int POI_index = 0; POI_index < fire_hydrants.size(); POI_index++){
+         g->set_font_size(15);
+         g->draw_text(ezgl::point2d(fire_hydrants[POI_index].position.x,fire_hydrants[POI_index].position.y+5), fire_hydrants[POI_index].name);
+         g->fill_arc(fire_hydrants[POI_index].position, 1, 0, 360);
+         
+      }
+
+      for(int POI_index = 0; POI_index < EMTfacilities.size(); POI_index++){
+         g->set_font_size(15);
+         g->draw_text(ezgl::point2d(EMTfacilities[POI_index].position.x,EMTfacilities[POI_index].position.y+5), EMTfacilities[POI_index].name);
+         g->fill_arc(EMTfacilities[POI_index].position, 1, 0, 360);
+      }
    }
 }
 
@@ -285,7 +319,7 @@ void draw_streets(ezgl::renderer *g){
          if(checkContains(maxx, minx, maxy, miny))
          for(int point_index = 1; point_index < street_segments[segment_id].points.size();point_index++){
             set_segment_color(g, street_segments[segment_id].OSMtag);
-               g->draw_line(street_segments[segment_id].points[point_index-1],street_segments[segment_id].points[point_index]);
+            g->draw_line(street_segments[segment_id].points[point_index-1],street_segments[segment_id].points[point_index]);
          }
       }
    }
@@ -654,7 +688,7 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
 // Written by Jonathan
 void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, double x, double y) {
    const float INTERSECTION_CLICK_PROXIMITY = 6;
-   const float POI_CLICK_PROXIMITY = 2;
+   const float POI_CLICK_PROXIMITY = 10;
 
    std::cout << "Mouse clicked at (" << x << "," << y << ")\n";
 
@@ -678,11 +712,25 @@ void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, doubl
    }
 
    // Only create POI pop-up if clicked within close proximity
-   else if (findDistanceBetweenTwoPoints(position, getPOIPosition(poi_id)) < POI_CLICK_PROXIMITY) {
+   else if (findDistanceBetweenTwoPointsxy(latlon_to_point(position), buildings[poi_id].position) < POI_CLICK_PROXIMITY) {
       // Output intersection name information
       std::stringstream closestPOI;
-      closestPOI << getPOIName(poi_id);
-      app->create_popup_message("POI Selected", closestPOI.str().c_str());
+      std::string type = buildings[poi_id].type;
+      std::string levels = buildings[poi_id].levels; 
+
+      if(type == "yes"){
+         type = "Unknown";
+      }
+      if(levels == ""){
+         levels = "Unknown";
+      }
+
+      std::pair<double, std::string > fire_station = findClosestFireHydrant(position);
+      
+
+
+      closestPOI << "Type: " << type << "\n"<<"Floors: " << levels << "\n" << "Closest Fire Station: " << fire_station.second << "\n" << "Distance: "<< fire_station.first;
+      app->create_popup_message("Building Information", closestPOI.str().c_str());
 
       // Refresh map drawing
       app->refresh_drawing();
@@ -761,15 +809,30 @@ void fillMapDropDown(ezgl::application* application) {
 // Loops through all POIs and calls findDistanceBetweenTwoPoints to check its distance
 // Tracks the closest POI by POIIdx and tracks the smallest distance
 // Writen by Jonathan
+
 POIIdx findClickablePOI(LatLon my_position) {
     POIIdx closestPOI = 0;
-    double minDistance = findDistanceBetweenTwoPoints(my_position, getPOIPosition(0));
+    double minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), buildings[0].position);
 
-    for (int POI_idx = 0; POI_idx < getNumPointsOfInterest(); POI_idx++) {
-        if (findDistanceBetweenTwoPoints(my_position, getPOIPosition(POI_idx)) < minDistance) {
-            minDistance = findDistanceBetweenTwoPoints(my_position, getPOIPosition(POI_idx));
+    for (int POI_idx = 0; POI_idx < buildings.size(); POI_idx++) {
+        if (findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), buildings[POI_idx].position) < minDistance) {
+            minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), buildings[POI_idx].position);
             closestPOI = POI_idx;
         }
     }
     return closestPOI;
 }
+
+std::pair<double, std::string> findClosestFireHydrant(LatLon my_position){
+    POIIdx closestPOI = 0;
+    double minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), FIREfacilities[0].position);
+
+    for (int POI_idx = 0; POI_idx < FIREfacilities.size(); POI_idx++) {
+        if (findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), FIREfacilities[POI_idx].position) < minDistance) {
+            minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), FIREfacilities[POI_idx].position);
+            closestPOI = POI_idx;
+        }
+    }
+    return {minDistance, FIREfacilities[closestPOI].name};
+}
+

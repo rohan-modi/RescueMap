@@ -50,8 +50,10 @@ struct Intersection_data {
    bool highlight = false;
 };
 
+
 struct closed_feature_data {
     std::vector<ezgl::point2d> bounds;
+    
     std::string name;
     double area;
     int index;
@@ -94,6 +96,17 @@ struct name_data{
     double angle;
     std::string type;
 };
+
+struct POI_data{
+    ezgl::point2d position;
+    std::string name;
+};
+
+struct building_data{
+    ezgl::point2d position;
+    std::string levels;
+    std::string type;
+};
 /*
 Cities:
 beijing_china
@@ -133,7 +146,11 @@ std::vector<feature_data> features;
 std::vector<segment_data> street_segments;
 std::vector<std::string> mapNames;
 std::vector<name_data> streetNames;
-std::vector<ezgl::point2d> POIlocations;
+std::vector<POI_data> POIlocations;
+std::vector<POI_data> fire_hydrants;
+std::vector<POI_data> FIREfacilities;
+std::vector<POI_data> EMTfacilities;
+std::vector<building_data> buildings;
 
 float cos_latavg;
 
@@ -159,6 +176,104 @@ std::string getOSMWayTagValue(OSMID osm_id, std::string key);
 ezgl::point2d findMidPoint(ezgl::point2d point1, ezgl::point2d point2);
 double findAngle(ezgl::point2d point_1, ezgl::point2d point_2);
 int findDistanceBetweenTwoPointsxy(ezgl::point2d point_1, ezgl::point2d point_2);
+
+//WORKING ON ADDING LOAD MAP FEATURES======================================================================
+
+void populatePOILocations(){
+    const OSMNode* node;
+    std::pair<std::string, std::string> tagPair;
+    for(int node_index = 0; node_index < getNumberOfNodes(); node_index++){
+        
+        auto iterator = OSMNodeByID.find(getNodeByIndex(node_index)->id());
+
+        if (iterator == OSMNodeByID.end()) {
+            continue;
+        }
+
+        node = iterator->second;
+
+        for (int j = 0; j < getTagCount(node); j++) {
+            tagPair = getTagPair(node, j);
+
+             if (tagPair.first == "emergency") {
+                if(tagPair.second == "ambulance_station"|| tagPair.second == "landing_site"){
+                        std::cout<<tagPair.second<<std::endl;
+                        POI_data data;
+                        data.position = latlon_to_pointm1(getNodeCoords(node));
+                        data.name = tagPair.second;
+                        EMTfacilities.push_back(data);
+                }else if(tagPair.second == "fire_service_inlet" || tagPair.second == "fire_hydrant"){
+                        POI_data data;
+                        data.position = latlon_to_pointm1(getNodeCoords(node));
+                        data.name = tagPair.second;
+                        fire_hydrants.push_back(data);
+                }
+            }
+        }
+
+    }
+
+
+    const OSMWay* way;
+    for(int way_index = 0; way_index < getNumberOfWays(); way_index++){
+        
+        auto iterator = OSMWayByID.find(getWayByIndex(way_index)->id());
+
+        if (iterator == OSMWayByID.end()) {
+            continue;
+        }
+
+        way = iterator->second;
+
+        for (int j = 0; j < getTagCount(way); j++) {
+            tagPair = getTagPair(way, j);
+
+             if (tagPair.first == "amenity") {
+                if(tagPair.second == "fire_station"|| tagPair.second == "hospital"){
+                    std::vector<OSMID> nodes = getWayMembers(way);
+                    double tempmaxx = latlon_to_pointm1(getNodeCoords(OSMNodeByID.find(nodes[0])->second)).x;
+                    double tempminx = tempmaxx;
+                    double tempmaxy = latlon_to_pointm1(getNodeCoords(OSMNodeByID.find(nodes[0])->second)).y;
+                    double tempminy = tempmaxy;
+
+                    for(int node_iterator = 0; node_iterator < nodes.size(); node_iterator++){
+                        ezgl::point2d point = latlon_to_pointm1(getNodeCoords(OSMNodeByID.find(nodes[node_iterator])->second));
+                        if(point.x < tempminx){
+                            tempminx = point.x;
+                        }else if(point.x > tempmaxx){
+                            tempmaxx = point.x;
+                        }
+                        if(point.y < tempminy){
+                            tempminy = point.y;
+                        }else if(point.y > tempmaxy){
+                            tempmaxy = point.y;
+                        }
+                    }
+
+                    POI_data data;
+                    data.position = ezgl::point2d((tempminx+tempmaxx)/2, (tempminy+tempmaxy)/2);
+                    data.name = getOSMWayTagValue(getWayByIndex(way_index)->id(), "name");
+                    if(tagPair.second == "fire_station"){
+                        FIREfacilities.push_back(data);
+                    }else{
+                        EMTfacilities.push_back(data);
+                    }
+                }
+            }
+        }
+
+    }
+
+
+
+
+
+
+    
+    // for(int i = 0; i < getNumPointsOfInterest(); i++){
+    //     //POIlocations.push_back(latlon_to_pointm1(getPOIPosition(i)));
+    // }
+}
 
 
 // ==================================== Implementation of m1 functions ====================================
@@ -735,12 +850,13 @@ bool loadMap(std::string map_streets_database_filename) {
 
     populateOSMNodeByID();
 
-    populatePOILocations();
+    
     
     populateOSMWaylengths();
     
     populateFeatures();
 
+    populatePOILocations();
     populateMapNames();
 
     load_successful = check1 && check2; //Make sure this is updated to reflect whether
@@ -1040,6 +1156,15 @@ void populateFeatures(){
             data.area = findFeatureArea(feature_id);
             data.name = getFeatureName(feature_id);
             data.type = getFeatureType(feature_id);
+
+            if(data.type == BUILDING){
+                building_data building;
+                building.position = ezgl::point2d((tempminx+tempmaxx)/2, (tempminy+tempmaxy)/2);
+                building.type = getOSMWayTagValue(getFeatureOSMID(feature_id), "building");
+                building.levels = getOSMWayTagValue(getFeatureOSMID(feature_id), "building:levels");
+
+                buildings.push_back(building);
+            }
             
             closedFeatures.push_back(data);
             
@@ -1059,24 +1184,19 @@ void populateFeatures(){
 
             lineFeatures.push_back(data);
 
-      }
-      else{
+        }
+        else{
             feature_data data;
             data.position = latlon_to_pointm1(getFeaturePoint(0, feature_id));
             data.type = getFeatureType(feature_id);
 
             features.push_back(data);
-      }
+        }
     }
 
     std::sort(closedFeatures.begin(), closedFeatures.end());
 }
 
-void populatePOILocations(){
-    for(int i = 0; i < getNumPointsOfInterest(); i++){
-        POIlocations.push_back(latlon_to_pointm1(getPOIPosition(i)));
-    }
-}
 
 // Converts LatLon to cartesian coordinates
 // Written by Kevin and Jonathan
