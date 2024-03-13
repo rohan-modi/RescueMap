@@ -22,7 +22,7 @@
             <property name="row-homogeneous">True</property>
             <property name="column-homogeneous">True</property>
             <child>
-              <object class="GtkOverlay">
+              <object class="GtkOverlay" id="MapOverlay">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <child>
@@ -37,7 +37,7 @@
                   </packing>
                 </child>
                 <child type="overlay">
-                  <!-- n-columns=4 n-rows=12 -->
+                  <!-- n-columns=4 n-rows=15 -->
                   <object class="GtkGrid" id="DropDownGrid">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
@@ -121,20 +121,6 @@
                         <property name="left-attach">0</property>
                         <property name="top-attach">8</property>
                         <property name="width">3</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="FindIntersections1">
-                        <property name="label">gtk-find</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                        <property name="opacity">0</property>
-                        <property name="use-stock">True</property>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">9</property>
                       </packing>
                     </child>
                     <child>
@@ -237,6 +223,36 @@
                       </packing>
                     </child>
                     <child>
+                      <object class="GtkComboBoxText" id="MapSelectionSpace">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="opacity">0</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">0</property>
+                        <property name="top-attach">10</property>
+                        <property name="width">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkSwitch" id="DarkModeSwitchSpace">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="opacity">0</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">0</property>
+                        <property name="top-attach">12</property>
+                        <property name="width">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
                       <placeholder/>
                     </child>
                     <child>
@@ -311,7 +327,7 @@
                   </packing>
                 </child>
                 <child type="overlay">
-                  <!-- n-columns=4 n-rows=14 -->
+                  <!-- n-columns=4 n-rows=15 -->
                   <object class="GtkGrid" id="MainGrid">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
@@ -494,29 +510,43 @@
                       </object>
                       <packing>
                         <property name="left-attach">0</property>
+                        <property name="top-attach">12</property>
+                        <property name="width">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkSwitch" id="ModeSwitch">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">0</property>
+                        <property name="top-attach">14</property>
+                        <property name="width">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="DarkModeSwitchLabel">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="label" translatable="yes">Dark Mode:</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">0</property>
                         <property name="top-attach">11</property>
                         <property name="width">3</property>
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="ScaleBar">
+                      <object class="GtkLabel" id="UserModeSwitchLabel">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">|          |</property>
-                        <attributes>
-                          <attribute name="underline" value="True"/>
-                        </attributes>
+                        <property name="label" translatable="yes">Paramedic - Firefighter</property>
                       </object>
                       <packing>
                         <property name="left-attach">0</property>
-                        <property name="top-attach">12</property>
+                        <property name="top-attach">0</property>
                       </packing>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
                     </child>
                     <child>
                       <placeholder/>
