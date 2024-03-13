@@ -144,7 +144,7 @@ double findAngle360(ezgl::point2d point_1, ezgl::point2d point_2);
 void drawPOIs(ezgl::renderer *g);
 void setWorldScale(ezgl::renderer *g);
 gboolean changeUserMode(GtkSwitch* /*switch*/, gboolean switch_state);
-
+LatLon point_to_latlon(ezgl::point2d point);
 float x_from_lon(float lon);
 float y_from_lat(float lat);
 float lon_from_x(float x);
@@ -160,7 +160,9 @@ void menuCallBack2(GtkComboBoxText* /*box*/, ezgl::application* application);
 void map_selection_changed(GtkComboBoxText* /*box*/, ezgl::application* application);
 void updateOptions(std::string boxName, std::string streetName, ezgl::application* application);
 void drawScaleBar(ezgl::renderer* g);
-std::pair<double, std::string> findClosestFireHydrant(LatLon my_position);
+std::pair<double, std::string> findClosestFireStation(LatLon my_position);
+std::pair<double, std::string> findClosestHydrant(LatLon my_position);
+std::pair<double, std::string> findClosestHospital(LatLon my_position);
 //FOR TESTING USE
 
 
@@ -517,6 +519,15 @@ ezgl::point2d latlon_to_point(LatLon position) {
    return(ezgl::point2d(x,y));
 }
 
+LatLon point_to_latlon(ezgl::point2d point) {
+    float longitude = point.x / (kEarthRadiusInMeters * kDegreeToRadian * cos_latavg);
+    float latitude = point.y / (kEarthRadiusInMeters * kDegreeToRadian);
+
+    return LatLon(latitude, longitude);
+}
+
+
+
 // Update options displayed as suggested streets based on prefixes
 void updateOptions(std::string boxName, std::string streetName, ezgl::application* application) {
    // Get street names and initialize vector of options
@@ -734,12 +745,20 @@ void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, doubl
       if(levels == ""){
          levels = "Unknown";
       }
-
-      std::pair<double, std::string > fire_station = findClosestFireHydrant(position);
       
 
+      if(userMode){
+         std::pair<double, std::string > fire_station = findClosestFireStation(position);
+         std::pair<double, std::string > hydrant = findClosestHydrant(position);
+         closestPOI << "Type: " << type << "\n"<<"Floors: " << levels << "\n" << "Closest Fire Station: " << fire_station.second << "\n" 
+                    << "Distance: "<< fire_station.first << " m" << "\n" << "Closest Fire Hydrant: " << hydrant.first << " m" << "\n"
+                    << "Located near: " << hydrant.second;
+      }else{
+         std::pair<double, std::string > hospital = findClosestHospital(position);
+         closestPOI << "Type: " << type << "\n"<<"Floors: " << levels << "\n" << "Closest Hospital: " << hospital.second << "\n" 
+                    << "Distance: "<< hospital.first << " m";
+      }
 
-      closestPOI << "Type: " << type << "\n"<<"Floors: " << levels << "\n" << "Closest Fire Station: " << fire_station.second << "\n" << "Distance: "<< fire_station.first << " m";
       app->create_popup_message("Building Information", closestPOI.str().c_str());
 
       // Refresh map drawing
@@ -835,7 +854,7 @@ POIIdx findClickablePOI(LatLon my_position) {
     return closestPOI;
 }
 
-std::pair<double, std::string> findClosestFireHydrant(LatLon my_position){
+std::pair<double, std::string> findClosestFireStation(LatLon my_position){
     POIIdx closestPOI = 0;
     double minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), FIREfacilities[0].position);
 
@@ -846,6 +865,32 @@ std::pair<double, std::string> findClosestFireHydrant(LatLon my_position){
         }
     }
     return {minDistance, FIREfacilities[closestPOI].name};
+}
+
+std::pair<double, std::string> findClosestHydrant(LatLon my_position){
+    POIIdx closestPOI = 0;
+    double minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), fire_hydrants[0].position);
+
+    for (int POI_idx = 0; POI_idx < fire_hydrants.size(); POI_idx++) {
+        if (findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), fire_hydrants[POI_idx].position) < minDistance) {
+            minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), fire_hydrants[POI_idx].position);
+            closestPOI = POI_idx;
+        }
+    }
+    return {minDistance, getIntersectionName(findClosestIntersection(point_to_latlon(fire_hydrants[closestPOI].position)))};
+}
+
+std::pair<double, std::string> findClosestHospital(LatLon my_position){
+    POIIdx closestPOI = 0;
+    double minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), EMTfacilities[0].position);
+
+    for (int POI_idx = 0; POI_idx < EMTfacilities.size(); POI_idx++) {
+        if (findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), EMTfacilities[POI_idx].position) < minDistance) {
+            minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), EMTfacilities[POI_idx].position);
+            closestPOI = POI_idx;
+        }
+    }
+    return {minDistance, EMTfacilities[closestPOI].name};
 }
 
 

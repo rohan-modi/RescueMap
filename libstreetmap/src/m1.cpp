@@ -1162,7 +1162,6 @@ void populateFeatures(){
                 building.position = ezgl::point2d((tempminx+tempmaxx)/2, (tempminy+tempmaxy)/2);
                 building.type = getOSMWayTagValue(getFeatureOSMID(feature_id), "building");
                 building.levels = getOSMWayTagValue(getFeatureOSMID(feature_id), "building:levels");
-
                 buildings.push_back(building);
             }
             
