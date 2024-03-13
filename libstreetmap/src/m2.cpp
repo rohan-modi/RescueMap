@@ -739,7 +739,7 @@ void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, doubl
       
 
 
-      closestPOI << "Type: " << type << "\n"<<"Floors: " << levels << "\n" << "Closest Fire Station: " << fire_station.second << "\n" << "Distance: "<< fire_station.first;
+      closestPOI << "Type: " << type << "\n"<<"Floors: " << levels << "\n" << "Closest Fire Station: " << fire_station.second << "\n" << "Distance: "<< fire_station.first << " m";
       app->create_popup_message("Building Information", closestPOI.str().c_str());
 
       // Refresh map drawing
