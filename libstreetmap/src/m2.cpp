@@ -143,7 +143,7 @@ void fillMapDropDown(ezgl::application* application);
 double findAngle360(ezgl::point2d point_1, ezgl::point2d point_2);
 void drawPOIs(ezgl::renderer *g);
 void setWorldScale(ezgl::renderer *g);
-gboolean changeUserMode(GtkSwitch* /*switch*/, gboolean switch_state);
+gboolean changeUserMode(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::application* application);
 LatLon point_to_latlon(ezgl::point2d point);
 float x_from_lon(float lon);
 float y_from_lat(float lat);
@@ -259,7 +259,7 @@ void drawScaleBar(ezgl::renderer* g) {
 //written by kevin
 void drawPOIs(ezgl::renderer *g){
    g->set_color(ezgl::RED);
-   if(1){
+   if (userMode) {
       for(int POI_index = 0; POI_index < FIREfacilities.size(); POI_index++){
          g->set_font_size(15);
          g->draw_text(ezgl::point2d(FIREfacilities[POI_index].position.x,FIREfacilities[POI_index].position.y+5), FIREfacilities[POI_index].name);
@@ -272,7 +272,7 @@ void drawPOIs(ezgl::renderer *g){
          g->fill_arc(fire_hydrants[POI_index].position, 1, 0, 360);
          
       }
-
+   } else {
       for(int POI_index = 0; POI_index < EMTfacilities.size(); POI_index++){
          g->set_font_size(15);
          g->draw_text(ezgl::point2d(EMTfacilities[POI_index].position.x,EMTfacilities[POI_index].position.y+5), EMTfacilities[POI_index].name);
@@ -690,7 +690,7 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
    g_signal_connect(dropDown1, "changed", G_CALLBACK(menuCallBack1), application);
    g_signal_connect(dropDown2, "changed", G_CALLBACK(menuCallBack2), application);
    g_signal_connect(dropDown3, "changed", G_CALLBACK(map_selection_changed), application);
-   g_signal_connect(modeTypeSwitch, "state-set", G_CALLBACK(changeUserMode), NULL);
+   g_signal_connect(modeTypeSwitch, "state-set", G_CALLBACK(changeUserMode), application);
 
    // Populate dropdown menu of map names
    fillMapDropDown(application);
@@ -894,9 +894,10 @@ std::pair<double, std::string> findClosestHospital(LatLon my_position){
 }
 
 
-gboolean changeUserMode(GtkSwitch* /*switch*/, gboolean switch_state) {
+gboolean changeUserMode(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::application* application) {
    userMode = switch_state;
    std::cout << "User mode is " << userMode << std::endl;
+   application->refresh_drawing();
    return false;
 }
 
