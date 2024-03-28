@@ -40,8 +40,38 @@
 // (e.g. going from Bloor Street West to Bloor Street East) we have a turn.
 double computePathTravelTime(const double turn_penalty,
                              const std::vector<StreetSegmentIdx>& path) {
+    
+    // If empty path, then return 0 travel time
+    if (path.size() == 0) {
+        return 0.0;
+    }
 
-    return 0.0;
+    // Initialize travelTime sum and previous streetID variables.
+    // We keep track of previous streetID to determine if the streetID
+    // changes, thus indicating when a turn penalty should be applied.
+    double travelTime = 0.0;
+    StreetIdx prevStreetIdx = getStreetSegmentInfo(path[0]).streetID;
+
+    // Loop through all street segments in the given path:
+    for (int segmentNum = 0; segmentNum < path.size(); segmentNum++) {
+        
+        // Add the travel time for street segment:
+        travelTime += findStreetSegmentTravelTime(path[segmentNum]);
+
+        // Retrieve the streetID for the current segment:
+        StreetIdx currStreetIdx = getStreetSegmentInfo(path[segmentNum]).streetID;
+
+        // Add the turn penalty if the current streetID is different
+        // from the previous streetID:
+        if (currStreetIdx != prevStreetIdx) {
+            travelTime += turn_penalty;
+        }
+
+        // Update the previous streetID to the current streetID
+        prevStreetIdx = currStreetIdx;
+    }
+
+    return travelTime;
 }
 
 
@@ -58,5 +88,5 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
             const double turn_penalty,
             const std::pair<IntersectionIdx, IntersectionIdx> intersect_ids) {
 
-    return {};
+    return {0};
 }
