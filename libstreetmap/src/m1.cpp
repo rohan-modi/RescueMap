@@ -197,7 +197,6 @@ void populatePOILocations(){
 
              if (tagPair.first == "emergency") {
                 if(tagPair.second == "ambulance_station"|| tagPair.second == "landing_site"){
-                        std::cout<<tagPair.second<<std::endl;
                         POI_data data;
                         data.position = latlon_to_pointm1(getNodeCoords(node));
                         data.name = tagPair.second;
@@ -205,7 +204,7 @@ void populatePOILocations(){
                 }else if(tagPair.second == "fire_service_inlet" || tagPair.second == "fire_hydrant"){
                         POI_data data;
                         data.position = latlon_to_pointm1(getNodeCoords(node));
-                        data.name = tagPair.second;
+                        data.name = "Fire Hydrant";
                         fire_hydrants.push_back(data);
                 }
             }

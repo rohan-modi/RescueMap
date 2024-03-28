@@ -124,6 +124,7 @@ double viewPortArea;
 bool darkMode;
 ezgl::rectangle world;
 bool userMode = 0;
+int temp = 0;
 
 // ==================================== Declare Helper Functions ====================================
 void draw_main_canvas (ezgl::renderer *g);
@@ -294,7 +295,7 @@ void draw_intersections(ezgl::renderer *g){
    }
    auto currTime = std::chrono::high_resolution_clock::now();
    auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
-   std::cout << "draw_intersections took " << wallClock.count() << " seconds" << std::endl;
+   //std::cout << "draw_intersections took " << wallClock.count() << " seconds" << std::endl;
 }
 
 //draws streets and street names only if visible on screen
@@ -341,7 +342,7 @@ void draw_streets(ezgl::renderer *g){
 
    auto currTime = std::chrono::high_resolution_clock::now();
    auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
-   std::cout << "draw_streets took " << wallClock.count() <<" seconds" << std::endl;
+   //std::cout << "draw_streets took " << wallClock.count() <<" seconds" << std::endl;
 }
 
 //draws features from preloaded data strucs with closed and line features
@@ -372,7 +373,7 @@ void draw_features(ezgl::renderer *g){
     
    auto currTime = std::chrono::high_resolution_clock::now();
    auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
-   std::cout << "draw_features took " << wallClock.count() <<" seconds" << std::endl;
+   //std::cout << "draw_features took " << wallClock.count() <<" seconds" << std::endl;
 }
 
 // ==================================== Helper Functions ====================================
@@ -711,7 +712,7 @@ void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, doubl
    const float INTERSECTION_CLICK_PROXIMITY = 6;
    const float POI_CLICK_PROXIMITY = 10;
 
-   std::cout << "Mouse clicked at (" << x << "," << y << ")\n";
+   //std::cout << "Mouse clicked at (" << x << "," << y << ")\n";
 
    // Convert mouse click coordinates (xy) to LatLon to determine closest intersection
    LatLon position = LatLon(lat_from_y(y), lon_from_x(x));
@@ -725,8 +726,11 @@ void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, doubl
 
       // Output intersection name information
       std::stringstream closestIntersection;
-      closestIntersection << "Selected: " << intersections[inter_id].name;
+      closestIntersection << "intersection "<< temp << " : " << intersections[inter_id].name;
+      temp++;
       app->update_message(closestIntersection.str());
+
+      std::cout << closestIntersection.str() << std::endl;
 
       // Refresh map drawing
       app->refresh_drawing();
@@ -750,12 +754,12 @@ void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, doubl
       if(userMode){
          std::pair<double, std::string > fire_station = findClosestFireStation(position);
          std::pair<double, std::string > hydrant = findClosestHydrant(position);
-         closestPOI << "Type: " << type << "\n"<<"Floors: " << levels << "\n" << "Closest Fire Station: " << fire_station.second << "\n" 
+         closestPOI << "Type: " << type << "\n" <<"Floors: " << levels << "\n" << "Closest Fire Station: " << fire_station.second << "\n" 
                     << "Distance: "<< fire_station.first << " m" << "\n" << "Closest Fire Hydrant: " << hydrant.first << " m" << "\n"
                     << "Located near: " << hydrant.second;
       }else{
          std::pair<double, std::string > hospital = findClosestHospital(position);
-         closestPOI << "Type: " << type << "\n"<<"Floors: " << levels << "\n" << "Closest Hospital: " << hospital.second << "\n" 
+         closestPOI << "Type: " << type << "\n" <<"Floors: " << levels << "\n" << "Closest Hospital: " << hospital.second << "\n" 
                     << "Distance: "<< hospital.first << " m";
       }
 
