@@ -31,6 +31,10 @@
 #include "StreetsDatabaseAPI.h"
 #include <thread>
 
+
+// ==================================== Declare Helper Functions ====================================
+std::string getSegmentTravelDirection(IntersectionIdx inter1, IntersectionIdx inter2);
+
 // Returns the time required to travel along the path specified, in seconds.
 // The path is given as a vector of street segment ids, and this function can
 // assume the vector either forms a legal path or has size == 0. The travel
@@ -90,3 +94,49 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
 
     return {0};
 }
+
+
+// Determines the direction of travel given 2 intersection endpoints of a street segment.
+// Written by Jonathan
+std::string getSegmentTravelDirection(IntersectionIdx inter1, IntersectionIdx inter2) {
+    LatLon src = getIntersectionPosition(inter1);
+    LatLon dest = getIntersectionPosition(inter2);
+
+    // To find the distance between two points (lon1, lat1) and (lon2, lat2),
+    // it is accurate to compute lat_avg = (lat1 + lat2) / 2 [rad]
+    double lat_avg = kDegreeToRadian * (src.latitude() + dest.latitude()) / 2;
+
+    // Compute x-coordinates for src and dest
+    double x1 = kEarthRadiusInMeters * kDegreeToRadian * src.longitude() * cos(lat_avg);
+    double x2 = kEarthRadiusInMeters * kDegreeToRadian * dest.longitude() * cos(lat_avg);
+
+    // Compute y-coordinates for src and dest
+    double y1 = kEarthRadiusInMeters * kDegreeToRadian * src.latitude();
+    double y2 = kEarthRadiusInMeters * kDegreeToRadian * dest.latitude();
+    
+    // Compute inverse tangent to determine angle
+    double angle = atan((y2 - y1) / (x2 - x1));
+
+    // If x-component is negative, add pi
+    if ((x2 - x1) < 0) {
+        angle += M_PI;
+    }
+
+    // Declare direction string
+    std::string direction;
+
+    // Determine direction (North, South, East, West)
+    // Direction boundaries are split at 90 degree intervals along 45 degree diagonals
+    if ((angle > -(kDegreeToRadian * 45)) && (angle < kDegreeToRadian * 45)) {
+        direction = "east";
+    } else if ((angle > kDegreeToRadian * 45) && (angle < kDegreeToRadian * 135)) {
+        direction = "north";
+    } else if ((angle > kDegreeToRadian * 135) && (angle < kDegreeToRadian * 225)) {
+        direction = "west";
+    } else {
+        direction = "south";
+    }
+
+    return direction;
+}
+
