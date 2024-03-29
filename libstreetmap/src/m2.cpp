@@ -163,6 +163,8 @@ void drawScaleBar(ezgl::renderer* g);
 std::pair<double, std::string> findClosestFireStation(LatLon my_position);
 std::pair<double, std::string> findClosestHydrant(LatLon my_position);
 std::pair<double, std::string> findClosestHospital(LatLon my_position);
+void createHelpPopup(GtkButton* /*button*/, ezgl::application* application);
+
 //FOR TESTING USE
 
 
@@ -677,6 +679,7 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
    GObject* dropDown3 = application->get_object("MapSelection");
    GObject* darkSwitch = application->get_object("DarkMode");
    GObject* modeTypeSwitch = application->get_object("ModeSwitch");
+   GObject* helpButton = application->get_object("HelpButton");
    // GObject* modeLabelWhite = application->get_object("UserModeSwitchLabelWhite");
    // GObject* modeLabelBlack = application->get_object("UserModeSwitchLabelBlack");
    // GObject* darkLabelWhite = application->get_object("DarkSwitchLabelWhite");
@@ -691,6 +694,7 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
    g_signal_connect(dropDown2, "changed", G_CALLBACK(menuCallBack2), application);
    g_signal_connect(dropDown3, "changed", G_CALLBACK(map_selection_changed), application);
    g_signal_connect(modeTypeSwitch, "state-set", G_CALLBACK(changeUserMode), application);
+   g_signal_connect(helpButton, "clicked", G_CALLBACK(createHelpPopup), application);
 
    // Populate dropdown menu of map names
    fillMapDropDown(application);
@@ -899,6 +903,11 @@ gboolean changeUserMode(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::appl
    std::cout << "User mode is " << userMode << std::endl;
    application->refresh_drawing();
    return false;
+}
+
+void createHelpPopup(GtkButton* /*button*/, ezgl::application* application) {
+   application->create_popup_message("User Instructions", 
+   "1. Type your streets into the provided search bars.\n2. Allow the amazing autocomplete to fix your spelling\n3. Press find route and watch the amazing results");
 }
 
 // void redrawSwitchLabels(ezgl::application* application) {
