@@ -25,10 +25,7 @@
 #include "m1.h"
 #include "m2.h"
 #include "m3.h"
-<<<<<<< HEAD
-=======
 #include "m3helpers.h"
->>>>>>> 389c54c (Integrated directions with getDirections function)
 #include "ezgl/application.hpp"
 #include "ezgl/graphics.hpp"
 #include "OSMDatabaseAPI.h"
