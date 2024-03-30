@@ -24,6 +24,7 @@
 #include <chrono>
 #include "m1.h"
 #include "m2.h"
+#include "m3.h"
 #include "ezgl/application.hpp"
 #include "ezgl/graphics.hpp"
 #include "OSMDatabaseAPI.h"
@@ -36,7 +37,12 @@ struct Intersection_data {
    ezgl::point2d position;
    std::string name;
    bool highlight = false;
+   bool processed = false;
+   int reachingEdge = 0;
+   int reachingNode = 0;
+   double bestTime = 0;
 };
+
 
 struct Map_bounds {
    double max_lat;
@@ -124,7 +130,12 @@ double viewPortArea;
 bool darkMode;
 ezgl::rectangle world;
 bool userMode = 0;
-int temp = 0;
+
+
+//FOR M3
+int intersection1 = -1, intersection2 = -1;
+bool togglenav = true;
+
 
 // ==================================== Declare Helper Functions ====================================
 void draw_main_canvas (ezgl::renderer *g);
@@ -196,6 +207,11 @@ void drawMap() {
    application.run(initial_setup, act_on_mouse_click, nullptr, nullptr);
 }
 
+//TEMP
+
+//void draw_nagivation(ezgl::renderer *g, std::vector<int>)
+
+
 void draw_main_canvas(ezgl::renderer *g) {
 
    viewPortArea = g->get_visible_world().area();
@@ -207,6 +223,18 @@ void draw_main_canvas(ezgl::renderer *g) {
       ezgl::rectangle visible_world = g->get_visible_world();
       g->set_color(60, 60, 70); 
       g->fill_rectangle(visible_world);
+   }
+
+   if(intersection1 != -1 && intersection2 != -1){
+      std::vector<int> temp = findPathBetweenIntersections(0.0,std::pair<IntersectionIdx, IntersectionIdx>(intersection1, intersection2));
+      
+
+      for(int i = 0; i<temp.size(); i++){
+         intersections[temp[i]].highlight = true;
+         //std::cout<< temp[i] << std::endl;
+      }
+      intersection1 = -1;
+      intersection2 = -1;
    }
    
    draw_features(g);
@@ -724,10 +752,22 @@ void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, doubl
       // Change the visibility of the selected intersection
       intersections[inter_id].highlight = !intersections[inter_id].highlight;
 
+
+      //TEMP FOR TESTING
+      if(togglenav){
+         intersection1 = inter_id;
+         togglenav = !togglenav;
+      }else{
+         intersection2 = inter_id;
+         togglenav = !togglenav;
+      }
+
+
+
       // Output intersection name information
       std::stringstream closestIntersection;
-      closestIntersection << "intersection "<< temp << " : " << intersections[inter_id].name;
-      temp++;
+      closestIntersection << "intersection "<< inter_id << " : " << intersections[inter_id].name;
+
       app->update_message(closestIntersection.str());
 
       std::cout << closestIntersection.str() << std::endl;
