@@ -33,9 +33,12 @@
 
 
 // ==================================== Declare Helper Functions ====================================
+std::string getTravelDirections(const std::vector<StreetSegmentIdx>& path, IntersectionIdx inter_start, IntersectionIdx inter_finish);
 std::string getSegmentTravelDirection(IntersectionIdx inter1, IntersectionIdx inter2);
 std::string getIntersectionTurningDirection(StreetSegmentIdx segment1, StreetSegmentIdx segment2);
 std::vector<LatLon>findAngleReferencePoints(StreetSegmentIdx src_street_segment_id, StreetSegmentIdx dst_street_segment_id);
+std::string getRoundedDistance(double distance);
+void replaceUnknown(std::string &input);
 
 // Returns the time required to travel along the path specified, in seconds.
 // The path is given as a vector of street segment ids, and this function can
@@ -98,6 +101,124 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
 }
 
 
+// This function returns a string containing detailed travel directions for a driver.
+// This function calls several helper functions that return strings.
+// Instructions are of the following general forms:
+// -- Start at starting intersection
+// -- Turn onto a new street, continue in a direction for a given distance
+// -- Arrive at destination intersection
+// Input receives a vector of street segments to form a path, starting intersection,
+// destination intersection. Assume a valid path and valid intersection endpoints.
+// Written by Jonathan
+std::string getTravelDirections(const std::vector<StreetSegmentIdx>& path, IntersectionIdx inter_start, IntersectionIdx inter_finish) {
+
+    // Declare stringstream to contain all travel directions
+    std::stringstream directions;
+    
+    // Starting intersection
+    directions << "Start at " << getIntersectionName(inter_start) << "\n";
+
+    // Declare previous street segment and current street segment
+    StreetSegmentInfo prevSegment = getStreetSegmentInfo(path[0]);
+    StreetSegmentInfo currSegment = getStreetSegmentInfo(path[0]);
+
+    // Declare previous intersection and next intersection (relative to current street segment)
+    IntersectionIdx prevInter = inter_start;
+    IntersectionIdx nextInter;
+    if (currSegment.from == inter_start) {
+        nextInter = currSegment.to;
+        directions << "Head " << getSegmentTravelDirection(currSegment.from, currSegment.to);
+    } else {
+        nextInter = currSegment.from;
+        directions << "Head " << getSegmentTravelDirection(currSegment.to, currSegment.from);
+    }
+    directions << " on " << getStreetName(currSegment.streetID) << "\n";
+    
+    // Declare and initialize total trip distance
+    double totalDistance = 0.0;
+
+    // Loop through all street segments in the given path
+    for (int pathIdx = 1; pathIdx < path.size(); pathIdx++) {
+        
+        prevSegment = currSegment;
+        currSegment = getStreetSegmentInfo(path[pathIdx]);
+
+        prevInter = nextInter;
+        if (currSegment.from == prevInter) {
+            nextInter = currSegment.to;
+        } else {
+            nextInter = currSegment.from;
+        }
+
+        // Declare distance variable to record distance travelled along one street
+        // Initialize to the distance of the first street segment
+        double distance = findStreetSegmentLength(path[pathIdx]);
+        
+        // Determine turning action based on angle between street segments
+        double angle = findAngleBetweenStreetSegments(path[pathIdx - 1], path[pathIdx]);
+
+        // Continue straight if angle is less than 5 degrees
+        if (angle < 5 * kDegreeToRadian) {
+            directions << "Continue straight";
+        }
+        // Slight turn if angle is between 5 degrees and 70 degrees
+        else if ((angle > 5 * kDegreeToRadian) && (angle < 70 * kDegreeToRadian)) {
+            directions << "Take a slight " << getIntersectionTurningDirection(path[pathIdx - 1], path[pathIdx]);
+        }
+        // Sharp turn if angle is greater than 110 degrees
+        else if (angle > 110 * kDegreeToRadian) {
+            directions << "Take a sharp " << getIntersectionTurningDirection(path[pathIdx - 1], path[pathIdx]);
+        }
+        // Or else, apply a regular turn
+        else {
+            directions << "Turn " << getIntersectionTurningDirection(path[pathIdx - 1], path[pathIdx]);
+        }
+        directions << " onto " << getStreetName(currSegment.streetID) << ", ";
+        directions << "continue " << getSegmentTravelDirection(prevInter, nextInter) << " for ";
+
+        // Look ahead to the next street segment to determine its streetID.
+        // While it is the same streetID, keep skipping the next iteration of street segment.
+        // In other words, if consecutive street segments are part of the same street, only
+        // output 1 instruction for the travel directions.
+        while ((pathIdx + 1 < path.size()) && (getStreetSegmentInfo(path[pathIdx + 1]).streetID == currSegment.streetID)) {
+            pathIdx = pathIdx + 1;
+
+            prevSegment = currSegment;
+            currSegment = getStreetSegmentInfo(path[pathIdx]);
+
+            prevInter = nextInter;
+            if (currSegment.from == prevInter) {
+                nextInter = currSegment.to;
+            } else {
+                nextInter = currSegment.from;
+            }
+
+            // Accumulate the total distance across all street segments
+            distance += findStreetSegmentLength(path[pathIdx]);
+        }
+        
+        // Output the distance travelled along one street
+        directions << getRoundedDistance(distance) << "\n";
+        
+        // Accumulate the total distance for the trip
+        totalDistance += distance;
+    }    
+
+    // Destination intersection
+    directions << "Arrive at " << getIntersectionName(inter_finish) << "\n";
+
+    // Report total trip distance
+    directions << "Total trip distance: " << getRoundedDistance(totalDistance) << "\n";
+    
+    // Report total trip time
+    directions << "Total trip time: " << "<XXX [PLACEHOLDER] XXX>" << "\n";
+
+    // Replace <unknown> and return travel directions as a string
+    std::string output = directions.str();
+    replaceUnknown(output);
+    return output;
+}
+
 // Determines the direction of travel given 2 intersection endpoints of a street segment.
 // Returns north, south, east, or west.
 // Direction of travel is assumed to be inter1 -> inter2.
@@ -144,6 +265,7 @@ std::string getSegmentTravelDirection(IntersectionIdx inter1, IntersectionIdx in
     return direction;
 }
 
+
 // Determines the direction of turn given 2 street segments directly connected at
 // an intersection. Returns left or right.
 // This function assumes that segment1 and segment2 are connected such that one
@@ -156,20 +278,20 @@ std::string getIntersectionTurningDirection(StreetSegmentIdx segment1, StreetSeg
     LatLon point1 = referencePoints[1];
     LatLon point2 = referencePoints[2];
     
-    float lat_avg = kDegreeToRadian * (shared.latitude() + point1.latitude() + point2.latitude()) / 3;
+    double lat_avg = kDegreeToRadian * (shared.latitude() + point1.latitude() + point2.latitude()) / 3;
 
     // Compute x-coordinates
-    float x_shared = kEarthRadiusInMeters * kDegreeToRadian * shared.longitude() * cos(lat_avg);
-    float x_1 = kEarthRadiusInMeters * kDegreeToRadian * point1.longitude() * cos(lat_avg);
-    float x_2 = kEarthRadiusInMeters * kDegreeToRadian * point2.longitude() * cos(lat_avg);
+    double x_shared = kEarthRadiusInMeters * kDegreeToRadian * shared.longitude() * cos(lat_avg);
+    double x_1 = kEarthRadiusInMeters * kDegreeToRadian * point1.longitude() * cos(lat_avg);
+    double x_2 = kEarthRadiusInMeters * kDegreeToRadian * point2.longitude() * cos(lat_avg);
     
     // Compute y-coordinates for src and dest
-    float y_shared = kEarthRadiusInMeters * kDegreeToRadian * shared.latitude();
-    float y_1 = kEarthRadiusInMeters * kDegreeToRadian * point1.latitude();
-    float y_2 = kEarthRadiusInMeters * kDegreeToRadian * point2.latitude();
+    double y_shared = kEarthRadiusInMeters * kDegreeToRadian * shared.latitude();
+    double y_1 = kEarthRadiusInMeters * kDegreeToRadian * point1.latitude();
+    double y_2 = kEarthRadiusInMeters * kDegreeToRadian * point2.latitude();
 
     // Compute cross product in z-direction
-    float crossProduct = (x_shared - x_1) * (y_2 - y_shared) - (x_2 - x_shared) * (y_shared - y_1);
+    double crossProduct = (x_shared - x_1) * (y_2 - y_shared) - (x_2 - x_shared) * (y_shared - y_1);
 
     // By the right-hand rule:
     // If the z-component is positive, then the direction is left
@@ -191,7 +313,6 @@ std::string getIntersectionTurningDirection(StreetSegmentIdx segment1, StreetSeg
 // Returns the 3 sets of reference points as a vector of 3 LatLon objects.
 // This function assumes that src and dst are connected such that one
 // can drive legally by exiting src and entering dst.
-
 // Written by Jonathan
 std::vector<LatLon>findAngleReferencePoints(StreetSegmentIdx src_street_segment_id, StreetSegmentIdx dst_street_segment_id) {
 
@@ -300,4 +421,64 @@ std::vector<LatLon>findAngleReferencePoints(StreetSegmentIdx src_street_segment_
     }
 
     return {shared_point, point_1, point_2};
+}
+
+
+// Distance is given in [m]
+// Round the given distance depending on magnitude, return in string form
+// Written by Jonathan
+std::string getRoundedDistance(double distance) {
+    const int KILOMETER_TO_METER = 1000;
+
+    std::stringstream roundedDistance;
+
+    // Any value below 10 m is rounded to 10 m
+    if (distance < 0.01 * KILOMETER_TO_METER) {
+        distance = 10;
+        roundedDistance << distance << " m";        
+    }
+    // Any value less than 1 km is rounded to the nearest 10 m
+    else if (distance < KILOMETER_TO_METER) {
+        distance = std::round(distance / 10) * 10;
+        roundedDistance << distance << " m";
+    }
+    // Any value between 1 km and 100 km is rounded to the nearest 0.1 km
+    else if (distance < 100 * KILOMETER_TO_METER) {
+        distance = std::round(distance / KILOMETER_TO_METER * 10) / 10;
+        roundedDistance << distance << " km";
+    }
+    // Any value greater than 1 km is rounded to the nearest 1 km
+    else {
+        distance = std::round(distance / KILOMETER_TO_METER);
+        roundedDistance << distance << " km";
+    }
+    
+    // Return the rounded distance as a string
+    return roundedDistance.str();
+}
+
+
+// Takes in a string input passed by reference.
+// Replaces all instances of "<unknown>" with "Unnamed Road" for usability considerations.
+// Written by Jonathan
+void replaceUnknown(std::string &input) {
+    
+    // Find substring
+    std::string str_find = "<unknown>";
+
+    // Replacement substring
+    std::string str_replace = "Unnamed Road";
+
+    // Search for the first instance of "<unknown>"
+    std::size_t pos = input.find(str_find);
+
+    // Traverse the entire input string and replace all instances
+    while (pos != std::string::npos) {
+        
+        // Replace first instance of "<unknown>" with "Unnamed Road"
+        input.replace(pos, str_find.size(), str_replace);
+
+        // Search for the next instance of "<unknown>"
+        pos = input.find(str_find, pos + str_replace.size());
+    }
 }
