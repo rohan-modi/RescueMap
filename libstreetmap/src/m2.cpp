@@ -131,13 +131,13 @@ double viewPortArea;
 bool darkMode;
 ezgl::rectangle world;
 bool userMode = 0;
-std::vector<StreetSegmentIdx> highlightedSegments;
-
 
 //FOR M3
 int intersection1 = -1, intersection2 = -1;
 bool togglenav = true;
-
+std::vector<IntersectionIdx> firstIntersections;
+std::vector<IntersectionIdx> secondIntersections;
+std::vector<StreetSegmentIdx> pathSegments;
 
 // ==================================== Declare Helper Functions ====================================
 void draw_main_canvas (ezgl::renderer *g);
@@ -245,7 +245,7 @@ void draw_main_canvas(ezgl::renderer *g) {
    draw_features(g);
    draw_streets(g);
    draw_intersections(g);
-   highlightRoute(g, highlightedSegments);
+   highlightRoute(g, pathSegments);
    drawScaleBar(g);
    if (viewPortArea < MAX_VIEW_PORT_AREA) {
       drawPOIs(g);
@@ -334,9 +334,6 @@ void draw_intersections(ezgl::renderer *g){
       
       if (intersections[inter_id].highlight) {
          g->fill_arc(intersections[inter_id].position, intersectionRadius, 0, 360);
-         for (int i = 0; i < getNumIntersectionStreetSegment(inter_id); i++) {
-            highlightedSegments.push_back(getIntersectionStreetSegment(i, inter_id));
-         }
       }
    }
    auto currTime = std::chrono::high_resolution_clock::now();
@@ -736,9 +733,6 @@ void menuCallBack4(GtkComboBoxText* /*box*/, ezgl::application* application) {
    }
 }
 
-std::vector<IntersectionIdx> firstIntersections;
-std::vector<IntersectionIdx> secondIntersections;
-
 // When find button is pressed, find intersections of the streets currently entered
 // Highlight the intersections, pan and zoom to them
 void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
@@ -865,15 +859,38 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
       ezgl::renderer* g = application->get_renderer();
       g->set_visible_world(ezgl::rectangle({x-zoomBoxSize, y-zoomBoxSize}, {x+zoomBoxSize, y+zoomBoxSize}));            
       application->refresh_drawing();
-      firstIntersections.clear();
-      secondIntersections.clear();
-      firstIntersections.resize(tempFirstIntersections.size());
-      secondIntersections.resize(tempSecondIntersections.size());
-      for (int intersectionIndex = 0; intersectionIndex < tempFirstIntersections.size(); intersectionIndex++) {
-         firstIntersections[intersectionIndex] = tempFirstIntersections[intersectionIndex];
+
+      bool changeFirstVector = true;
+      bool changeSecondVector = true;
+      if (firstIntersections.size() == 1) {
+         for (int intersectionIndex = 0; intersectionIndex < tempFirstIntersections.size(); intersectionIndex++) {
+            if (tempFirstIntersections[intersectionIndex] == firstIntersections[0]) {
+               changeFirstVector = false;
+               break;
+            }
+         }
       }
-      for (int intersectionIndex = 0; intersectionIndex < tempSecondIntersections.size(); intersectionIndex++) {
-         secondIntersections[intersectionIndex] = tempSecondIntersections[intersectionIndex];
+      if (secondIntersections.size() == 1) {
+         for (int intersectionIndex = 0; intersectionIndex < tempSecondIntersections.size(); intersectionIndex++) {
+            if (tempSecondIntersections[intersectionIndex] == secondIntersections[0]) {
+               changeSecondVector = false;
+               break;
+            }
+         }
+      }
+      if (changeFirstVector) {
+         firstIntersections.clear();
+         firstIntersections.resize(tempFirstIntersections.size());
+         for (int intersectionIndex = 0; intersectionIndex < tempFirstIntersections.size(); intersectionIndex++) {
+            firstIntersections[intersectionIndex] = tempFirstIntersections[intersectionIndex];
+         }
+      }
+      if (changeSecondVector) {
+         secondIntersections.clear();
+         secondIntersections.resize(tempSecondIntersections.size());
+         for (int intersectionIndex = 0; intersectionIndex < tempSecondIntersections.size(); intersectionIndex++) {
+            secondIntersections[intersectionIndex] = tempSecondIntersections[intersectionIndex];
+         }
       }
    } else {
       if (intersection1Exists == false) {
@@ -883,20 +900,15 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
       }
       return;
    }
-   std::cout << "Vector 1:" << std::endl;
-   for (int i = 0; i < firstIntersections.size(); i++) {
-      std::cout << "\t" << firstIntersections[i] << std::endl;
-      std::cout << "\t" << getIntersectionName(firstIntersections[i]) << std::endl;
+   std::pair<IntersectionIdx, IntersectionIdx> intersectionPair(firstIntersections[0], secondIntersections[0]);
+   std::vector<StreetSegmentIdx> tempPath = findPathBetweenIntersections(15, intersectionPair);
+   pathSegments.resize(tempPath.size());
+   for (int i = 0; i < tempPath.size(); i++) {
+      pathSegments[i] = tempPath[i];
    }
-   std::cout << "Vector 2:" << std::endl;
-   for (int i = 0; i < secondIntersections.size(); i++) {
-      std::cout << "\t" << secondIntersections[i] << std::endl;
-      std::cout << "\t" << getIntersectionName(secondIntersections[i]) << std::endl;
-   }
-
-   const std::vector<StreetSegmentIdx> path = {67341, 67342, 67320, 67331, 67327, 67325, 67324, 64697, 197040, 197039, 197041, 103842, 103843, 158290, 158289, 67526, 67525, 67524, 67514, 67515, 233266, 67522, 189755, 189754, 189753, 189752, 189747, 222771, 222770, 222769, 222768, 222767, 222766, 222765, 222764, 20019, 221624, 221629, 221628, 221627, 221626, 221625, 16176, 150013, 150016, 150017, 161792, 161793, 161794, 159071, 68814, 68813, 68815, 189363, 132431, 132432, 16188, 16191, 132426, 116822, 116823, 23373, 23374, 116808, 106076, 249806, 119680, 9153, 116795, 116794, 116796, 106091, 116797, 28653, 28654, 240608, 28666, 28667, 6347, 6348, 145466, 145471, 145469, 85333, 145464, 85337, 85338, 85339, 85360, 85361, 118839, 118840, 39177, 39178, 39179, 39180, 39181, 267831, 267830, 39191, 15914, 9457, 9458, 9459, 128289};
-   std::string directions = getTravelDirections(path, 66119, 0);
+   std::string directions = getTravelDirections(pathSegments, intersectionPair.first, intersectionPair.second);
    displayDirections(application, directions);
+   application->refresh_drawing();
    //GtkWidget* window = (GtkWidget*) application->find_widget("MainWindow");
    //gtk_widget_show_all(window);
 }
@@ -1196,8 +1208,6 @@ void act_on_mouse_move(ezgl::application */*application*/, GdkEventButton */*eve
 void updateStreetTextBoxes(ezgl::application* application, IntersectionIdx intersection) {
    std::string intersectionStreets = getIntersectionName(intersection);
 
-   std::cout << "Intersection name " << intersectionStreets << std::endl;
-
    std::string street1;
    std::string street2;
 
@@ -1218,6 +1228,9 @@ void updateStreetTextBoxes(ezgl::application* application, IntersectionIdx inter
    GtkEntry* streetNameBox2 = (GtkEntry*) application->find_widget("Street2");
    const gchar* charVersionStreet2 = street2.c_str();
    gtk_entry_set_text(streetNameBox2, charVersionStreet2);
+
+   firstIntersections.clear();
+   firstIntersections.push_back(intersection);
 }
 
 void swapStreetNames(GtkButton* /*button*/, ezgl::application* application) {
@@ -1240,6 +1253,8 @@ void swapStreetNames(GtkButton* /*button*/, ezgl::application* application) {
    gtk_entry_set_text(streetNameBox2, charVersionStreet4);
    gtk_entry_set_text(streetNameBox3, charVersionStreet1);
    gtk_entry_set_text(streetNameBox4, charVersionStreet2);
+
+   firstIntersections.swap(secondIntersections);
 }
 
 void displayDirections(ezgl::application* application, std::string directions) {
