@@ -618,6 +618,14 @@ void firstTextEntered(GtkEntry* textBox, ezgl::application* application) {
    std::string streetString = text;
    updateOptions("Street1Options", streetString, application);
    //gtk_text_grab_focus_without_selecting(textBox);
+   // GtkTreeView* treeView = (GtkTreeView*) application->find_widget("StreetOptionsTree");
+   // GtkTreeModel* treeModel = gtk_tree_view_get_model(treeView);
+   // GtkTreeIter iter;
+   // gtk_tree_store_clear((GtkTreeStore*)treeModel);
+   // gtk_tree_store_append((GtkTreeStore*)treeModel, &iter, NULL);
+   // gtk_tree_store_set((GtkTreeStore*)treeModel, &iter, 0, text, -1);
+   // GtkWidget* window = (GtkWidget*) application->find_widget("MainWindow");
+   // gtk_widget_show_all(window);
 }
 
 // Get entered text from second text box, call function to update coresponding dropdown
@@ -857,8 +865,8 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
    std::cout << "Finding route from " << getIntersectionName(firstIntersections[0]) << " to " << getIntersectionName(secondIntersections[0]) << std::endl;
    std::string directions = "Turn left\n Turn right\n Go in circles\n You will never arrive\nTurn left\n Turn right\n Go in circles\n You will never arrive\nTurn left\n Turn right\n Go in circles\n You will never arrive\nTurn left\n Turn right\n Go in circles\n You will never arrive\nTurn left\n Turn right\n Go in circles\n You will never arrive\nTurn left\n Turn right\n Go in circles\n You will never arrive\nTurn left\n Turn right\n Go in circles\n You will never arrive\nTurn left\n Turn right\n Go in circles\n You will never arrive\nTurn left\n Turn right\n Go in circles\n You will never arrive\n";
    displayDirections(application, directions);
-   GtkWidget* window = (GtkWidget*) application->find_widget("MainWindow");
-   gtk_widget_show_all(window);
+   //GtkWidget* window = (GtkWidget*) application->find_widget("MainWindow");
+   //gtk_widget_show_all(window);
 }
 
 // Initialize GObjects and connect callbacks to signals
@@ -901,6 +909,10 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
    g_signal_connect(modeTypeSwitch, "state-set", G_CALLBACK(changeUserMode), application);
    g_signal_connect(helpButton, "clicked", G_CALLBACK(createHelpPopup), application);
    g_signal_connect(swapIntersectionsButton, "clicked", G_CALLBACK(swapStreetNames), application);
+
+   // GtkTreeView* treeView = (GtkTreeView*) application->find_widget("StreetOptionsTree");
+   // GtkTreeStore* store = gtk_tree_store_new(1, G_TYPE_STRING);
+   // gtk_tree_view_set_model(treeView, (GtkTreeModel*) store);
 
    // Populate dropdown menu of map names
    fillMapDropDown(application);
@@ -1116,7 +1128,7 @@ gboolean changeUserMode(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::appl
 
 void createHelpPopup(GtkButton* /*button*/, ezgl::application* application) {
    application->create_popup_message("User Instructions", 
-   "1. Type your streets into the provided search bars.\n2. Allow the amazing autocomplete to fix your spelling\n3. Press find route and watch the amazing results");
+   "1. Type your streets into the provided search bars.\n2. Allow the amazing autocomplete to fix your spelling\n3. Press find route and watch the amazing results\nTip: The map UI is optimal in full screen");
 }
 
 
@@ -1139,12 +1151,20 @@ void act_on_mouse_move(ezgl::application */*application*/, GdkEventButton */*eve
 void updateStreetTextBoxes(ezgl::application* application, IntersectionIdx intersection) {
    std::string intersectionStreets = getIntersectionName(intersection);
 
+   std::cout << "Intersection name " << intersectionStreets << std::endl;
+
    std::string street1;
    std::string street2;
 
    int splitIndex = intersectionStreets.find('&');
    street1 = intersectionStreets.substr(0, splitIndex-1);
    street2 = intersectionStreets.substr(splitIndex+2);
+
+   int occurences = std::count(intersectionStreets.begin(), intersectionStreets.end(), '&');
+   if (occurences > 1) {
+      int secondIndex = street2.find('&');
+      street2 = street2.substr(0, secondIndex-1);
+   }
 
    GtkEntry* streetNameBox1 = (GtkEntry*) application->find_widget("Street1");
    const gchar* charVersionStreet1 = street1.c_str();
