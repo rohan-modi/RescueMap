@@ -161,11 +161,8 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
         openHeap.pop();
 
         IntersectionIdx nodeId = node.nodeID;
-        std::cout<<"loop"<<std::endl;
 
         if( node.travelTime < intersections[nodeId].bestTime){
-            std::cout<< "node time:" <<node.travelTime << std::endl;
-            std::cout<< "inter time:" <<intersections[nodeId].bestTime << std::endl;
             intersections[nodeId].reachingEdge = node.edgeID;
             intersections[nodeId].reachingNode = node.reachingNodeID;
             intersections[nodeId].bestTime = node.travelTime;
@@ -196,16 +193,10 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
             intersections[newData.intersectionId].reachingNode = nodeId;
             intersections[nodeId].bestTime = time;
 
-            
-
             openHeap.push(WaveElem(newData.intersectionId, newData.streetId, nodeId,time ));
 
         }
-
-
-
     }
-    std::cout<<"noPath"<<std::endl;
     return {0};
 }
 
@@ -223,15 +214,10 @@ std::vector<StreetSegmentIdx> retracePath(int nodeId, int startingNode){
     std::vector<StreetSegmentIdx> path;
     int index = nodeId;
     while(index != startingNode &&index != 0){
-        path.push_back(intersections[index].reachingNode);
+        path.push_back(intersections[index].reachingEdge);
         index = intersections[index].reachingNode;
-        
-        std::cout<< intersections[index].reachingEdge <<std::endl;
-            
     }
-    
     return path;
-
 }
 
 
