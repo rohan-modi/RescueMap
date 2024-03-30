@@ -695,10 +695,20 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
    float y2 = 0;
 
    // Check if the current street names are valid
-   if (firstResults.size() == 0 || secondResults.size() == 0 || thirdResults.size() == 0 || fourthResults.size() == 0) {
-      application->create_popup_message("Incorrect Street Names", "There were no streets found matching the provided names");
+   if (firstResults.size() == 0) {
+      application->create_popup_message("Incorrect Street Names", "There were no streets found matching the name provided for Street 1");
+      return;
+   } else if (secondResults.size() == 0) {
+      application->create_popup_message("Incorrect Street Names", "There were no streets found matching the name provided for Street 2");
+      return;
+   } else if (thirdResults.size() == 0) {
+      application->create_popup_message("Incorrect Street Names", "There were no streets found matching the name provided for Street 3");
+      return;
+   } else if (fourthResults.size() == 0) {
+      application->create_popup_message("Incorrect Street Names", "There were no streets found matching the name provided for Street 4");
       return;
    }
+
 
    // Loop through all combinations of street names based on prefix and check for intersections
    for (int street1StringsIdx = 0; street1StringsIdx < firstResults.size(); street1StringsIdx++) {
@@ -788,7 +798,11 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
          secondIntersections[intersectionIndex] = tempSecondIntersections[intersectionIndex];
       }
    } else {
-      application->create_popup_message("No Intersections Found", "The provided streets do not intersect.");
+      if (intersection1Exists == false) {
+         application->create_popup_message("No Intersections Found", "The provided streets 1 and 2 do not intersect.");
+      } else if (intersection2Exists == false) {
+         application->create_popup_message("No Intersections Found", "The provided streets 3 and 4 do not intersect.");
+      }
       return;
    }
    std::cout << "Vector 1:" << std::endl;
