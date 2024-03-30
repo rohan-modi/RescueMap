@@ -381,6 +381,9 @@ void highlightRoute(ezgl::renderer *g, std::vector<StreetSegmentIdx> highlighted
       if(checkContains(maxx, minx, maxy, miny))
       for(int point_index = 1; point_index < street_segments[segment_id].points.size();point_index++){
          g->set_color(ezgl::BLUE);
+         if (darkMode) {
+            g->set_color(ezgl::YELLOW);
+         }
          g->draw_line(street_segments[segment_id].points[point_index-1],street_segments[segment_id].points[point_index]);
       }
    } 
