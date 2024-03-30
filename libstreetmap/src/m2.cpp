@@ -124,6 +124,7 @@ double viewPortArea;
 bool darkMode;
 ezgl::rectangle world;
 bool userMode = 0;
+std::vector<StreetSegmentIdx> highlightedSegments;
 
 // ==================================== Declare Helper Functions ====================================
 void draw_main_canvas (ezgl::renderer *g);
@@ -171,6 +172,7 @@ void createHelpPopup(GtkButton* /*button*/, ezgl::application* application);
 void act_on_mouse_move(ezgl::application */*application*/, GdkEventButton */*event*/, double x, double y);
 void updateStreetTextBoxes(ezgl::application *application, IntersectionIdx intersection);
 void swapStreetNames(GtkButton* button, ezgl::application* application);
+void highlightRoute(ezgl::renderer *g, std::vector<StreetSegmentIdx> highlightedStreetSegments);
 
 //FOR TESTING USE
 
@@ -220,6 +222,7 @@ void draw_main_canvas(ezgl::renderer *g) {
    draw_features(g);
    draw_streets(g);
    draw_intersections(g);
+   highlightRoute(g, highlightedSegments);
    drawScaleBar(g);
    if(viewPortArea < 200000)
       drawPOIs(g);
@@ -299,6 +302,9 @@ void draw_intersections(ezgl::renderer *g){
       
       if (intersections[inter_id].highlight) {
          g->fill_arc(intersections[inter_id].position, intersectionRadius, 0, 360);
+         for (int i = 0; i < getNumIntersectionStreetSegment(inter_id); i++) {
+            highlightedSegments.push_back(getIntersectionStreetSegment(i, inter_id));
+         }
       }
    }
    auto currTime = std::chrono::high_resolution_clock::now();
@@ -351,6 +357,33 @@ void draw_streets(ezgl::renderer *g){
    auto currTime = std::chrono::high_resolution_clock::now();
    auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
    std::cout << "draw_streets took " << wallClock.count() <<" seconds" << std::endl;
+}
+
+void highlightRoute(ezgl::renderer *g, std::vector<StreetSegmentIdx> highlightedStreetSegments) {
+   for(int segmentIndex = 0; segmentIndex < highlightedStreetSegments.size(); segmentIndex++){
+      int segment_id = highlightedStreetSegments[segmentIndex];
+      int points = street_segments[segment_id].points.size();
+
+      ezgl::point2d prev = street_segments[segment_id].points[0];
+      ezgl::point2d curr = street_segments[segment_id].points[points-1];
+      double minx = prev.x;
+      double maxx = curr.x;
+      double miny = prev.y;
+      double maxy = curr.y;
+      if(prev.x > curr.x){
+         minx = curr.x;
+         maxx = prev.x;
+      }
+      if(prev.y > curr.y){
+         miny = curr.y;
+         maxy = prev.y;
+      }
+      if(checkContains(maxx, minx, maxy, miny))
+      for(int point_index = 1; point_index < street_segments[segment_id].points.size();point_index++){
+         g->set_color(ezgl::BLUE);
+         g->draw_line(street_segments[segment_id].points[point_index-1],street_segments[segment_id].points[point_index]);
+      }
+   } 
 }
 
 //draws features from preloaded data strucs with closed and line features
