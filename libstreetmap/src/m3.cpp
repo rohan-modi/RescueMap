@@ -21,6 +21,8 @@
 
 #include <cmath>
 #include <sstream>
+#include <vector>
+#include <queue>
 #include <chrono>
 #include "m1.h"
 #include "m2.h"
@@ -30,6 +32,72 @@
 #include "OSMDatabaseAPI.h"
 #include "StreetsDatabaseAPI.h"
 #include <thread>
+
+extern float cos_latavg;
+
+//External structs
+struct connected_intersection_data{
+    IntersectionIdx intersectionId;
+    ezgl::point2d position;
+    StreetIdx streetId;
+    double distance;
+    double speedlimit;
+    double travel_time;
+    bool open;
+    bool closed;
+};
+
+struct Intersection_data {
+   ezgl::point2d position;
+   std::string name;
+   bool highlight = false;
+   bool processed = false;
+   int reachingEdge = 0;
+   int reachingNode = 0;
+   double bestTime = 0;
+};
+
+
+//External Globals
+extern std::vector<std::vector<connected_intersection_data>> connectedIntersections;
+extern std::vector<Intersection_data> intersections;
+
+struct WaveElem {
+    IntersectionIdx nodeID;
+    StreetSegmentIdx edgeID;
+    IntersectionIdx reachingNodeID;
+    double travelTime;
+    WaveElem(int intersection, int segment, int inter2, float time) {nodeID = intersection; edgeID = segment; reachingNodeID = inter2; travelTime = time;}
+    bool operator<(const WaveElem other) const {
+        return travelTime > other.travelTime;
+    }
+};
+
+#define NO_EDGE -1
+#define STARTING_TIME 0.0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+double findDistanceBetweenTwoPointsxym3(ezgl::point2d point_1, ezgl::point2d point_2);
+std::vector<StreetSegmentIdx> retracePath(int nodeId, int startingNode);
+ezgl::point2d latlon_to_pointm3(LatLon position);
+void resetNodes(std::vector<int> nodes);
+
 
 // Returns the time required to travel along the path specified, in seconds.
 // The path is given as a vector of street segment ids, and this function can
@@ -88,5 +156,102 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
             const double turn_penalty,
             const std::pair<IntersectionIdx, IntersectionIdx> intersect_ids) {
 
+    std::priority_queue<WaveElem> openHeap;
+    std::vector<IntersectionIdx> nodesToReset;
+
+    openHeap.push(WaveElem(intersect_ids.first, NO_EDGE, NO_EDGE, STARTING_TIME));
+    nodesToReset.push_back(intersect_ids.first);
+
+    ezgl::point2d destination= latlon_to_pointm3(getIntersectionPosition(intersect_ids.second));
+
+
+    while(!openHeap.empty()){
+        WaveElem node = openHeap.top();
+        openHeap.pop();
+
+        IntersectionIdx nodeId = node.nodeID;
+        std::cout<<"loop"<<std::endl;
+
+        if( node.travelTime < intersections[nodeId].bestTime){
+            std::cout<< "node time:" <<node.travelTime << std::endl;
+            std::cout<< "inter time:" <<intersections[nodeId].bestTime << std::endl;
+            intersections[nodeId].reachingEdge = node.edgeID;
+            intersections[nodeId].reachingNode = node.reachingNodeID;
+            intersections[nodeId].bestTime = node.travelTime;
+        }
+
+        if(nodeId == intersect_ids.second){
+
+            std::vector<StreetSegmentIdx> path = retracePath(nodeId,intersect_ids.first);
+            resetNodes(nodesToReset);
+            return path;
+        }
+
+        for(int connectedNode = 0; connectedNode < connectedIntersections[nodeId].size(); connectedNode++){
+
+            connected_intersection_data newData = connectedIntersections[nodeId][connectedNode];
+
+             //std::cout<< "inter time:" <<newData.travel_time << std::endl;
+
+            if(intersections[newData.intersectionId].processed){
+                continue;
+            }
+            nodesToReset.push_back(newData.intersectionId);
+
+            
+            double time = newData.travel_time + node.travelTime + findDistanceBetweenTwoPointsxym3(newData.position, destination);
+            intersections[newData.intersectionId].processed = true;
+            intersections[newData.intersectionId].reachingEdge = newData.streetId;
+            intersections[newData.intersectionId].reachingNode = nodeId;
+            intersections[nodeId].bestTime = time;
+
+            
+
+            openHeap.push(WaveElem(newData.intersectionId, newData.streetId, nodeId,time ));
+
+        }
+
+
+
+    }
+    std::cout<<"noPath"<<std::endl;
     return {0};
+}
+
+void resetNodes(std::vector<int> nodes){
+    for(int nodeIndex = 0; nodeIndex < nodes.size(); nodeIndex++){
+        intersections[nodes[nodeIndex]].processed = false;
+        intersections[nodes[nodeIndex]].reachingEdge = 0;
+        intersections[nodes[nodeIndex]].reachingNode = 0;
+        intersections[nodes[nodeIndex]].bestTime = 1000000000;
+    }
+}
+
+std::vector<StreetSegmentIdx> retracePath(int nodeId, int startingNode){
+
+    std::vector<StreetSegmentIdx> path;
+    int index = nodeId;
+    while(index != startingNode &&index != 0){
+        path.push_back(intersections[index].reachingNode);
+        index = intersections[index].reachingNode;
+        
+        std::cout<< intersections[index].reachingEdge <<std::endl;
+            
+    }
+    
+    return path;
+
+}
+
+
+double findDistanceBetweenTwoPointsxym3(ezgl::point2d point_1, ezgl::point2d point_2) {
+    // Return the distance by the Pythagoras theorem: d = sqrt((y2 - y1)^2, (x2 - x1)^2) [m]
+    return sqrt(pow(point_2.y - point_1.y, 2) + pow(point_2.x - point_1.x, 2));
+}
+
+ezgl::point2d latlon_to_pointm3(LatLon position){
+   float x = kEarthRadiusInMeters * kDegreeToRadian * position.longitude() * cos_latavg;
+   float y = kEarthRadiusInMeters * kDegreeToRadian * position.latitude();
+
+   return(ezgl::point2d(x,y));
 }
