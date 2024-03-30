@@ -42,34 +42,6 @@
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <child>
-                      <object class="GtkButton" id="ZoomInButton1">
-                        <property name="label" translatable="yes">Zoom In</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                        <property name="opacity">0</property>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">3</property>
-                        <property name="width">3</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="ZoomOutButton1">
-                        <property name="label" translatable="yes">Zoom Out</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                        <property name="opacity">0</property>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">4</property>
-                        <property name="width">3</property>
-                      </packing>
-                    </child>
-                    <child>
                       <object class="GtkButton" id="ZoomFitButton1">
                         <property name="label" translatable="yes">Zoom Fit</property>
                         <property name="visible">True</property>
@@ -98,7 +70,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="Street3">
+                      <object class="GtkEntry" id="Street5">
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="opacity">0</property>
@@ -111,7 +83,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="Street4">
+                      <object class="GtkEntry" id="Street6">
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="opacity">0</property>
@@ -131,7 +103,7 @@
                       </object>
                       <packing>
                         <property name="left-attach">0</property>
-                        <property name="top-attach">8</property>
+                        <property name="top-attach">4</property>
                         <property name="width">3</property>
                       </packing>
                     </child>
@@ -143,7 +115,7 @@
                       </object>
                       <packing>
                         <property name="left-attach">0</property>
-                        <property name="top-attach">9</property>
+                        <property name="top-attach">5</property>
                         <property name="width">3</property>
                       </packing>
                     </child>
@@ -245,6 +217,52 @@
                         <property name="top-attach">12</property>
                         <property name="width">3</property>
                       </packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBoxText" id="Street3Options">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="opacity">0</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">0</property>
+                        <property name="top-attach">6</property>
+                        <property name="width">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBoxText" id="Street4Options">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="opacity">0</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">0</property>
+                        <property name="top-attach">7</property>
+                        <property name="width">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEntry">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="opacity">0</property>
+                        <property name="placeholder-text" translatable="yes">Street 1</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">0</property>
+                        <property name="top-attach">3</property>
+                        <property name="width">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
                     </child>
                     <child>
                       <placeholder/>
@@ -351,7 +369,7 @@
                   </packing>
                 </child>
                 <child type="overlay">
-                  <!-- n-columns=4 n-rows=16 -->
+                  <!-- n-columns=4 n-rows=17 -->
                   <object class="GtkGrid" id="MainGrid">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
@@ -427,32 +445,6 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="ZoomInButton">
-                        <property name="label" translatable="yes">Zoom In</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">3</property>
-                        <property name="width">3</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="ZoomOutButton">
-                        <property name="label" translatable="yes">Zoom Out</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">4</property>
-                        <property name="width">3</property>
-                      </packing>
-                    </child>
-                    <child>
                       <object class="GtkButton" id="ZoomFitButton">
                         <property name="label" translatable="yes">Zoom Fit</property>
                         <property name="visible">True</property>
@@ -461,7 +453,7 @@
                       </object>
                       <packing>
                         <property name="left-attach">0</property>
-                        <property name="top-attach">5</property>
+                        <property name="top-attach">8</property>
                         <property name="width">3</property>
                       </packing>
                     </child>
@@ -474,45 +466,32 @@
                       </object>
                       <packing>
                         <property name="left-attach">0</property>
+                        <property name="top-attach">9</property>
+                        <property name="width">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="Street4">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="placeholder-text" translatable="yes">Street 4</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">0</property>
                         <property name="top-attach">6</property>
                         <property name="width">3</property>
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="Street1">
+                      <object class="GtkButton" id="FindIntersections">
+                        <property name="label">Find Route</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
-                        <property name="placeholder-text" translatable="yes">Street 1</property>
+                        <property name="receives-default">True</property>
                       </object>
                       <packing>
                         <property name="left-attach">0</property>
                         <property name="top-attach">7</property>
-                        <property name="width">3</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkEntry" id="Street2">
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="placeholder-text" translatable="yes">Street 2</property>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">8</property>
-                        <property name="width">3</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="FindIntersections">
-                        <property name="label">gtk-find</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                        <property name="use-stock">True</property>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">9</property>
                         <property name="width">3</property>
                       </packing>
                     </child>
@@ -585,6 +564,54 @@
                         <property name="top-attach">15</property>
                         <property name="width">3</property>
                       </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="Street3">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="placeholder-text" translatable="yes">Street 3</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">0</property>
+                        <property name="top-attach">5</property>
+                        <property name="width">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="Street2">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="placeholder-text" translatable="yes">Street 2</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">0</property>
+                        <property name="top-attach">4</property>
+                        <property name="width">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="Street1">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="placeholder-text" translatable="yes">Street 1</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">0</property>
+                        <property name="top-attach">3</property>
+                        <property name="width">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
                     </child>
                     <child>
                       <placeholder/>
