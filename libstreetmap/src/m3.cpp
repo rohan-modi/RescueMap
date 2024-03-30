@@ -281,7 +281,7 @@ std::string getTravelDirections(const std::vector<StreetSegmentIdx>& path, Inter
     directions << " on " << getStreetName(currSegment.streetID) << "\n";
     
     // Declare and initialize total trip distance
-    double totalDistance = 0.0;
+    double totalDistance = findStreetSegmentLength(path[0]);
 
     // Loop through all street segments in the given path
     for (int pathIdx = 1; pathIdx < path.size(); pathIdx++) {
@@ -303,23 +303,23 @@ std::string getTravelDirections(const std::vector<StreetSegmentIdx>& path, Inter
         // Determine turning action based on angle between street segments
         double angle = findAngleBetweenStreetSegments(path[pathIdx - 1], path[pathIdx]);
 
-        // Continue straight if angle is less than 5 degrees
-        if (angle < 5 * kDegreeToRadian) {
-            directions << "Continue straight";
+        // Continue straight if angle is less than 8 degrees
+        if (angle < 8 * kDegreeToRadian) {
+            directions << "Continue straight on ";
         }
-        // Slight turn if angle is between 5 degrees and 70 degrees
-        else if ((angle > 5 * kDegreeToRadian) && (angle < 70 * kDegreeToRadian)) {
-            directions << "Take a slight " << getIntersectionTurningDirection(path[pathIdx - 1], path[pathIdx]);
+        // Slight turn if angle is between 8 degrees and 70 degrees
+        else if ((angle > 8 * kDegreeToRadian) && (angle < 70 * kDegreeToRadian)) {
+            directions << "Take a slight " << getIntersectionTurningDirection(path[pathIdx - 1], path[pathIdx]) << " onto ";
         }
         // Sharp turn if angle is greater than 110 degrees
         else if (angle > 110 * kDegreeToRadian) {
-            directions << "Take a sharp " << getIntersectionTurningDirection(path[pathIdx - 1], path[pathIdx]);
+            directions << "Take a sharp " << getIntersectionTurningDirection(path[pathIdx - 1], path[pathIdx]) << " onto ";
         }
         // Or else, apply a regular turn
         else {
-            directions << "Turn " << getIntersectionTurningDirection(path[pathIdx - 1], path[pathIdx]);
+            directions << "Turn " << getIntersectionTurningDirection(path[pathIdx - 1], path[pathIdx]) << " onto ";
         }
-        directions << " onto " << getStreetName(currSegment.streetID) << ", ";
+        directions << getStreetName(currSegment.streetID) << ", ";
         directions << "continue " << getSegmentTravelDirection(prevInter, nextInter) << " for ";
 
         // Look ahead to the next street segment to determine its streetID.
