@@ -70,7 +70,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="Street3">
+                      <object class="GtkEntry" id="Street5">
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="opacity">0</property>
@@ -83,7 +83,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="Street4">
+                      <object class="GtkEntry" id="Street6">
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="opacity">0</property>
@@ -471,7 +471,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="Stree">
+                      <object class="GtkEntry" id="Street4">
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="placeholder-text" translatable="yes">Street 4</property>
@@ -566,7 +566,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="Street">
+                      <object class="GtkEntry" id="Street3">
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="placeholder-text" translatable="yes">Street 3</property>

@@ -369,7 +369,7 @@
                   </packing>
                 </child>
                 <child type="overlay">
-                  <!-- n-columns=4 n-rows=17 -->
+                  <!-- n-columns=4 n-rows=18 -->
                   <object class="GtkGrid" id="MainGrid">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
@@ -453,7 +453,7 @@
                       </object>
                       <packing>
                         <property name="left-attach">0</property>
-                        <property name="top-attach">8</property>
+                        <property name="top-attach">15</property>
                         <property name="width">3</property>
                       </packing>
                     </child>
@@ -478,7 +478,7 @@
                       </object>
                       <packing>
                         <property name="left-attach">0</property>
-                        <property name="top-attach">6</property>
+                        <property name="top-attach">7</property>
                         <property name="width">3</property>
                       </packing>
                     </child>
@@ -491,7 +491,7 @@
                       </object>
                       <packing>
                         <property name="left-attach">0</property>
-                        <property name="top-attach">7</property>
+                        <property name="top-attach">8</property>
                         <property name="width">3</property>
                       </packing>
                     </child>
@@ -561,7 +561,7 @@
                       </object>
                       <packing>
                         <property name="left-attach">0</property>
-                        <property name="top-attach">15</property>
+                        <property name="top-attach">16</property>
                         <property name="width">3</property>
                       </packing>
                     </child>
@@ -573,7 +573,7 @@
                       </object>
                       <packing>
                         <property name="left-attach">0</property>
-                        <property name="top-attach">5</property>
+                        <property name="top-attach">6</property>
                         <property name="width">3</property>
                       </packing>
                     </child>
@@ -600,6 +600,22 @@
                         <property name="top-attach">3</property>
                         <property name="width">3</property>
                       </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="SwitchIntersections">
+                        <property name="label" translatable="yes">Switch Intersections</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">0</property>
+                        <property name="top-attach">5</property>
+                        <property name="width">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <placeholder/>
                     </child>
                     <child>
                       <placeholder/>

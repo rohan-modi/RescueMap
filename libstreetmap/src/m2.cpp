@@ -170,6 +170,7 @@ std::pair<double, std::string> findClosestHospital(LatLon my_position);
 void createHelpPopup(GtkButton* /*button*/, ezgl::application* application);
 void act_on_mouse_move(ezgl::application */*application*/, GdkEventButton */*event*/, double x, double y);
 void updateStreetTextBoxes(ezgl::application *application, IntersectionIdx intersection);
+void swapStreetNames(GtkButton* button, ezgl::application* application);
 
 //FOR TESTING USE
 
@@ -838,6 +839,7 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
    GObject* darkSwitch = application->get_object("DarkMode");
    GObject* modeTypeSwitch = application->get_object("ModeSwitch");
    GObject* helpButton = application->get_object("HelpButton");
+   GObject* swapIntersectionsButton = application->get_object("SwitchIntersections");
    // GObject* modeLabelWhite = application->get_object("UserModeSwitchLabelWhite");
    // GObject* modeLabelBlack = application->get_object("UserModeSwitchLabelBlack");
    // GObject* darkLabelWhite = application->get_object("DarkSwitchLabelWhite");
@@ -857,6 +859,7 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
    g_signal_connect(dropDown3, "changed", G_CALLBACK(map_selection_changed), application);
    g_signal_connect(modeTypeSwitch, "state-set", G_CALLBACK(changeUserMode), application);
    g_signal_connect(helpButton, "clicked", G_CALLBACK(createHelpPopup), application);
+   g_signal_connect(swapIntersectionsButton, "clicked", G_CALLBACK(swapStreetNames), application);
 
    // Populate dropdown menu of map names
    fillMapDropDown(application);
@@ -1099,8 +1102,8 @@ void updateStreetTextBoxes(ezgl::application* application, IntersectionIdx inter
    std::string street2;
 
    int splitIndex = intersectionStreets.find('&');
-   street1 = intersectionStreets.substr(0, splitIndex);
-   street2 = intersectionStreets.substr(splitIndex+1);
+   street1 = intersectionStreets.substr(0, splitIndex-1);
+   street2 = intersectionStreets.substr(splitIndex+2);
 
    GtkEntry* streetNameBox1 = (GtkEntry*) application->find_widget("Street1");
    const gchar* charVersionStreet1 = street1.c_str();
@@ -1109,4 +1112,26 @@ void updateStreetTextBoxes(ezgl::application* application, IntersectionIdx inter
    GtkEntry* streetNameBox2 = (GtkEntry*) application->find_widget("Street2");
    const gchar* charVersionStreet2 = street2.c_str();
    gtk_entry_set_text(streetNameBox2, charVersionStreet2);
+}
+
+void swapStreetNames(GtkButton* /*button*/, ezgl::application* application) {
+   GtkEntry* streetNameBox1 = (GtkEntry*) application->find_widget("Street1");
+   GtkEntry* streetNameBox2 = (GtkEntry*) application->find_widget("Street2");
+   GtkEntry* streetNameBox3 = (GtkEntry*) application->find_widget("Street3");
+   GtkEntry* streetNameBox4 = (GtkEntry*) application->find_widget("Street4");
+
+   std::string string1 = gtk_entry_get_text(streetNameBox1);
+   std::string string2 = gtk_entry_get_text(streetNameBox2);
+   std::string string3 = gtk_entry_get_text(streetNameBox3);
+   std::string string4 = gtk_entry_get_text(streetNameBox4);
+
+   const gchar* charVersionStreet1 = string1.c_str();
+   const gchar* charVersionStreet2 = string2.c_str();
+   const gchar* charVersionStreet3 = string3.c_str();
+   const gchar* charVersionStreet4 = string4.c_str();
+
+   gtk_entry_set_text(streetNameBox1, charVersionStreet3);
+   gtk_entry_set_text(streetNameBox2, charVersionStreet4);
+   gtk_entry_set_text(streetNameBox3, charVersionStreet1);
+   gtk_entry_set_text(streetNameBox4, charVersionStreet2);
 }
