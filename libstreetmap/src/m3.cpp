@@ -211,7 +211,7 @@ std::string getTravelDirections(const std::vector<StreetSegmentIdx>& path, Inter
     directions << "Total trip distance: " << getRoundedDistance(totalDistance) << "\n";
     
     // Report total trip time
-    directions << "Total trip time: " << "<XXX [PLACEHOLDER] XXX>" << "\n";
+    directions << "Total trip time: " << "<XXX[PLACEHOLDER]XXX>" << "\n";
 
     // Replace <unknown> and return travel directions as a string
     std::string output = directions.str();
@@ -271,6 +271,11 @@ std::string getSegmentTravelDirection(IntersectionIdx inter1, IntersectionIdx in
 // This function assumes that segment1 and segment2 are connected such that one
 // can drive legally by exiting segment1 and entering segment2.
 // Written by Jonathan
+// Determines the direction of turn given 2 street segments directly connected at
+// an intersection. Returns left or right.
+// This function assumes that segment1 and segment2 are connected such that one
+// can drive legally by exiting segment1 and entering segment2.
+// Written by Jonathan
 std::string getIntersectionTurningDirection(StreetSegmentIdx segment1, StreetSegmentIdx segment2) {
     
     std::vector<LatLon> referencePoints = findAngleReferencePoints(segment1, segment2);
@@ -278,21 +283,30 @@ std::string getIntersectionTurningDirection(StreetSegmentIdx segment1, StreetSeg
     LatLon point1 = referencePoints[1];
     LatLon point2 = referencePoints[2];
     
-    double lat_avg = kDegreeToRadian * (shared.latitude() + point1.latitude() + point2.latitude()) / 3;
+    double lat_avg1 = kDegreeToRadian * (shared.latitude() + point1.latitude()) / 2;
+    double lat_avg2 = kDegreeToRadian * (shared.latitude() + point2.latitude()) / 2;
 
     // Compute x-coordinates
-    double x_shared = kEarthRadiusInMeters * kDegreeToRadian * shared.longitude() * cos(lat_avg);
-    double x_1 = kEarthRadiusInMeters * kDegreeToRadian * point1.longitude() * cos(lat_avg);
-    double x_2 = kEarthRadiusInMeters * kDegreeToRadian * point2.longitude() * cos(lat_avg);
-    
+    double x_shared1 = kEarthRadiusInMeters * kDegreeToRadian * shared.longitude() * cos(lat_avg1);
+    double x_1 = kEarthRadiusInMeters * kDegreeToRadian * point1.longitude() * cos(lat_avg1);
+
+    double x_shared2 = kEarthRadiusInMeters * kDegreeToRadian * shared.longitude() * cos(lat_avg2);
+    double x_2 = kEarthRadiusInMeters * kDegreeToRadian * point2.longitude() * cos(lat_avg2);
+
     // Compute y-coordinates for src and dest
     double y_shared = kEarthRadiusInMeters * kDegreeToRadian * shared.latitude();
     double y_1 = kEarthRadiusInMeters * kDegreeToRadian * point1.latitude();
     double y_2 = kEarthRadiusInMeters * kDegreeToRadian * point2.latitude();
+    
+    // Compute cross product in z-direction: (Ax * By) - (Ay * Bx)
+    double Ax = x_shared1 - x_1;
+    double Ay = y_shared - y_1;
 
-    // Compute cross product in z-direction
-    double crossProduct = (x_shared - x_1) * (y_2 - y_shared) - (x_2 - x_shared) * (y_shared - y_1);
+    double Bx = x_2 - x_shared2;
+    double By = y_2 - y_shared;
 
+    double crossProduct = (Ax * By) - (Ay * Bx);
+    
     // By the right-hand rule:
     // If the z-component is positive, then the direction is left
     // If the z-component is negative, then the direction is right
