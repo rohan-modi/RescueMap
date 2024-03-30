@@ -169,6 +169,7 @@ std::pair<double, std::string> findClosestHydrant(LatLon my_position);
 std::pair<double, std::string> findClosestHospital(LatLon my_position);
 void createHelpPopup(GtkButton* /*button*/, ezgl::application* application);
 void act_on_mouse_move(ezgl::application */*application*/, GdkEventButton */*event*/, double x, double y);
+void updateStreetTextBoxes(ezgl::application *application, IntersectionIdx intersection);
 
 //FOR TESTING USE
 
@@ -880,8 +881,8 @@ void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, doubl
 
    // Convert mouse click coordinates (xy) to LatLon to determine closest intersection
    LatLon position = LatLon(lat_from_y(y), lon_from_x(x));
-   int inter_id = findClosestIntersection(position);
-   int poi_id = findClickablePOI(position);
+   IntersectionIdx inter_id = findClosestIntersection(position);
+   POIIdx poi_id = findClickablePOI(position);
 
    // Only highlight and display intersection if clicked within close proximity
    if (findDistanceBetweenTwoPoints(position, getIntersectionPosition(inter_id)) < INTERSECTION_CLICK_PROXIMITY) {
@@ -892,6 +893,9 @@ void act_on_mouse_click(ezgl::application* app, GdkEventButton* /*event*/, doubl
       std::stringstream closestIntersection;
       closestIntersection << "Selected: " << intersections[inter_id].name;
       app->update_message(closestIntersection.str());
+
+      // Update streets text boxes
+      updateStreetTextBoxes(app, inter_id);
 
       // Refresh map drawing
       app->refresh_drawing();
@@ -1086,4 +1090,23 @@ void act_on_mouse_move(ezgl::application */*application*/, GdkEventButton */*eve
       std::cout << "Mouse move at coordinates (" << x << "," << y << ") "<< std::endl;
       mouseCounter = 0;
    }
+}
+
+void updateStreetTextBoxes(ezgl::application* application, IntersectionIdx intersection) {
+   std::string intersectionStreets = getIntersectionName(intersection);
+
+   std::string street1;
+   std::string street2;
+
+   int splitIndex = intersectionStreets.find('&');
+   street1 = intersectionStreets.substr(0, splitIndex);
+   street2 = intersectionStreets.substr(splitIndex+1);
+
+   GtkEntry* streetNameBox1 = (GtkEntry*) application->find_widget("Street1");
+   const gchar* charVersionStreet1 = street1.c_str();
+   gtk_entry_set_text(streetNameBox1, charVersionStreet1);
+
+   GtkEntry* streetNameBox2 = (GtkEntry*) application->find_widget("Street2");
+   const gchar* charVersionStreet2 = street2.c_str();
+   gtk_entry_set_text(streetNameBox2, charVersionStreet2);
 }
