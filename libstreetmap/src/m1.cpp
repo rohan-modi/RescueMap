@@ -48,8 +48,11 @@ struct Intersection_data {
    ezgl::point2d position;
    std::string name;
    bool highlight = false;
+   bool processed = false;
+   int reachingEdge = 0;
+   int reachingNode = 0;
+   double bestTime = 0;
 };
-
 
 struct closed_feature_data {
     std::vector<ezgl::point2d> bounds;
@@ -107,6 +110,22 @@ struct building_data{
     std::string levels;
     std::string type;
 };
+
+//ADDED FOR M3
+struct connected_intersection_data{
+    IntersectionIdx intersectionId;
+    ezgl::point2d position;
+    StreetIdx streetId;
+    double distance;
+    double speedlimit;
+    double travel_time;
+    bool open;
+    bool closed;
+};
+
+
+
+
 /*
 Cities:
 beijing_china
@@ -151,8 +170,10 @@ std::vector<POI_data> fire_hydrants;
 std::vector<POI_data> FIREfacilities;
 std::vector<POI_data> EMTfacilities;
 std::vector<building_data> buildings;
-
 float cos_latavg;
+
+//ADDED FOR M3
+std::vector<std::vector<connected_intersection_data>> connectedIntersections;
 
 
 // ==================================== Declare functions to populate globals ====================================
@@ -1079,28 +1100,57 @@ void populateIntersectionData() {
     double min_lon = max_lon;
     
     std::vector<LatLon> intersectionsTemp;
+    connectedIntersections.resize(getNumIntersections());
     intersections.resize(getNumIntersections());
 
-    for (int i = 0; i < getNumIntersections(); i++) {
+    for (int inter_id = 0; inter_id < getNumIntersections(); inter_id++) {
 
-        intersectionsTemp.push_back(getIntersectionPosition(i));
-        intersections[i].name = getIntersectionName(i);
+        intersectionsTemp.push_back(getIntersectionPosition(inter_id));
+        intersections[inter_id].name = getIntersectionName(inter_id);
 
-        max_lat = std::max(max_lat, intersectionsTemp[i].latitude());
-        min_lat = std::min(min_lat, intersectionsTemp[i].latitude());
-        max_lon = std::max(max_lon, intersectionsTemp[i].longitude());
-        min_lon = std::min(min_lon, intersectionsTemp[i].longitude());
+        max_lat = std::max(max_lat, intersectionsTemp[inter_id].latitude());
+        min_lat = std::min(min_lat, intersectionsTemp[inter_id].latitude());
+        max_lon = std::max(max_lon, intersectionsTemp[inter_id].longitude());
+        min_lon = std::min(min_lon, intersectionsTemp[inter_id].longitude());
 
-        numberOfStreetSegments = getNumIntersectionStreetSegment(i);
+        numberOfStreetSegments = getNumIntersectionStreetSegment(inter_id);
+
         for (int j = 0; j < numberOfStreetSegments; j++) {
-            streetSegmentID = getIntersectionStreetSegment(j, i);
-            streetID = (getStreetSegmentInfo(streetSegmentID)).streetID;
-            streetSegmentsOfIntersections[i].push_back(streetSegmentID);
+            streetSegmentID = getIntersectionStreetSegment(j, inter_id);
+            StreetSegmentInfo segment = getStreetSegmentInfo(streetSegmentID);
+            streetID = segment.streetID;
+            streetSegmentsOfIntersections[inter_id].push_back(streetSegmentID);
             if (intersectionsOfStreets_[streetID].size() == 0) {
-                intersectionsOfStreets_[streetID].push_back(i);
-            } else if (intersectionsOfStreets_[streetID].back() != i) {
-                intersectionsOfStreets_[streetID].push_back(i);
+                intersectionsOfStreets_[streetID].push_back(inter_id);
+            } else if (intersectionsOfStreets_[streetID].back() != inter_id) {
+                intersectionsOfStreets_[streetID].push_back(inter_id);
             }
+
+            //ADDED FOR M3
+            //Populates data for connected intersections
+            
+            //checks if intersection is one way to the connected intersection
+            if(segment.oneWay && segment.to == inter_id){
+                continue;
+            }
+            connected_intersection_data data;
+            
+            if(inter_id == segment.to){
+                data.intersectionId = segment.from;
+            }else{
+                data.intersectionId = segment.to;
+            }
+
+            data.streetId = streetSegmentID;
+            data.speedlimit = segment.speedLimit;
+            data.distance = findStreetSegmentLength(j);
+            data.travel_time = data.distance/data.speedlimit;
+            data.position = latlon_to_pointm1(getIntersectionPosition(data.intersectionId));
+            data.open = false;
+            data.closed = false;
+
+            connectedIntersections[inter_id].push_back(data);
+            //END OF ADDED FOR M3
         }
     }
     cos_latavg = cos((min_lat + max_lat) * kDegreeToRadian / 2);
@@ -1113,6 +1163,8 @@ void populateIntersectionData() {
     mapBounds.max_lon = max_lon;
     mapBounds.min_lon = min_lon;
 }
+
+
 
 //populates feature vector with feature strucs based on closed, line and point features
 //finds max and min values of closed struct for speed optimization in draw
