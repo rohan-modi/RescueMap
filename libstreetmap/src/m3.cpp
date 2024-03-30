@@ -80,12 +80,6 @@ extern float cos_latavg;
 
 
 // ==================================== Declare Helper Functions ====================================
-std::string getTravelDirections(const std::vector<StreetSegmentIdx>& path, IntersectionIdx inter_start, IntersectionIdx inter_finish);
-std::string getSegmentTravelDirection(IntersectionIdx inter1, IntersectionIdx inter2);
-std::string getIntersectionTurningDirection(StreetSegmentIdx segment1, StreetSegmentIdx segment2);
-std::vector<LatLon>findAngleReferencePoints(StreetSegmentIdx src_street_segment_id, StreetSegmentIdx dst_street_segment_id);
-std::string getRoundedDistance(double distance);
-void replaceUnknown(std::string &input);
 double findDistanceBetweenTwoPointsxym3(ezgl::point2d point_1, ezgl::point2d point_2);
 std::vector<StreetSegmentIdx> retracePath(int nodeId, int startingNode);
 ezgl::point2d latlon_to_pointm3(LatLon position);
