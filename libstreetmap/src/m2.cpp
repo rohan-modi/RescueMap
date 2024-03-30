@@ -173,6 +173,7 @@ void act_on_mouse_move(ezgl::application */*application*/, GdkEventButton */*eve
 void updateStreetTextBoxes(ezgl::application *application, IntersectionIdx intersection);
 void swapStreetNames(GtkButton* button, ezgl::application* application);
 void highlightRoute(ezgl::renderer *g, std::vector<StreetSegmentIdx> highlightedStreetSegments);
+void displayDirections(ezgl::application* application, std::vector<std::string> directions);
 
 //FOR TESTING USE
 
@@ -854,6 +855,10 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
       std::cout << "\t" << getIntersectionName(secondIntersections[i]) << std::endl;
    }
    std::cout << "Finding route from " << getIntersectionName(firstIntersections[0]) << " to " << getIntersectionName(secondIntersections[0]) << std::endl;
+   std::vector<std::string> directions = {"Turn left", "Turn right", "Make 3 U-turns", "Turn left again", "Keep right", "Keep left", "Go backwards", "Speed up", "Slow down", "You have arrived", "Get out of the car", "Get back in the car", "Go away", "You're welcome", "Turn left", "Turn right", "Make 3 U-turns", "Turn left again", "Keep right", "Keep left", "Go backwards", "Speed up", "Slow down", "You have arrived", "Get out of the car", "Get back in the car", "Go away", "You're welcome", "Turn left", "Turn right", "Make 3 U-turns", "Turn left again", "Keep right", "Keep left", "Go backwards", "Speed up", "Slow down", "You have arrived", "Get out of the car", "Get back in the car", "Go away", "You're welcome", "Turn left", "Turn right", "Make 3 U-turns", "Turn left again", "Keep right", "Keep left", "Go backwards", "Speed up", "Slow down", "You have arrived", "Get out of the car", "Get back in the car", "Go away", "You're welcome", "Turn left", "Turn right", "Make 3 U-turns", "Turn left again", "Keep right", "Keep left", "Go backwards", "Speed up", "Slow down", "You have arrived", "Get out of the car", "Get back in the car", "Go away", "You're welcome", "Turn left", "Turn right", "Make 3 U-turns", "Turn left again", "Keep right", "Keep left", "Go backwards", "Speed up", "Slow down", "You have arrived", "Get out of the car", "Get back in the car", "Go away", "You're welcome"};
+   displayDirections(application, directions);
+   GtkWidget* window = (GtkWidget*) application->find_widget("MainWindow");
+   gtk_widget_show_all(window);
 }
 
 // Initialize GObjects and connect callbacks to signals
@@ -1170,4 +1175,16 @@ void swapStreetNames(GtkButton* /*button*/, ezgl::application* application) {
    gtk_entry_set_text(streetNameBox2, charVersionStreet4);
    gtk_entry_set_text(streetNameBox3, charVersionStreet1);
    gtk_entry_set_text(streetNameBox4, charVersionStreet2);
+}
+
+void displayDirections(ezgl::application* application, std::vector<std::string> directions) {
+   GtkTextBuffer* textDisplay = (GtkTextBuffer*) application->find_widget("Directions");
+   std::string directionString = "Directions:\n";
+   for (int directionNumber = 0; directionNumber < directions.size(); directionNumber++) {
+      directionString += directions[directionNumber];
+      directionString += "\n";
+   }
+   const gchar* charVersion = directionString.c_str();
+   // gtk_text_buffer_set_text(textDisplay, charVersion, sizeof(directionString));
+   gtk_text_buffer_set_text(textDisplay, charVersion, -1);
 }
