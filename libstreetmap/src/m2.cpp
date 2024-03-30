@@ -689,7 +689,10 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
    bool intersection1Exists = false;
    bool intersection2Exists = false;
 
-   float x1, x2, y1, y2;
+   float x1 = 0;
+   float x2 = 0;
+   float y1 = 0;
+   float y2 = 0;
 
    // Check if the current street names are valid
    if (firstResults.size() == 0 || secondResults.size() == 0 || thirdResults.size() == 0 || fourthResults.size() == 0) {
@@ -786,6 +789,7 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
       }
    } else {
       application->create_popup_message("No Intersections Found", "The provided streets do not intersect.");
+      return;
    }
    std::cout << "Vector 1:" << std::endl;
    for (int i = 0; i < firstIntersections.size(); i++) {
