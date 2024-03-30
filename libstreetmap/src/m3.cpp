@@ -27,6 +27,7 @@
 #include "m1.h"
 #include "m2.h"
 #include "m3.h"
+#include "m3helpers.h"
 #include "ezgl/application.hpp"
 #include "ezgl/graphics.hpp"
 #include "OSMDatabaseAPI.h"

@@ -25,6 +25,10 @@
 #include "m1.h"
 #include "m2.h"
 #include "m3.h"
+<<<<<<< HEAD
+=======
+#include "m3helpers.h"
+>>>>>>> 389c54c (Integrated directions with getDirections function)
 #include "ezgl/application.hpp"
 #include "ezgl/graphics.hpp"
 #include "OSMDatabaseAPI.h"
@@ -890,8 +894,9 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
       std::cout << "\t" << secondIntersections[i] << std::endl;
       std::cout << "\t" << getIntersectionName(secondIntersections[i]) << std::endl;
    }
-   std::cout << "Finding route from " << getIntersectionName(firstIntersections[0]) << " to " << getIntersectionName(secondIntersections[0]) << std::endl;
-   std::string directions = "Turn left\n Turn right\n Go in circles\n You will never arrive\nTurn left\n Turn right\n Go in circles\n You will never arrive\nTurn left\n Turn right\n Go in circles\n You will never arrive\nTurn left\n Turn right\n Go in circles\n You will never arrive\nTurn left\n Turn right\n Go in circles\n You will never arrive\nTurn left\n Turn right\n Go in circles\n You will never arrive\nTurn left\n Turn right\n Go in circles\n You will never arrive\nTurn left\n Turn right\n Go in circles\n You will never arrive\nTurn left\n Turn right\n Go in circles\n You will never arrive\n";
+
+   const std::vector<StreetSegmentIdx> path = {67341, 67342, 67320, 67331, 67327, 67325, 67324, 64697, 197040, 197039, 197041, 103842, 103843, 158290, 158289, 67526, 67525, 67524, 67514, 67515, 233266, 67522, 189755, 189754, 189753, 189752, 189747, 222771, 222770, 222769, 222768, 222767, 222766, 222765, 222764, 20019, 221624, 221629, 221628, 221627, 221626, 221625, 16176, 150013, 150016, 150017, 161792, 161793, 161794, 159071, 68814, 68813, 68815, 189363, 132431, 132432, 16188, 16191, 132426, 116822, 116823, 23373, 23374, 116808, 106076, 249806, 119680, 9153, 116795, 116794, 116796, 106091, 116797, 28653, 28654, 240608, 28666, 28667, 6347, 6348, 145466, 145471, 145469, 85333, 145464, 85337, 85338, 85339, 85360, 85361, 118839, 118840, 39177, 39178, 39179, 39180, 39181, 267831, 267830, 39191, 15914, 9457, 9458, 9459, 128289};
+   std::string directions = getTravelDirections(path, 66119, 0);
    displayDirections(application, directions);
    //GtkWidget* window = (GtkWidget*) application->find_widget("MainWindow");
    //gtk_widget_show_all(window);
