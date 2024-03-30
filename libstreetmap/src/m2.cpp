@@ -227,6 +227,8 @@ void drawMap() {
 
 void draw_main_canvas(ezgl::renderer *g) {
 
+   const int MAX_VIEW_PORT_AREA = 200000;
+
    viewPortArea = g->get_visible_world().area();
    world = g->get_visible_world();
    setWorldScale(g);
@@ -245,14 +247,14 @@ void draw_main_canvas(ezgl::renderer *g) {
    draw_intersections(g);
    highlightRoute(g, highlightedSegments);
    drawScaleBar(g);
-   if(viewPortArea < 200000)
+   if (viewPortArea < MAX_VIEW_PORT_AREA) {
       drawPOIs(g);
-
-      if(intersection1 != -1 && intersection2 != -1){
+   }
+   if (intersection1 != -1 && intersection2 != -1) {
       std::vector<int> temp = findPathBetweenIntersections(0.0,std::pair<IntersectionIdx, IntersectionIdx>(intersection1, intersection2));
-      
+
       highlightRoute(g, temp);
-      
+
       intersection1 = -1;
       intersection2 = -1;
    }
