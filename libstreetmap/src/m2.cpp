@@ -747,6 +747,14 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
    std::string street3 = gtk_entry_get_text(streetNameBox3);
    std::string street4 = gtk_entry_get_text(streetNameBox4);
 
+   if (street1 == street2) {
+      application->create_popup_message("Repeated Street", "The provided streets 1 and 2 are the same");
+      return;
+   } else if (street3 == street4) {
+      application->create_popup_message("Repeated Street", "The provided streets 3 and 4 are the same");
+      return;
+   }
+
    // Make a pair of street ids
    std::pair<StreetIdx, StreetIdx> streetPair1;
    std::pair<StreetIdx, StreetIdx> streetPair2;
@@ -842,7 +850,11 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
       }
    }
 
-   // If no intersections found, display popup
+   if (tempFirstIntersections[0] == tempSecondIntersections[0]) {
+      application->create_popup_message("Invalid Route", "The provided intersections are at the same location");
+      return;
+   }
+
    if (intersection1Exists && intersection2Exists) {
       float xMin = std::min(x1, x2);
       float xMax = std::max(x1, x2);
