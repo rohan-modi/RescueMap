@@ -26,6 +26,7 @@
 #include "m2.h"
 #include "m3.h"
 #include "m3helpers.h"
+#include "m2helpers.h"
 #include "ezgl/application.hpp"
 #include "ezgl/graphics.hpp"
 #include "OSMDatabaseAPI.h"
@@ -145,12 +146,10 @@ bool checkContains(double maxx, double minx, double maxy, double miny);
 void initializeIntersections();
 void draw_intersections(ezgl::renderer *g);
 void draw_streets(ezgl::renderer *g);
-ezgl::point2d latlon_to_point(LatLon position);
 void draw_features(ezgl::renderer *g);
 void set_feature_color(ezgl::renderer *g, int feature_id);
 bool set_segment_color(ezgl::renderer *g, std::string streetType);
 void act_on_mouse_click(ezgl::application* app, GdkEventButton* event, double x, double y);
-int findDistanceBetweenTwoPointsxy(ezgl::point2d point_1, ezgl::point2d point_2);
 gboolean change_dark_switch(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::application* application);
 void fillMapDropDown(ezgl::application* application);
 double findAngle360(ezgl::point2d point_1, ezgl::point2d point_2);

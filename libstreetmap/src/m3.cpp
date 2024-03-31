@@ -26,6 +26,7 @@
 #include "m1.h"
 #include "m2.h"
 #include "m3.h"
+#include "m2helpers.h"
 #include "m3helpers.h"
 #include "ezgl/application.hpp"
 #include "ezgl/graphics.hpp"
@@ -89,10 +90,8 @@ std::string getIntersectionTurningDirection(StreetSegmentIdx segment1, StreetSeg
 std::vector<LatLon>findAngleReferencePoints(StreetSegmentIdx src_street_segment_id, StreetSegmentIdx dst_street_segment_id);
 std::string getRoundedDistance(double distance);
 void replaceUnknown(std::string &input);
-ezgl::point2d latlon_to_pointm3(LatLon position);
 std::vector<StreetSegmentIdx> retracePath(int nodeId, int startingNode);
 void resetNodes(std::vector<int> nodes);
-double findDistanceBetweenTwoPointsxym3(ezgl::point2d point_1, ezgl::point2d point_2);
 
 // Returns the time required to travel along the path specified, in seconds.
 // The path is given as a vector of street segment ids, and this function can
@@ -157,7 +156,7 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
     openHeap.push(WaveElem(intersect_ids.first, NO_EDGE, NO_EDGE, STARTING_TIME, NO_EDGE));
     nodesToReset.push_back(intersect_ids.first);
 
-    ezgl::point2d destination= latlon_to_pointm3(getIntersectionPosition(intersect_ids.second));
+    ezgl::point2d destination = latlon_to_point(getIntersectionPosition(intersect_ids.second));
 
 
     while(!openHeap.empty()){
@@ -198,7 +197,7 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
             }
 
             
-            double time = newData.travel_time + node.travelTime + findDistanceBetweenTwoPointsxym3(newData.position, destination) + delay;
+            double time = newData.travel_time + node.travelTime + findDistanceBetweenTwoPointsxy(newData.position, destination) + delay;
             intersections[newData.intersectionId].processed = true;
             intersections[newData.intersectionId].reachingEdge = newData.streetId;
             intersections[newData.intersectionId].reachingNode = nodeId;
@@ -229,19 +228,6 @@ std::vector<StreetSegmentIdx> retracePath(int nodeId, int startingNode){
         index = intersections[index].reachingNode;
     }
     return std::vector<StreetSegmentIdx>(path.begin(), path.end());
-}
-
-
-double findDistanceBetweenTwoPointsxym3(ezgl::point2d point_1, ezgl::point2d point_2) {
-    // Return the distance by the Pythagoras theorem: d = sqrt((y2 - y1)^2, (x2 - x1)^2) [m]
-    return sqrt(pow(point_2.y - point_1.y, 2) + pow(point_2.x - point_1.x, 2));
-}
-
-ezgl::point2d latlon_to_pointm3(LatLon position){
-   float x = kEarthRadiusInMeters * kDegreeToRadian * position.longitude() * cos_latavg;
-   float y = kEarthRadiusInMeters * kDegreeToRadian * position.latitude();
-
-   return(ezgl::point2d(x,y));
 }
 
 // This function returns a string containing detailed travel directions for a driver.
