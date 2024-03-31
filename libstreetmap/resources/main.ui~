@@ -229,7 +229,7 @@
                       </object>
                       <packing>
                         <property name="left-attach">0</property>
-                        <property name="top-attach">6</property>
+                        <property name="top-attach">7</property>
                         <property name="width">3</property>
                       </packing>
                     </child>
@@ -241,7 +241,7 @@
                       </object>
                       <packing>
                         <property name="left-attach">0</property>
-                        <property name="top-attach">7</property>
+                        <property name="top-attach">8</property>
                         <property name="width">3</property>
                       </packing>
                     </child>
@@ -923,7 +923,7 @@
           <packing>
             <property name="left-attach">1</property>
             <property name="top-attach">0</property>
-            <property name="width">10</property>
+            <property name="width">9</property>
           </packing>
         </child>
         <child>
@@ -943,7 +943,6 @@
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="shadow-type">in</property>
-            <property name="kinetic-scrolling">False</property>
             <child>
               <object class="GtkTextView" id="DirectionText">
                 <property name="visible">True</property>
@@ -956,7 +955,11 @@
           <packing>
             <property name="left-attach">0</property>
             <property name="top-attach">0</property>
+            <property name="width">2</property>
           </packing>
+        </child>
+        <child>
+          <placeholder/>
         </child>
         <child>
           <placeholder/>
