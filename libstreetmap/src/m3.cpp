@@ -34,6 +34,7 @@
 #include "StreetsDatabaseAPI.h"
 #include <thread>
 #include <queue>
+#include <limits>
 
 #define NO_EDGE -1
 #define STARTING_TIME 0.0
@@ -59,7 +60,7 @@ struct Intersection_data {
    bool processed = false;
    int reachingEdge = 0;
    int reachingNode = 0;
-   double bestTime = 0;
+   double bestTime = std::numeric_limits<double>::infinity();
 };
 
 struct WaveElem {
@@ -156,56 +157,62 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
     openHeap.push(WaveElem(intersect_ids.first, NO_EDGE, NO_EDGE, STARTING_TIME, NO_EDGE));
     nodesToReset.push_back(intersect_ids.first);
 
-    ezgl::point2d destination = latlon_to_point(getIntersectionPosition(intersect_ids.second));
+    ezgl::point2d destination= latlon_to_point(getIntersectionPosition(intersect_ids.second));
 
 
     while(!openHeap.empty()){
         WaveElem node = openHeap.top();
         openHeap.pop();
+        std::cout<< "pulled" << node.travelTime << std::endl;
 
         IntersectionIdx nodeId = node.nodeID;
+        //intersections[nodeId].highlight = true;
 
         if( node.travelTime < intersections[nodeId].bestTime){
+            std::cout<< "updated Node " << nodeId<< "from" << node.reachingNodeID<<std::endl;
             intersections[nodeId].reachingEdge = node.edgeID;
             intersections[nodeId].reachingNode = node.reachingNodeID;
             intersections[nodeId].bestTime = node.travelTime;
-        }
 
-        if(nodeId == intersect_ids.second){
+            if(nodeId == intersect_ids.second){
 
             std::vector<StreetSegmentIdx> path = retracePath(nodeId,intersect_ids.first);
             resetNodes(nodesToReset);
             return path;
-        }
-
-        for(int connectedNode = 0; connectedNode < connectedIntersections[nodeId].size(); connectedNode++){
-
-            connected_intersection_data newData = connectedIntersections[nodeId][connectedNode];
-
-            if(intersections[newData.intersectionId].processed){
-                continue;
-            }
-            nodesToReset.push_back(newData.intersectionId);
-            double delay;
-
-            if(newData.primaryStreet != node.primaryStreet){
-                //std::cout<< "added delay" <<std::endl;
-                delay = turn_penalty;
-            }else{
-                //std::cout<< "NOI delay" <<std::endl;
-                delay = 0.0;
             }
 
-            
-            double time = newData.travel_time + node.travelTime + findDistanceBetweenTwoPointsxy(newData.position, destination) + delay;
-            intersections[newData.intersectionId].processed = true;
-            intersections[newData.intersectionId].reachingEdge = newData.streetId;
-            intersections[newData.intersectionId].reachingNode = nodeId;
-            intersections[nodeId].bestTime = time;
+            for(int connectedNode = 0; connectedNode < connectedIntersections[nodeId].size(); connectedNode++){
 
-            openHeap.push(WaveElem(newData.intersectionId, newData.streetId, nodeId,time, newData.primaryStreet));
+                connected_intersection_data newData = connectedIntersections[nodeId][connectedNode];
 
+                if(newData.intersectionId == nodeId){
+                    continue;
+                }
+
+                nodesToReset.push_back(newData.intersectionId);
+                double delay;
+
+                if(newData.primaryStreet != node.primaryStreet){
+                    //std::cout<< "added delay" <<std::endl;
+                    delay = turn_penalty;
+                }else{
+                    //std::cout<< "NOI delay" <<std::endl;
+                    delay = 0.0;
+                }
+
+                
+                double time = newData.travel_time + node.travelTime + delay;
+
+                double time_to_dest = (findDistanceBetweenTwoPointsxy(latlon_to_point(getIntersectionPosition(newData.intersectionId)), destination)/100.0);
+
+                std::cout<< "added Node " <<newData.intersectionId << " :"<< time + time_to_dest << std::endl;
+                openHeap.push(WaveElem(newData.intersectionId, newData.streetId, nodeId,time + time_to_dest, newData.primaryStreet));
+
+            }
+            std::cout<< "END     @@@@@@" << std::endl;
         }
+
+        
     }
     return {0};
 }
@@ -215,7 +222,7 @@ void resetNodes(std::vector<int> nodes){
         intersections[nodes[nodeIndex]].processed = false;
         intersections[nodes[nodeIndex]].reachingEdge = 0;
         intersections[nodes[nodeIndex]].reachingNode = 0;
-        intersections[nodes[nodeIndex]].bestTime = 1000000000;
+        intersections[nodes[nodeIndex]].bestTime = std::numeric_limits<double>::infinity();
     }
 }
 

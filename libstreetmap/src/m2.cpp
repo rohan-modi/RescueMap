@@ -32,6 +32,7 @@
 #include "OSMDatabaseAPI.h"
 #include "StreetsDatabaseAPI.h"
 #include <thread>
+#include <limits>
 
 // ==================================== Declare strucs ====================================
 
@@ -42,7 +43,7 @@ struct Intersection_data {
    bool processed = false;
    int reachingEdge = 0;
    int reachingNode = 0;
-   double bestTime = 0;
+   double bestTime = std::numeric_limits<double>::infinity();
 };
 
 

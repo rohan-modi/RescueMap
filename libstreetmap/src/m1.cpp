@@ -28,6 +28,7 @@
 #include "ezgl/graphics.hpp"
 #include <unordered_set>
 #include <unordered_map>
+#include <limits>
 
 // Declare typedefs
 typedef int StreetSegmentIdx;
@@ -51,7 +52,7 @@ struct Intersection_data {
    bool processed = false;
    int reachingEdge = 0;
    int reachingNode = 0;
-   double bestTime = 0;
+   double bestTime = std::numeric_limits<double>::infinity();
 };
 
 struct closed_feature_data {
