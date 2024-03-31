@@ -116,6 +116,7 @@ struct connected_intersection_data{
     IntersectionIdx intersectionId;
     ezgl::point2d position;
     StreetIdx streetId;
+    int primaryStreet;
     double distance;
     double speedlimit;
     double travel_time;
@@ -1142,8 +1143,9 @@ void populateIntersectionData() {
             }
 
             data.streetId = streetSegmentID;
+            data.primaryStreet = segment.streetID;
             data.speedlimit = segment.speedLimit;
-            data.distance = findStreetSegmentLength(j);
+            data.distance = findStreetSegmentLength(streetSegmentID);
             data.travel_time = data.distance/data.speedlimit;
             data.position = latlon_to_pointm1(getIntersectionPosition(data.intersectionId));
             data.open = false;

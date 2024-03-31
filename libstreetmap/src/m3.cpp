@@ -24,6 +24,7 @@
 #include <vector>
 #include <queue>
 #include <chrono>
+#include <list>
 #include "m1.h"
 #include "m2.h"
 #include "m3.h"
@@ -41,12 +42,14 @@ struct connected_intersection_data{
     IntersectionIdx intersectionId;
     ezgl::point2d position;
     StreetIdx streetId;
+    int primaryStreet;
     double distance;
     double speedlimit;
     double travel_time;
     bool open;
     bool closed;
 };
+
 
 struct Intersection_data {
    ezgl::point2d position;
@@ -63,7 +66,8 @@ struct WaveElem {
     StreetSegmentIdx edgeID;
     IntersectionIdx reachingNodeID;
     double travelTime;
-    WaveElem(int intersection, int segment, int inter2, float time) {nodeID = intersection; edgeID = segment; reachingNodeID = inter2; travelTime = time;}
+    int primaryStreet;
+    WaveElem(int intersection, int segment, int inter2, float time, int s) {nodeID = intersection; edgeID = segment; reachingNodeID = inter2; travelTime = time;primaryStreet = s;}
     bool operator<(const WaveElem other) const {
         return travelTime > other.travelTime;
     }
@@ -129,7 +133,7 @@ double computePathTravelTime(const double turn_penalty,
         // Update the previous streetID to the current streetID
         prevStreetIdx = currStreetIdx;
     }
-
+    std::cout<<travelTime<<std::endl;
     return travelTime;
 }
 
@@ -150,7 +154,7 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
     std::priority_queue<WaveElem> openHeap;
     std::vector<IntersectionIdx> nodesToReset;
 
-    openHeap.push(WaveElem(intersect_ids.first, NO_EDGE, NO_EDGE, STARTING_TIME));
+    openHeap.push(WaveElem(intersect_ids.first, NO_EDGE, NO_EDGE, STARTING_TIME, NO_EDGE));
     nodesToReset.push_back(intersect_ids.first);
 
     ezgl::point2d destination= latlon_to_pointm3(getIntersectionPosition(intersect_ids.second));
@@ -179,21 +183,28 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
 
             connected_intersection_data newData = connectedIntersections[nodeId][connectedNode];
 
-             //std::cout<< "inter time:" <<newData.travel_time << std::endl;
-
             if(intersections[newData.intersectionId].processed){
                 continue;
             }
             nodesToReset.push_back(newData.intersectionId);
+            double delay;
+
+            if(newData.primaryStreet != node.primaryStreet){
+                //std::cout<< "added delay" <<std::endl;
+                delay = turn_penalty;
+            }else{
+                //std::cout<< "NOI delay" <<std::endl;
+                delay = 0.0;
+            }
 
             
-            double time = newData.travel_time + node.travelTime + findDistanceBetweenTwoPointsxym3(newData.position, destination);
+            double time = newData.travel_time + node.travelTime + findDistanceBetweenTwoPointsxym3(newData.position, destination) + delay;
             intersections[newData.intersectionId].processed = true;
             intersections[newData.intersectionId].reachingEdge = newData.streetId;
             intersections[newData.intersectionId].reachingNode = nodeId;
             intersections[nodeId].bestTime = time;
 
-            openHeap.push(WaveElem(newData.intersectionId, newData.streetId, nodeId,time ));
+            openHeap.push(WaveElem(newData.intersectionId, newData.streetId, nodeId,time, newData.primaryStreet));
 
         }
     }
@@ -211,13 +222,13 @@ void resetNodes(std::vector<int> nodes){
 
 std::vector<StreetSegmentIdx> retracePath(int nodeId, int startingNode){
 
-    std::vector<StreetSegmentIdx> path;
+    std::list<StreetSegmentIdx> path;
     int index = nodeId;
     while(index != startingNode &&index != 0){
-        path.push_back(intersections[index].reachingEdge);
+        path.push_front(intersections[index].reachingEdge);
         index = intersections[index].reachingNode;
     }
-    return path;
+    return std::vector<StreetSegmentIdx>(path.begin(), path.end());
 }
 
 
