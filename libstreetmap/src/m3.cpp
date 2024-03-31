@@ -250,6 +250,10 @@ ezgl::point2d latlon_to_pointm3(LatLon position){
 // Written by Jonathan
 std::string getTravelDirections(const std::vector<StreetSegmentIdx>& path, IntersectionIdx inter_start, IntersectionIdx inter_finish) {
 
+    const int STRAIGHT_THRESHOLD = 5;
+    const int SLIGHT_THRESHOLD = 70;
+    const int SHARP_THRESHOLD = 110;
+
     // Declare stringstream to contain all travel directions
     std::stringstream directions;
     
@@ -265,10 +269,10 @@ std::string getTravelDirections(const std::vector<StreetSegmentIdx>& path, Inter
     IntersectionIdx nextInter;
     if (currSegment.from == inter_start) {
         nextInter = currSegment.to;
-        directions << "Head " << getSegmentTravelDirection(currSegment.from, currSegment.to);
+        directions << "Head " << getSegmentTravelDirection(inter_start, nextInter);
     } else {
         nextInter = currSegment.from;
-        directions << "Head " << getSegmentTravelDirection(currSegment.to, currSegment.from);
+        directions << "Head " << getSegmentTravelDirection(inter_start, nextInter);
     }
     directions << " on " << getStreetName(currSegment.streetID) << "\n";
     
@@ -296,15 +300,15 @@ std::string getTravelDirections(const std::vector<StreetSegmentIdx>& path, Inter
         double angle = findAngleBetweenStreetSegments(path[pathIdx - 1], path[pathIdx]);
 
         // Continue straight if angle is less than 8 degrees
-        if (angle < 8 * kDegreeToRadian) {
+        if (angle < STRAIGHT_THRESHOLD * kDegreeToRadian) {
             directions << "Continue straight on ";
         }
         // Slight turn if angle is between 8 degrees and 70 degrees
-        else if ((angle > 8 * kDegreeToRadian) && (angle < 70 * kDegreeToRadian)) {
+        else if ((angle > STRAIGHT_THRESHOLD * kDegreeToRadian) && (angle < SLIGHT_THRESHOLD * kDegreeToRadian)) {
             directions << "Take a slight " << getIntersectionTurningDirection(path[pathIdx - 1], path[pathIdx]) << " onto ";
         }
         // Sharp turn if angle is greater than 110 degrees
-        else if (angle > 110 * kDegreeToRadian) {
+        else if (angle > SHARP_THRESHOLD * kDegreeToRadian) {
             directions << "Take a sharp " << getIntersectionTurningDirection(path[pathIdx - 1], path[pathIdx]) << " onto ";
         }
         // Or else, apply a regular turn
@@ -378,13 +382,8 @@ std::string getSegmentTravelDirection(IntersectionIdx inter1, IntersectionIdx in
     double y2 = kEarthRadiusInMeters * kDegreeToRadian * dest.latitude();
     
     // Compute inverse tangent to determine angle
-    double angle = atan((y2 - y1) / (x2 - x1));
-
-    // If x-component is negative, add pi
-    if ((x2 - x1) < 0) {
-        angle += M_PI;
-    }
-
+    double angle = atan2((y2 - y1), (x2 - x1));
+    
     // Declare direction string
     std::string direction;
 
@@ -394,7 +393,7 @@ std::string getSegmentTravelDirection(IntersectionIdx inter1, IntersectionIdx in
         direction = "east";
     } else if ((angle > kDegreeToRadian * 45) && (angle < kDegreeToRadian * 135)) {
         direction = "north";
-    } else if ((angle > kDegreeToRadian * 135) && (angle < kDegreeToRadian * 225)) {
+    } else if ((angle > kDegreeToRadian * 135) || angle < -(kDegreeToRadian * 135)) {
         direction = "west";
     } else {
         direction = "south";
