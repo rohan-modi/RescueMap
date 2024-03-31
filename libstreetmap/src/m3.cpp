@@ -342,9 +342,6 @@ std::string getTravelDirections(const std::vector<StreetSegmentIdx>& path, Inter
 
     // Report total trip distance
     directions << "Total trip distance: " << getRoundedDistance(totalDistance) << "\n";
-    
-    // Report total trip time
-    directions << "Total trip time: " << "<XXX[PLACEHOLDER]XXX>" << "\n";
 
     // Replace <unknown> and return travel directions as a string
     std::string output = directions.str();
