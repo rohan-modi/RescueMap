@@ -258,10 +258,10 @@ std::string getTravelDirections(const std::vector<StreetSegmentIdx>& path, Inter
     IntersectionIdx nextInter;
     if (currSegment.from == inter_start) {
         nextInter = currSegment.to;
-        directions << "Head " << getSegmentTravelDirection(currSegment.from, currSegment.to);
+        directions << "Head " << getSegmentTravelDirection(inter_start, nextInter);
     } else {
         nextInter = currSegment.from;
-        directions << "Head " << getSegmentTravelDirection(currSegment.to, currSegment.from);
+        directions << "Head " << getSegmentTravelDirection(inter_start, nextInter);
     }
     directions << " on " << getStreetName(currSegment.streetID) << "\n";
     
@@ -289,7 +289,7 @@ std::string getTravelDirections(const std::vector<StreetSegmentIdx>& path, Inter
         double angle = findAngleBetweenStreetSegments(path[pathIdx - 1], path[pathIdx]);
 
         // Continue straight if angle is less than 8 degrees
-        if (angle < 8 * kDegreeToRadian) {
+        if (angle < STRAIGHT_THRESHOLD * kDegreeToRadian) {
             directions << "Continue straight on ";
         }
         // Slight turn if angle is between 8 degrees and 70 degrees
@@ -371,13 +371,8 @@ std::string getSegmentTravelDirection(IntersectionIdx inter1, IntersectionIdx in
     double y2 = kEarthRadiusInMeters * kDegreeToRadian * dest.latitude();
     
     // Compute inverse tangent to determine angle
-    double angle = atan((y2 - y1) / (x2 - x1));
-
-    // If x-component is negative, add pi
-    if ((x2 - x1) < 0) {
-        angle += M_PI;
-    }
-
+    double angle = atan2((y2 - y1), (x2 - x1));
+    
     // Declare direction string
     std::string direction;
 
@@ -387,7 +382,7 @@ std::string getSegmentTravelDirection(IntersectionIdx inter1, IntersectionIdx in
         direction = "east";
     } else if ((angle > kDegreeToRadian * 45) && (angle < kDegreeToRadian * 135)) {
         direction = "north";
-    } else if ((angle > kDegreeToRadian * 135) && (angle < kDegreeToRadian * 225)) {
+    } else if ((angle > kDegreeToRadian * 135) || angle < -(kDegreeToRadian * 135)) {
         direction = "west";
     } else {
         direction = "south";
@@ -474,10 +469,6 @@ std::vector<LatLon>findAngleReferencePoints(StreetSegmentIdx src_street_segment_
         // The shared intersection LatLon is src_segment.from    
         shared_point = getIntersectionPosition(src_segment.from);
 
-        //point_1 = getIntersectionPosition(src_segment.to);
-        //point_2 = getIntersectionPosition(dst_segment.to);
-        //return {shared_point, point_1, point_2};
-
         // If the src segment has 0 curve points, then ref point 1 is src_segment.to
         if (src_segment.numCurvePoints == 0) {
             point_1 = getIntersectionPosition(src_segment.to);
@@ -501,10 +492,6 @@ std::vector<LatLon>findAngleReferencePoints(StreetSegmentIdx src_street_segment_
 
         // The shared intersection LatLon is src_segment.to
         shared_point = getIntersectionPosition(src_segment.to);
-
-        //point_1 = getIntersectionPosition(src_segment.from);
-        //point_2 = getIntersectionPosition(dst_segment.from);
-        //return {shared_point, point_1, point_2};
 
         // If the src segment has 0 curve points, then ref point 1 is src_segment.from
         if (src_segment.numCurvePoints == 0) {
@@ -530,10 +517,6 @@ std::vector<LatLon>findAngleReferencePoints(StreetSegmentIdx src_street_segment_
         // The shared intersection LatLon is src_segment.from    
         shared_point = getIntersectionPosition(src_segment.from);
 
-        //point_1 = getIntersectionPosition(src_segment.to);
-        //point_2 = getIntersectionPosition(dst_segment.from);
-        //return {shared_point, point_1, point_2};
-
         // If the src segment has 0 curve points, then ref point 1 is src_segment.to
         if (src_segment.numCurvePoints == 0) {
             point_1 = getIntersectionPosition(src_segment.to);
@@ -557,10 +540,6 @@ std::vector<LatLon>findAngleReferencePoints(StreetSegmentIdx src_street_segment_
                
         // The shared intersection LatLon is src_segment.to    
         shared_point = getIntersectionPosition(src_segment.to);
-
-        //point_1 = getIntersectionPosition(src_segment.from);
-        //point_2 = getIntersectionPosition(dst_segment.to);
-        //return {shared_point, point_1, point_2};
 
         // If the src segment has 0 curve points, then ref point 1 is src_segment.from
         if (src_segment.numCurvePoints == 0) {
