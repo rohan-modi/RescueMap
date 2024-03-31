@@ -1185,7 +1185,7 @@ gboolean changeUserMode(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::appl
 // Create popup for instructions for user
 void createHelpPopup(GtkButton* /*button*/, ezgl::application* application) {
    application->create_popup_message("User Instructions", 
-   "1. Type your streets into the provided search bars.\n2. Allow the amazing autocomplete to fix your spelling\n3. Press find route and watch the amazing results\n4. Clicking intersections also fills in the street names\n5. Use the \"Switch Intersections\" Button to add multiple intersections with mouse clicks\nTip: The map UI is optimal in full screen");
+   "1. Type your streets into the provided search bars.\n2. Allow the amazing autocomplete to fix your spelling.\n3. Press find route and watch the amazing results.\n4. Clicking intersections also fills in the street names.\n5. To intersections using mouse clicks, first click any intersction. Then, press the \"Switch Intersections\" button before clicking a second intersection.\nTip: The map UI is optimal in full screen");
 }
 
 // Update the strings in the street text boxes, called when user clicks on an intersection
