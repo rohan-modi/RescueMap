@@ -242,19 +242,20 @@ void draw_main_canvas(ezgl::renderer *g) {
    draw_features(g);
    draw_streets(g);
    draw_intersections(g);
-   highlightRoute(g, highlightedSegments);
-   drawScaleBar(g);
-   if(viewPortArea < 200000)
-      drawPOIs(g);
-
-      if(intersection1 != -1 && intersection2 != -1){
-      std::vector<int> temp = findPathBetweenIntersections(0.0,std::pair<IntersectionIdx, IntersectionIdx>(intersection1, intersection2));
+   //highlightRoute(g, highlightedSegments);
+   if(intersection1 != -1 && intersection2 != -1){
+      std::vector<int> temp = findPathBetweenIntersections(30.0,std::pair<IntersectionIdx, IntersectionIdx>(intersection1, intersection2));
       
       highlightRoute(g, temp);
       
       intersection1 = -1;
       intersection2 = -1;
    }
+   drawScaleBar(g);
+   if(viewPortArea < 200000)
+      drawPOIs(g);
+
+      
 }
 
 // ==================================== Draw Functions ====================================
