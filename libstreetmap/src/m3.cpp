@@ -304,9 +304,9 @@ std::string getTravelDirections(const std::vector<StreetSegmentIdx>& path, Inter
         }
         // Or else, apply a regular turn
         else {
-            directions << "Turn " << getIntersectionTurningDirection(path[pathIdx - 1], path[pathIdx]);
+            directions << "Turn " << getIntersectionTurningDirection(path[pathIdx - 1], path[pathIdx]) << " onto ";
         }
-        directions << " onto " << getStreetName(currSegment.streetID) << ", ";
+        directions << getStreetName(currSegment.streetID) << ", ";
         directions << "continue " << getSegmentTravelDirection(prevInter, nextInter) << " for ";
 
         // Look ahead to the next street segment to determine its streetID.
