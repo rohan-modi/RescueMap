@@ -187,6 +187,7 @@ void updateStreetTextBoxes(ezgl::application *application, IntersectionIdx inter
 void swapStreetNames(GtkButton* button, ezgl::application* application);
 void highlightRoute(ezgl::renderer *g, std::vector<StreetSegmentIdx> highlightedStreetSegments);
 void displayDirections(ezgl::application* application, std::string directions);
+void clearHighlights(GtkButton* /*button*/, ezgl::application* application);
 
 //FOR TESTING USE
 
@@ -781,7 +782,6 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
       return;
    }
 
-
    // Loop through all combinations of street names based on prefix and check for intersections
    for (int street1StringsIdx = 0; street1StringsIdx < firstResults.size(); street1StringsIdx++) {
       for (int street2StringsIdx = 0; street2StringsIdx < secondResults.size(); street2StringsIdx++) {
@@ -933,6 +933,7 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
    GObject* modeTypeSwitch = application->get_object("ModeSwitch");
    GObject* helpButton = application->get_object("HelpButton");
    GObject* swapIntersectionsButton = application->get_object("SwitchIntersections");
+   GObject* clearButton = application->get_object("ClearButton");
    // GObject* modeLabelWhite = application->get_object("UserModeSwitchLabelWhite");
    // GObject* modeLabelBlack = application->get_object("UserModeSwitchLabelBlack");
    // GObject* darkLabelWhite = application->get_object("DarkSwitchLabelWhite");
@@ -953,6 +954,7 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
    g_signal_connect(modeTypeSwitch, "state-set", G_CALLBACK(changeUserMode), application);
    g_signal_connect(helpButton, "clicked", G_CALLBACK(createHelpPopup), application);
    g_signal_connect(swapIntersectionsButton, "clicked", G_CALLBACK(swapStreetNames), application);
+   g_signal_connect(clearButton, "clicked", G_CALLBACK(clearHighlights), application);
 
    // GtkTreeView* treeView = (GtkTreeView*) application->find_widget("StreetOptionsTree");
    // GtkTreeStore* store = gtk_tree_store_new(1, G_TYPE_STRING);
@@ -1262,4 +1264,12 @@ void displayDirections(ezgl::application* application, std::string directions) {
    std::string outputDirections = "Directions\n" + directions;
    const gchar* charVersion = outputDirections.c_str();
    gtk_text_buffer_set_text(textDisplay, charVersion, -1);
+}
+
+void clearHighlights(GtkButton* /*button*/, ezgl::application* application) {
+   for (int intersectionID = 0; intersectionID < getNumIntersections(); intersectionID++) {
+      intersections[intersectionID].highlight = false;
+   }
+   pathSegments.clear();
+   application->refresh_drawing();
 }
