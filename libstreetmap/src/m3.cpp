@@ -21,8 +21,6 @@
 
 #include <cmath>
 #include <sstream>
-#include <vector>
-#include <queue>
 #include <chrono>
 #include <list>
 #include "m1.h"
@@ -34,6 +32,7 @@
 #include "OSMDatabaseAPI.h"
 #include "StreetsDatabaseAPI.h"
 #include <thread>
+#include <queue>
 
 #define NO_EDGE -1
 #define STARTING_TIME 0.0
@@ -83,11 +82,17 @@ extern float cos_latavg;
 
 
 
+
 // ==================================== Declare Helper Functions ====================================
-double findDistanceBetweenTwoPointsxym3(ezgl::point2d point_1, ezgl::point2d point_2);
-std::vector<StreetSegmentIdx> retracePath(int nodeId, int startingNode);
+std::string getSegmentTravelDirection(IntersectionIdx inter1, IntersectionIdx inter2);
+std::string getIntersectionTurningDirection(StreetSegmentIdx segment1, StreetSegmentIdx segment2);
+std::vector<LatLon>findAngleReferencePoints(StreetSegmentIdx src_street_segment_id, StreetSegmentIdx dst_street_segment_id);
+std::string getRoundedDistance(double distance);
+void replaceUnknown(std::string &input);
 ezgl::point2d latlon_to_pointm3(LatLon position);
+std::vector<StreetSegmentIdx> retracePath(int nodeId, int startingNode);
 void resetNodes(std::vector<int> nodes);
+double findDistanceBetweenTwoPointsxym3(ezgl::point2d point_1, ezgl::point2d point_2);
 
 // Returns the time required to travel along the path specified, in seconds.
 // The path is given as a vector of street segment ids, and this function can
@@ -277,7 +282,7 @@ std::string getTravelDirections(const std::vector<StreetSegmentIdx>& path, Inter
     directions << " on " << getStreetName(currSegment.streetID) << "\n";
     
     // Declare and initialize total trip distance
-    double totalDistance = findStreetSegmentLength(path[0]);
+    double totalDistance = 0.0;
 
     // Loop through all street segments in the given path
     for (int pathIdx = 1; pathIdx < path.size(); pathIdx++) {
@@ -313,9 +318,9 @@ std::string getTravelDirections(const std::vector<StreetSegmentIdx>& path, Inter
         }
         // Or else, apply a regular turn
         else {
-            directions << "Turn " << getIntersectionTurningDirection(path[pathIdx - 1], path[pathIdx]) << " onto ";
+            directions << "Turn " << getIntersectionTurningDirection(path[pathIdx - 1], path[pathIdx]);
         }
-        directions << getStreetName(currSegment.streetID) << ", ";
+        directions << " onto " << getStreetName(currSegment.streetID) << ", ";
         directions << "continue " << getSegmentTravelDirection(prevInter, nextInter) << " for ";
 
         // Look ahead to the next street segment to determine its streetID.

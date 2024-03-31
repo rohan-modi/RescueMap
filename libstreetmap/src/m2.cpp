@@ -380,6 +380,7 @@ void draw_streets(ezgl::renderer *g){
    //std::cout << "draw_streets took " << wallClock.count() <<" seconds" << std::endl;
 }
 
+// Draw highlighted streets blue using same logic as draw streets, while changing the renderer colour
 void highlightRoute(ezgl::renderer *g, std::vector<StreetSegmentIdx> highlightedStreetSegments) {
    for(int segmentIndex = 0; segmentIndex < highlightedStreetSegments.size(); segmentIndex++){
       int segment_id = highlightedStreetSegments[segmentIndex];
