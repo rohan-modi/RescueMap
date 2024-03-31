@@ -150,7 +150,6 @@ void draw_features(ezgl::renderer *g);
 void set_feature_color(ezgl::renderer *g, int feature_id);
 bool set_segment_color(ezgl::renderer *g, std::string streetType);
 void act_on_mouse_click(ezgl::application* app, GdkEventButton* event, double x, double y);
-void my_act_on_key_press(ezgl::application *application, GdkEventKey *event, char *key_name);
 int findDistanceBetweenTwoPointsxy(ezgl::point2d point_1, ezgl::point2d point_2);
 gboolean change_dark_switch(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::application* application);
 void fillMapDropDown(ezgl::application* application);
@@ -182,17 +181,11 @@ std::pair<double, std::string> findClosestFireStation(LatLon my_position);
 std::pair<double, std::string> findClosestHydrant(LatLon my_position);
 std::pair<double, std::string> findClosestHospital(LatLon my_position);
 void createHelpPopup(GtkButton* /*button*/, ezgl::application* application);
-void act_on_mouse_move(ezgl::application */*application*/, GdkEventButton */*event*/, double x, double y);
 void updateStreetTextBoxes(ezgl::application *application, IntersectionIdx intersection);
 void swapStreetNames(GtkButton* button, ezgl::application* application);
 void highlightRoute(ezgl::renderer *g, std::vector<StreetSegmentIdx> highlightedStreetSegments);
 void displayDirections(ezgl::application* application, std::string directions);
 void clearHighlights(GtkButton* /*button*/, ezgl::application* application);
-
-//FOR TESTING USE
-
-
-void redrawSwitchLabels(ezgl::application* application);
 
 void drawMap() {
    // Set up the ezgl graphics window and hand control to it, as shown in the 
@@ -218,13 +211,8 @@ void drawMap() {
    application.add_canvas("MainCanvas", draw_main_canvas, initial_world);
 
    // Run the application
-   application.run(initial_setup, act_on_mouse_click, nullptr, my_act_on_key_press);
+   application.run(initial_setup, act_on_mouse_click, nullptr, nullptr);
 }
-
-//TEMP
-
-//void draw_nagivation(ezgl::renderer *g, std::vector<int>)
-
 
 void draw_main_canvas(ezgl::renderer *g) {
 
@@ -240,8 +228,6 @@ void draw_main_canvas(ezgl::renderer *g) {
       g->set_color(60, 60, 70); 
       g->fill_rectangle(visible_world);
    }
-
-   
    
    draw_features(g);
    draw_streets(g);
@@ -462,10 +448,9 @@ void setWorldScale(ezgl::renderer *g){
    }
 }
 
-
 //finds Angle from 0-360 degrees based on tow point2d
 //written by Kevin
-double findAngle360(ezgl::point2d point_1, ezgl::point2d point_2){
+double findAngle360(ezgl::point2d point_1, ezgl::point2d point_2) {
    double x, y;
       x = point_2.x - point_1.x;
       y = point_2.y - point_1.y;
@@ -480,27 +465,27 @@ double findAngle360(ezgl::point2d point_1, ezgl::point2d point_2){
 
 //checks if part of a feature of road will pass through the visible viewport
 //written by Kevin
-bool checkContains(double maxx, double minx, double maxy, double miny){
+bool checkContains(double maxx, double minx, double maxy, double miny) {
    ezgl::point2d bottom_right = world.bottom_right();
    ezgl::point2d top_left = world.top_left();
-   if(world.contains(maxx, miny)||world.contains(minx, maxy)||world.contains(maxx, miny)||world.contains(minx, maxy)){
+   if(world.contains(maxx, miny)||world.contains(minx, maxy)||world.contains(maxx, miny)||world.contains(minx, maxy)) {
       return true;
    }
-   if(maxx > bottom_right.x && minx < top_left.x ){
+   if(maxx > bottom_right.x && minx < top_left.x ) {
       return true;
-   }else if (miny < bottom_right.y && maxy > top_left.y ){
-      return true;
-   }
-
-   if(maxx < bottom_right.x && maxx > top_left.x ){
-      return true;
-   }else if (miny > bottom_right.y && miny < top_left.y ){
+   } else if (miny < bottom_right.y && maxy > top_left.y ) {
       return true;
    }
 
-   if(minx < bottom_right.x && minx > top_left.x ){
+   if (maxx < bottom_right.x && maxx > top_left.x ){
       return true;
-   }else if (maxy > bottom_right.y && maxy < top_left.y ){
+   } else if (miny > bottom_right.y && miny < top_left.y ) {
+      return true;
+   }
+
+   if (minx < bottom_right.x && minx > top_left.x ){
+      return true;
+   } else if (maxy > bottom_right.y && maxy < top_left.y ) {
       return true;
    }
    
@@ -595,13 +580,11 @@ ezgl::point2d latlon_to_point(LatLon position) {
 }
 
 LatLon point_to_latlon(ezgl::point2d point) {
-    float longitude = point.x / (kEarthRadiusInMeters * kDegreeToRadian * cos_latavg);
-    float latitude = point.y / (kEarthRadiusInMeters * kDegreeToRadian);
+   float longitude = point.x / (kEarthRadiusInMeters * kDegreeToRadian * cos_latavg);
+   float latitude = point.y / (kEarthRadiusInMeters * kDegreeToRadian);
 
-    return LatLon(latitude, longitude);
+   return LatLon(latitude, longitude);
 }
-
-
 
 // Update options displayed as suggested streets based on prefixes
 void updateOptions(std::string boxName, std::string streetName, ezgl::application* application) {
@@ -637,8 +620,6 @@ void updateOptions(std::string boxName, std::string streetName, ezgl::applicatio
    }
    GtkComboBox* textBox = (GtkComboBox*) application->find_widget(charVersion);
    gtk_combo_box_popup(textBox);
-
-   //GtkText* searchBar = (GtkText*) application->find_widget("Street1");
 }
 
 // Get entered text from first text box, call function to update coresponding dropdown
@@ -646,15 +627,6 @@ void firstTextEntered(GtkEntry* textBox, ezgl::application* application) {
    const gchar* text = gtk_entry_get_text(textBox);
    std::string streetString = text;
    updateOptions("Street1Options", streetString, application);
-   //gtk_text_grab_focus_without_selecting(textBox);
-   // GtkTreeView* treeView = (GtkTreeView*) application->find_widget("StreetOptionsTree");
-   // GtkTreeModel* treeModel = gtk_tree_view_get_model(treeView);
-   // GtkTreeIter iter;
-   // gtk_tree_store_clear((GtkTreeStore*)treeModel);
-   // gtk_tree_store_append((GtkTreeStore*)treeModel, &iter, NULL);
-   // gtk_tree_store_set((GtkTreeStore*)treeModel, &iter, 0, text, -1);
-   // GtkWidget* window = (GtkWidget*) application->find_widget("MainWindow");
-   // gtk_widget_show_all(window);
 }
 
 // Get entered text from second text box, call function to update coresponding dropdown
@@ -921,8 +893,6 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
    std::string directions = getTravelDirections(pathSegments, intersectionPair.first, intersectionPair.second);
    displayDirections(application, directions);
    application->refresh_drawing();
-   //GtkWidget* window = (GtkWidget*) application->find_widget("MainWindow");
-   //gtk_widget_show_all(window);
 }
 
 // Initialize GObjects and connect callbacks to signals
@@ -946,10 +916,6 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
    GObject* helpButton = application->get_object("HelpButton");
    GObject* swapIntersectionsButton = application->get_object("SwitchIntersections");
    GObject* clearButton = application->get_object("ClearButton");
-   // GObject* modeLabelWhite = application->get_object("UserModeSwitchLabelWhite");
-   // GObject* modeLabelBlack = application->get_object("UserModeSwitchLabelBlack");
-   // GObject* darkLabelWhite = application->get_object("DarkSwitchLabelWhite");
-   // GObject* darkLabelBlack = application->get_object("DarkSwitchLabelBlack");
 
    // Connect signals
    g_signal_connect(firstBox, "activate", G_CALLBACK(firstTextEntered), application);
@@ -967,10 +933,6 @@ void initial_setup(ezgl::application* application, bool /*new_window*/) {
    g_signal_connect(helpButton, "clicked", G_CALLBACK(createHelpPopup), application);
    g_signal_connect(swapIntersectionsButton, "clicked", G_CALLBACK(swapStreetNames), application);
    g_signal_connect(clearButton, "clicked", G_CALLBACK(clearHighlights), application);
-
-   // GtkTreeView* treeView = (GtkTreeView*) application->find_widget("StreetOptionsTree");
-   // GtkTreeStore* store = gtk_tree_store_new(1, G_TYPE_STRING);
-   // gtk_tree_view_set_model(treeView, (GtkTreeModel*) store);
 
    // Populate dropdown menu of map names
    fillMapDropDown(application);
@@ -1115,8 +1077,6 @@ gboolean change_dark_switch(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::
    // Update darkMode global variable based on the switch being on or off
    darkMode = switch_state;
 
-   //redrawSwitchLabels(application);
-
    //Force a redraw to reflect the new dark mode state
    application->refresh_drawing();
 
@@ -1138,57 +1098,56 @@ void fillMapDropDown(ezgl::application* application) {
 // Writen by Jonathan
 
 POIIdx findClickablePOI(LatLon my_position) {
-    POIIdx closestPOI = 0;
-    double minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), buildings[0].position);
+   POIIdx closestPOI = 0;
+   double minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), buildings[0].position);
 
-    for (int POI_idx = 0; POI_idx < buildings.size(); POI_idx++) {
-        if (findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), buildings[POI_idx].position) < minDistance) {
-            minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), buildings[POI_idx].position);
-            closestPOI = POI_idx;
-        }
-    }
-    return closestPOI;
+   for (int POI_idx = 0; POI_idx < buildings.size(); POI_idx++) {
+      if (findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), buildings[POI_idx].position) < minDistance) {
+         minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), buildings[POI_idx].position);
+         closestPOI = POI_idx;
+      }
+   }
+   return closestPOI;
 }
 
 std::pair<double, std::string> findClosestFireStation(LatLon my_position){
-    POIIdx closestPOI = 0;
-    double minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), FIREfacilities[0].position);
+   POIIdx closestPOI = 0;
+   double minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), FIREfacilities[0].position);
 
-    for (int POI_idx = 0; POI_idx < FIREfacilities.size(); POI_idx++) {
-        if (findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), FIREfacilities[POI_idx].position) < minDistance) {
-            minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), FIREfacilities[POI_idx].position);
-            closestPOI = POI_idx;
-        }
-    }
-    return {minDistance, FIREfacilities[closestPOI].name};
+   for (int POI_idx = 0; POI_idx < FIREfacilities.size(); POI_idx++) {
+      if (findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), FIREfacilities[POI_idx].position) < minDistance) {
+         minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), FIREfacilities[POI_idx].position);
+         closestPOI = POI_idx;
+      }
+   }
+   return {minDistance, FIREfacilities[closestPOI].name};
 }
 
 std::pair<double, std::string> findClosestHydrant(LatLon my_position){
-    POIIdx closestPOI = 0;
-    double minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), fire_hydrants[0].position);
+   POIIdx closestPOI = 0;
+   double minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), fire_hydrants[0].position);
 
-    for (int POI_idx = 0; POI_idx < fire_hydrants.size(); POI_idx++) {
-        if (findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), fire_hydrants[POI_idx].position) < minDistance) {
-            minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), fire_hydrants[POI_idx].position);
-            closestPOI = POI_idx;
-        }
-    }
-    return {minDistance, getIntersectionName(findClosestIntersection(point_to_latlon(fire_hydrants[closestPOI].position)))};
+   for (int POI_idx = 0; POI_idx < fire_hydrants.size(); POI_idx++) {
+      if (findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), fire_hydrants[POI_idx].position) < minDistance) {
+         minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), fire_hydrants[POI_idx].position);
+         closestPOI = POI_idx;
+      }
+   }
+   return {minDistance, getIntersectionName(findClosestIntersection(point_to_latlon(fire_hydrants[closestPOI].position)))};
 }
 
 std::pair<double, std::string> findClosestHospital(LatLon my_position){
-    POIIdx closestPOI = 0;
-    double minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), EMTfacilities[0].position);
+   POIIdx closestPOI = 0;
+   double minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), EMTfacilities[0].position);
 
-    for (int POI_idx = 0; POI_idx < EMTfacilities.size(); POI_idx++) {
-        if (findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), EMTfacilities[POI_idx].position) < minDistance) {
-            minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), EMTfacilities[POI_idx].position);
-            closestPOI = POI_idx;
-        }
-    }
-    return {minDistance, EMTfacilities[closestPOI].name};
+   for (int POI_idx = 0; POI_idx < EMTfacilities.size(); POI_idx++) {
+      if (findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), EMTfacilities[POI_idx].position) < minDistance) {
+         minDistance = findDistanceBetweenTwoPointsxy(latlon_to_point(my_position), EMTfacilities[POI_idx].position);
+         closestPOI = POI_idx;
+      }
+   }
+   return {minDistance, EMTfacilities[closestPOI].name};
 }
-
 
 gboolean changeUserMode(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::application* application) {
    userMode = switch_state;
@@ -1200,23 +1159,6 @@ gboolean changeUserMode(GtkSwitch* /*switch*/, gboolean switch_state, ezgl::appl
 void createHelpPopup(GtkButton* /*button*/, ezgl::application* application) {
    application->create_popup_message("User Instructions", 
    "1. Type your streets into the provided search bars.\n2. Allow the amazing autocomplete to fix your spelling\n3. Press find route and watch the amazing results\n4. Clicking intersections also fills in the street names\n5. Use the \"Switch Intersections\" Button to add multiple intersections with mouse clicks\nTip: The map UI is optimal in full screen");
-}
-
-
-void my_act_on_key_press(ezgl::application *application, GdkEventKey */*event*/, char *key_name) {
-  application->update_message("Key Pressed");
-  std::cout << key_name <<" key is pressed" << std::endl;
-}
-
-int mouseCounter = 0;
-
-void act_on_mouse_move(ezgl::application */*application*/, GdkEventButton */*event*/, double x, double y)
-{
-   mouseCounter++;
-   if (mouseCounter > 10) {
-      std::cout << "Mouse move at coordinates (" << x << "," << y << ") "<< std::endl;
-      mouseCounter = 0;
-   }
 }
 
 void updateStreetTextBoxes(ezgl::application* application, IntersectionIdx intersection) {
