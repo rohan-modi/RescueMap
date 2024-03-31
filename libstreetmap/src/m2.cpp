@@ -910,8 +910,8 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
 
    // Copy to global vector
    pathSegments.resize(tempPath.size());
-   for (int i = 0; i < tempPath.size(); i++) {
-      pathSegments[i] = tempPath[i];
+   for (int segmentIndex = 0; segmentIndex < tempPath.size(); segmentIndex++) {
+      pathSegments[segmentIndex] = tempPath[segmentIndex];
    }
 
    // Display the driving directions in the UI
