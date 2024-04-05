@@ -197,7 +197,7 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
             }
 
             
-            double time = newData.travel_time + node.travelTime + findDistanceBetweenTwoPointsxy(newData.position, destination) + delay;
+            double time = newData.travel_time + node.travelTime + findDistanceBetweenTwoPointsxy(latlon_to_point(getIntersectionPosition(newData.intersectionId)), destination)/100 + delay;
             intersections[newData.intersectionId].processed = true;
             intersections[newData.intersectionId].reachingEdge = newData.streetId;
             intersections[newData.intersectionId].reachingNode = nodeId;

@@ -239,7 +239,7 @@ void draw_main_canvas(ezgl::renderer *g) {
    if (intersection1 != -1 && intersection2 != -1) {
       std::vector<int> temp = findPathBetweenIntersections(0.0,std::pair<IntersectionIdx, IntersectionIdx>(intersection1, intersection2));
 
-      highlightRoute(g, temp);
+      //highlightRoute(g, temp);
 
       intersection1 = -1;
       intersection2 = -1;
@@ -761,7 +761,6 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
    float x2 = 0;
    float y1 = 0;
    float y2 = 0;
-
    // Check if the current street names are valid
    if (firstResults.size() == 0) {
       application->create_popup_message("Incorrect Street Names", "There were no streets found matching the name provided for Street 1");
@@ -776,6 +775,7 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
       application->create_popup_message("Incorrect Street Names", "There were no streets found matching the name provided for Street 4");
       return;
    }
+   std::cout << "Second" << std::endl;
 
    // Loop through all combinations of street names based on prefix and check for intersections
    for (int street1StringsIdx = 0; street1StringsIdx < firstResults.size(); street1StringsIdx++) {
@@ -808,6 +808,7 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
          }
       }
    }
+
    // Repeat the process for the second pair of street names
    for (int street3StringsIdx = 0; street3StringsIdx < thirdResults.size(); street3StringsIdx++) {
       for (int street4StringsIdx = 0; street4StringsIdx < fourthResults.size(); street4StringsIdx++) {
@@ -839,10 +840,13 @@ void findIntersections(GtkButton* /*button*/, ezgl::application* application) {
    }
 
    // Check if both starting and ending intersection are the same
-   if (tempFirstIntersections[0] == tempSecondIntersections[0]) {
-      application->create_popup_message("Invalid Route", "The provided intersections are at the same location");
-      return;
+   if (tempFirstIntersections.size() > 0 && tempSecondIntersections.size() > 0) {
+      if (tempFirstIntersections[0] == tempSecondIntersections[0]) {
+         application->create_popup_message("Invalid Route", "The provided intersections are at the same location");
+         return;
+      }
    }
+   
 
    // If both pairs of streets generated unique intersections, update global vectors using the temporary ones
    // Set the x and y coordinates and pan to put the route on screen
