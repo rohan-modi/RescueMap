@@ -199,6 +199,12 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
                     //std::cout<< "NOI delay" <<std::endl;
                     delay = 0.0;
                 }
+            
+            double time = newData.travel_time + node.travelTime + findDistanceBetweenTwoPointsxy(latlon_to_point(getIntersectionPosition(newData.intersectionId)), destination)/100 + delay;
+            intersections[newData.intersectionId].processed = true;
+            intersections[newData.intersectionId].reachingEdge = newData.streetId;
+            intersections[newData.intersectionId].reachingNode = nodeId;
+            intersections[nodeId].bestTime = time;
 
                 
                 double time = newData.travel_time + node.travelTime + delay;
@@ -311,9 +317,9 @@ std::string getTravelDirections(const std::vector<StreetSegmentIdx>& path, Inter
         }
         // Or else, apply a regular turn
         else {
-            directions << "Turn " << getIntersectionTurningDirection(path[pathIdx - 1], path[pathIdx]);
+            directions << "Turn " << getIntersectionTurningDirection(path[pathIdx - 1], path[pathIdx]) << " onto ";
         }
-        directions << " onto " << getStreetName(currSegment.streetID) << ", ";
+        directions << getStreetName(currSegment.streetID) << ", ";
         directions << "continue " << getSegmentTravelDirection(prevInter, nextInter) << " for ";
 
         // Look ahead to the next street segment to determine its streetID.
@@ -349,9 +355,6 @@ std::string getTravelDirections(const std::vector<StreetSegmentIdx>& path, Inter
 
     // Report total trip distance
     directions << "Total trip distance: " << getRoundedDistance(totalDistance) << "\n";
-    
-    // Report total trip time
-    directions << "Total trip time: " << "<XXX[PLACEHOLDER]XXX>" << "\n";
 
     // Replace <unknown> and return travel directions as a string
     std::string output = directions.str();
