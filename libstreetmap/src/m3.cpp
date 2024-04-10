@@ -228,7 +228,7 @@ std::vector<StreetSegmentIdx> retracePath(int nodeId, int startingNode){
 
     std::list<StreetSegmentIdx> path;
     int index = nodeId;
-    while(index != startingNode &&index != 0){
+    while(index != startingNode ){
         path.push_front(intersections[index].reachingEdge);
         index = intersections[index].reachingNode;
     }
