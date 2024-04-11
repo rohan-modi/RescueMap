@@ -35,7 +35,6 @@
 #include <thread>
 #include <queue>
 #include <limits>
-#include <chrono>
 
 #define NO_EDGE -1
 #define STARTING_TIME 0.0
