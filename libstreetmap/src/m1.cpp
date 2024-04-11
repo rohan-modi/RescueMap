@@ -45,16 +45,6 @@ struct Map_bounds {
    double min_lon;
 } mapBounds;
 
-struct Intersection_data {
-   ezgl::point2d position;
-   std::string name;
-   bool highlight = false;
-   bool processed = false;
-   int reachingEdge = 0;
-   int reachingNode = 0;
-   double bestTime = std::numeric_limits<double>::infinity();
-};
-
 struct closed_feature_data {
     std::vector<ezgl::point2d> bounds;
     
@@ -110,6 +100,15 @@ struct building_data{
     ezgl::point2d position;
     std::string levels;
     std::string type;
+};
+
+struct Intersection_data {
+   ezgl::point2d position;
+   std::string name;
+   bool highlight = false;
+   int reachingEdge = 0;
+   int reachingNode = 0;
+   double bestTime = std::numeric_limits<double>::infinity();
 };
 
 //ADDED FOR M3
@@ -190,6 +189,7 @@ void initializeIntersections();
 void populateFeatures();
 void populateMapNames();
 void populatePOILocations();
+void populateConnectedIntersectionData();
 
 // ==================================== Declare helper functions ====================================
 inline bool streetPairComparer(const std::pair<std::string, int>& pair1, const std::pair<std::string, int>& pair2);
@@ -201,6 +201,32 @@ double findAngle(ezgl::point2d point_1, ezgl::point2d point_2);
 int findDistanceBetweenTwoPointsxy(ezgl::point2d point_1, ezgl::point2d point_2);
 
 //WORKING ON ADDING LOAD MAP FEATURES======================================================================
+
+
+//FOR M4 (improving M3 Speed)
+
+void populateConnectedIntersectionData(){
+    for(int i = 0; i < connectedIntersections.size(); i++){
+        for(int j = 0; j< connectedIntersections[i].size(); j++){
+            connectedIntersections[i][j].distance = findStreetSegmentLength(connectedIntersections[i][j].streetId);
+            connectedIntersections[i][j].travel_time = connectedIntersections[i][j].distance/connectedIntersections[i][j].speedlimit;
+            connectedIntersections[i][j].position = latlon_to_pointm1(getIntersectionPosition(connectedIntersections[i][j].intersectionId));
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void populatePOILocations(){
     const OSMNode* node;
@@ -864,7 +890,9 @@ bool loadMap(std::string map_streets_database_filename) {
     POIlocations.clear();
     
 
-    populateIntersectionData();
+    populateIntersectionData(); //Critical do not remove
+
+    populateConnectedIntersectionData(); //Addedfor m3 speed improvements
     populateOSMWayByID();
     populateSegmentsdata();
     
@@ -1146,11 +1174,6 @@ void populateIntersectionData() {
             data.streetId = streetSegmentID;
             data.primaryStreet = segment.streetID;
             data.speedlimit = segment.speedLimit;
-            data.distance = findStreetSegmentLength(streetSegmentID);
-            data.travel_time = data.distance/data.speedlimit;
-            data.position = latlon_to_pointm1(getIntersectionPosition(data.intersectionId));
-            data.open = false;
-            data.closed = false;
 
             connectedIntersections[inter_id].push_back(data);
             //END OF ADDED FOR M3
