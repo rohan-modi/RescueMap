@@ -35,6 +35,7 @@
 #include <thread>
 #include <queue>
 #include <limits>
+#include <chrono>
 
 #define NO_EDGE -1
 #define STARTING_TIME 0.0
@@ -133,7 +134,7 @@ double computePathTravelTime(const double turn_penalty,
         // Update the previous streetID to the current streetID
         prevStreetIdx = currStreetIdx;
     }
-    std::cout<<travelTime<<std::endl;
+    //std::cout<<travelTime<<std::endl;
     return travelTime;
 }
 
@@ -150,6 +151,8 @@ double computePathTravelTime(const double turn_penalty,
 std::vector<StreetSegmentIdx> findPathBetweenIntersections(
             const double turn_penalty,
             const std::pair<IntersectionIdx, IntersectionIdx> intersect_ids) {
+
+    auto startTime = std::chrono::high_resolution_clock::now();
 
     std::priority_queue<WaveElem> openHeap;
     std::vector<IntersectionIdx> nodesToReset;
@@ -176,6 +179,10 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
             if(nodeId == intersect_ids.second){
                 std::vector<StreetSegmentIdx> path = retracePath(intersect_ids.second,intersect_ids.first);
                 resetNodes(nodesToReset);
+
+                auto currTime = std::chrono::high_resolution_clock::now();
+                auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
+                std::cout << "findPath took " << wallClock.count() <<" seconds" << std::endl;
                 return path;
             }
 
@@ -197,10 +204,10 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
                 }
 
                 
-                double time = findStreetSegmentTravelTime(newData.streetId) + node.travelTime + delay;
+                double time = newData.travel_time + node.travelTime + delay;
                 
 
-                double time_to_dest = (findDistanceBetweenTwoPointsxy(latlon_to_point(getIntersectionPosition(newData.intersectionId)), destination)/100.0);
+                double time_to_dest = (findDistanceBetweenTwoPointsxy(newData.position, destination)/100.0);
                 ;
 
                 openHeap.push(WaveElem(newData.intersectionId, newData.streetId, nodeId,time, time_to_dest, newData.primaryStreet));
