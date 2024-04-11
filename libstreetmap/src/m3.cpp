@@ -156,11 +156,10 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
 
     std::priority_queue<WaveElem> openHeap;
     std::vector<IntersectionIdx> nodesToReset;
-    ezgl::point2d destination= latlon_to_point(getIntersectionPosition(intersect_ids.second));
-    openHeap.push(WaveElem(intersect_ids.first, NO_EDGE, NO_EDGE, STARTING_TIME,findDistanceBetweenTwoPointsxy(latlon_to_point(getIntersectionPosition(intersect_ids.first)), destination)/100, NO_EDGE));
+    ezgl::point2d destination = intersections[intersect_ids.second].position;
+    openHeap.push(WaveElem(intersect_ids.first, NO_EDGE, NO_EDGE, STARTING_TIME,findDistanceBetweenTwoPointsxy(intersections[intersect_ids.first].position, destination)/100, NO_EDGE));
     nodesToReset.push_back(intersect_ids.first);
 
-    
     while(!openHeap.empty()){
         WaveElem node = openHeap.top();
 
@@ -173,8 +172,6 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
             intersections[nodeId].reachingEdge = node.edgeID;
             intersections[nodeId].reachingNode = node.reachingNodeID;
             intersections[nodeId].bestTime = node.travelTime + node.timeToDest;
-
-            
 
             if(nodeId == intersect_ids.second){
                 std::vector<StreetSegmentIdx> path = retracePath(intersect_ids.second,intersect_ids.first);
@@ -195,6 +192,7 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
                 }
 
                 nodesToReset.push_back(newData.intersectionId);
+
                 double delay;
 
                 if(newData.primaryStreet != node.primaryStreet){
@@ -202,21 +200,14 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
                 }else{
                     delay = 0.0;
                 }
-
                 
                 double time = newData.travel_time + node.travelTime + delay;
-                
 
                 double time_to_dest = (findDistanceBetweenTwoPointsxy(newData.position, destination)/100.0);
-                ;
 
                 openHeap.push(WaveElem(newData.intersectionId, newData.streetId, nodeId,time, time_to_dest, newData.primaryStreet));
-                
-
             }
         }
-
-        
     }
     return {0};
 }
