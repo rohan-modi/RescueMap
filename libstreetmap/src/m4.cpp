@@ -85,32 +85,33 @@ std::vector<IntersectionIdx> findPathBetweenIntersectionsM4(
 
 std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std::vector<DeliveryInf>& deliveries,const std::vector<IntersectionIdx>& depots)
 {
+
+     //=====================================START OF MATRIX SETUP================================================
     auto startTime = std::chrono::high_resolution_clock::now();
     int points = deliveries.size()*2;
     int indexTracker = 0;
 
     std::unordered_map<int, int> intersectionVectorIndicies;
     std::unordered_map<int, int> intersectionToDeliveryId;
-    
     std::unordered_set<int> destinationSet;
     std::unordered_set<int> depotSet;
-
     std::vector<IntersectionIdx> indexToIntersectionId;
-    
     std::vector<std::vector<TravelMatrixElem>> travelTimeMatrix;
 
+    //Populates data structs for delivery locations mapping interIds to indicies
     for(int i = 0; i < deliveries.size(); i++){
         destinationSet.insert(deliveries[i].pickUp);
         destinationSet.insert(deliveries[i].dropOff);
         indexToIntersectionId.push_back(deliveries[i].pickUp);
-        intersectionVectorIndicies.insert(std::make_pair(deliveries[i].pickUp, indexTracker));
-        indexTracker++;
         indexToIntersectionId.push_back(deliveries[i].dropOff);
-        intersectionVectorIndicies.insert(std::make_pair(deliveries[i].dropOff, indexTracker));
-        indexTracker++;
         intersectionToDeliveryId.insert(std::make_pair(deliveries[i].pickUp, i));
         intersectionToDeliveryId.insert(std::make_pair(deliveries[i].dropOff, i));
+        intersectionVectorIndicies.insert(std::make_pair(deliveries[i].pickUp, indexTracker));
+        indexTracker++;
+        intersectionVectorIndicies.insert(std::make_pair(deliveries[i].dropOff, indexTracker));
+        indexTracker++;
     }
+    //Populates data structs for depot locations mapping interIds to indicies
     for(int i = 0; i < depots.size(); i++){
         depotSet.insert(depots[i]);
         indexToIntersectionId.push_back(depots[i]);
@@ -139,25 +140,31 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
             data.to = indexToIntersectionId[j];
             data.from = indexToIntersectionId[i];
 
-            //bugged (only used for better optimization doesnt retrace steps if its from drop off to pick up of same delivery)
-            // for(const auto& pair: intersectionToDeliveryId){
-            //     std::cout << "key: "<< pair.first << "value: " << pair.second<<std::endl;
-            //     std::cout<< "finding " << intersectionToDeliveryId.find(data.from)->first<< std::endl;
-            // }
+            if(data.to == data.from){
+                    data.path = {-1};
+                    data.travelTime = std::numeric_limits<double>::infinity();
+                    data.legal = false;
+                    //std::cout<< "here" << std::endl;
+                    tempData.push_back(data);
+                    continue;
+                }
             
-            // //if(intersectionToDeliveryId.find(data.from) != intersectionToDeliveryId.end() && intersectionToDeliveryId.find(data.to) != intersectionToDeliveryId.end())
-            // if(intersectionToDeliveryId.find(data.from)->second == intersectionToDeliveryId.find(data.to)->second)
-            // {
-            //      std::cout<<deliveries[intersectionToDeliveryId.find(data.from)->second].pickUp<< std::endl;
-            //     // if(deliveries[intersectionToDeliveryId.find(data.from)->second].pickUp == data.to){
-            //     //     // data.path = {-1};
-            //     //     // data.travelTime = std::numeric_limits<double>::infinity();
-            //     //     // data.legal = false;
-            //     //     // std::cout<< "here" << std::endl;
-            //     //     // tempData.push_back(data);
-            //     //     //continue;
-            //     // }
-            // }
+            if(j < points){
+                if(intersectionToDeliveryId.find(data.from)->second == intersectionToDeliveryId.find(data.to)->second)
+                {
+                    //std::cout<<"entered"<<std::endl;
+                    //std::cout<<deliveries[intersectionToDeliveryId.find(data.from)->first].pickUp<< std::endl;
+                    if(deliveries[intersectionToDeliveryId.find(data.from)->second].pickUp == data.to){
+                        data.path = {-1};
+                        data.travelTime = std::numeric_limits<double>::infinity();
+                        data.legal = false;
+                        //std::cout<< "here" << std::endl;
+                        tempData.push_back(data);
+                        continue;
+                    }
+                }
+                
+            }
             data.path = retracePathM4(indexToIntersectionId[i],indexToIntersectionId[j]);
             data.travelTime = intersections[indexToIntersectionId[j]].bestTime;
             data.legal = true;
@@ -201,13 +208,15 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
         resetNodesM4(nodesToReset);
     }
 
+    //=====================================END OF MATRIX SETUP================================================
+
     //DRAWS OUT MATRIX
     for(int i = 0; i< 6; i++){
         for(int j = 0; j < travelTimeMatrix[i].size(); j++){
             if(travelTimeMatrix[i][j].legal)
             std::cout<<travelTimeMatrix[i][j].travelTime << "       ";
             else
-            std::cout<<"false  ";
+            std::cout<<"false         ";
             if(travelTimeMatrix[i][j].travelTime == 0)
                 std::cout<<"      ";
 
