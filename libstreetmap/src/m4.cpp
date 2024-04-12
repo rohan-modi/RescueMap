@@ -132,9 +132,7 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
         std::vector<TravelMatrixElem> tempData;
 
         for(int j = 0; j < points + depots.size(); j++){
-            //std::cout<<"here" << std::endl;
 
-            
             TravelMatrixElem data;
 
             data.to = indexToIntersectionId[j];
@@ -144,21 +142,19 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
                     data.path = {-1};
                     data.travelTime = std::numeric_limits<double>::infinity();
                     data.legal = false;
-                    //std::cout<< "here" << std::endl;
                     tempData.push_back(data);
+                    //std::cout<<"called"<<std::endl;
                     continue;
                 }
             
             if(j < points){
                 if(intersectionToDeliveryId.find(data.from)->second == intersectionToDeliveryId.find(data.to)->second)
                 {
-                    //std::cout<<"entered"<<std::endl;
-                    //std::cout<<deliveries[intersectionToDeliveryId.find(data.from)->first].pickUp<< std::endl;
                     if(deliveries[intersectionToDeliveryId.find(data.from)->second].pickUp == data.to){
                         data.path = {-1};
                         data.travelTime = std::numeric_limits<double>::infinity();
                         data.legal = false;
-                        //std::cout<< "here" << std::endl;
+                        
                         tempData.push_back(data);
                         continue;
                     }
@@ -173,7 +169,6 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
         }
 
         travelTimeMatrix.push_back(tempData);
-        //std::cout<< "here2" << std::endl;
         resetNodesM4(nodesToReset);
     }
 
@@ -191,7 +186,6 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
         std::vector<TravelMatrixElem> tempData;
 
         for(int j = 0; j < points; j++){
-            //std::cout<<"here" << std::endl;
             TravelMatrixElem data;
 
             data.to = indexToIntersectionId[j];
@@ -210,21 +204,21 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
 
     //=====================================END OF MATRIX SETUP================================================
 
-    //DRAWS OUT MATRIX
-    for(int i = 0; i< 6; i++){
-        for(int j = 0; j < travelTimeMatrix[i].size(); j++){
-            if(travelTimeMatrix[i][j].legal)
-            std::cout<<travelTimeMatrix[i][j].travelTime << "       ";
-            else
-            std::cout<<"false         ";
-            if(travelTimeMatrix[i][j].travelTime == 0)
-                std::cout<<"      ";
+    // DRAWS OUT MATRIX
+    // for(int i = 0; i< 6; i++){
+    //     for(int j = 0; j < travelTimeMatrix[i].size(); j++){
+    //         if(travelTimeMatrix[i][j].legal)
+    //         std::cout<<travelTimeMatrix[i][j].travelTime << "       ";
+    //         else
+    //         std::cout<<"false         ";
+    //         if(travelTimeMatrix[i][j].travelTime == 0)
+    //             std::cout<<"      ";
 
-        }
-        std::cout<<std::endl;
-    }
+    //     }
+    //     std::cout<<std::endl;
+    // }
 
-    //Empty return
+    // Empty return
     CourierSubPath data;
     std::vector<CourierSubPath> temp;
     temp.push_back(data);
