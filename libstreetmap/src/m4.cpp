@@ -523,9 +523,10 @@ bool twoOpt(std::vector<CourierSubPath>* initialPath, std::unordered_map<Interse
             pathIntersections[i] = swappedIntersections[1];
             pathIntersections[i+1] = swappedIntersections[2];
 
-            for (int j = 0; j < 3; j++) {
-                std::pair<IntersectionIdx, IntersectionIdx> intersectionPair (pathIntersections[i-1+j], pathIntersections[i+j]);
-                (*initialPath)[i-1+j].subpath = findPathBetweenIntersections(turnPenalty, intersectionPair);
+            for (int j = 0; j < 3; j++) {                
+                int firstIndex = intersectionVectorIndices.find(pathIntersections[i-1+j])->second;
+                int secondIndex = intersectionVectorIndices.find(pathIntersections[i+j])->second;
+                (*initialPath)[i-1+j].subpath = travelTimeMatrix[firstIndex][secondIndex].path;
             }
             return true;
         }
