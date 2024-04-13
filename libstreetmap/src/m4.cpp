@@ -73,15 +73,22 @@ extern std::vector<Intersection_data> intersections;
 extern float cos_latavg;
 
 void resetNodesM4(std::vector<int> nodes);
-std::vector<StreetSegmentIdx> retracePathM4(int startingNode, int nodeId);
-std::vector<IntersectionIdx> findPathBetweenIntersectionsM4(
+std::vector<StreetSegmentIdx> retracePathM4(int startingNode, int nodeId, std::vector<Intersection_data>& intersectionLinks);
+std::vector<TravelMatrixElem> findPathBetweenIntersectionsM4(
             const double turn_penalty,
             IntersectionIdx intersect_Start, 
             int combinations, 
-            std::unordered_set<int> destinationSet,
-            std::unordered_set<int> depotSet,
-            bool includeDepots
+            bool includeDepots,
+            const std::vector<DeliveryInf>& deliveries,
+            const std::vector<IntersectionIdx>& depots
             );
+
+    std::unordered_map<int, int> intersectionVectorIndicies;
+    std::unordered_map<int, int> intersectionToDeliveryId;
+    std::unordered_set<int> destinationSet;
+    std::unordered_set<int> depotSet;
+    std::vector<IntersectionIdx> indexToIntersectionId;
+    std::vector<std::vector<TravelMatrixElem>> travelTimeMatrix;
 
 std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std::vector<DeliveryInf>& deliveries,const std::vector<IntersectionIdx>& depots)
 {
@@ -91,12 +98,16 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
     int points = deliveries.size()*2;
     int indexTracker = 0;
 
-    std::unordered_map<int, int> intersectionVectorIndicies;
-    std::unordered_map<int, int> intersectionToDeliveryId;
-    std::unordered_set<int> destinationSet;
-    std::unordered_set<int> depotSet;
-    std::vector<IntersectionIdx> indexToIntersectionId;
-    std::vector<std::vector<TravelMatrixElem>> travelTimeMatrix;
+    intersectionVectorIndicies.clear();
+    intersectionToDeliveryId.clear();
+    destinationSet.clear();
+    depotSet.clear();
+    indexToIntersectionId.clear();
+    for(int i = 0; i< travelTimeMatrix.size(); i++){
+        travelTimeMatrix[i].clear();
+    }
+    travelTimeMatrix.clear();
+    travelTimeMatrix.resize(points+depots.size());
 
     //Populates data structs for delivery locations mapping interIds to indicies
     for(int i = 0; i < deliveries.size(); i++){
@@ -120,103 +131,63 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
     }
     
     //Paths between points and other points + depots
+    
+    
+    #pragma omp parallel for
     for(int i = 0; i < points; i++){
-        std::vector<IntersectionIdx> nodesToReset = findPathBetweenIntersectionsM4(
+        travelTimeMatrix[i] = findPathBetweenIntersectionsM4(
             turn_penalty,
             indexToIntersectionId[i], 
             points + depots.size(), 
-            destinationSet,
-            depotSet,
-            true
+            true,
+            deliveries,
+            depots
             );
-        std::vector<TravelMatrixElem> tempData;
-
-        for(int j = 0; j < points + depots.size(); j++){
-
-            TravelMatrixElem data;
-
-            data.to = indexToIntersectionId[j];
-            data.from = indexToIntersectionId[i];
-
-            if(data.to == data.from){
-                    data.path = {-1};
-                    data.travelTime = std::numeric_limits<double>::infinity();
-                    data.legal = false;
-                    tempData.push_back(data);
-                    //std::cout<<"called"<<std::endl;
-                    continue;
-                }
-            
-            if(j < points){
-                if(intersectionToDeliveryId.find(data.from)->second == intersectionToDeliveryId.find(data.to)->second)
-                {
-                    if(deliveries[intersectionToDeliveryId.find(data.from)->second].pickUp == data.to){
-                        data.path = {-1};
-                        data.travelTime = std::numeric_limits<double>::infinity();
-                        data.legal = false;
-                        
-                        tempData.push_back(data);
-                        continue;
-                    }
-                }
-                
-            }
-            data.path = retracePathM4(indexToIntersectionId[i],indexToIntersectionId[j]);
-            data.travelTime = intersections[indexToIntersectionId[j]].bestTime;
-            data.legal = true;
-
-            tempData.push_back(data);
-        }
-
-        travelTimeMatrix.push_back(tempData);
-        resetNodesM4(nodesToReset);
     }
 
-    //Paths between deopts to points excluding paths to other depots
+    #pragma omp parallel for
     for(int i = deliveries.size()*2; i < deliveries.size()*2 + depots.size(); i++){
 
-        std::vector<IntersectionIdx> nodesToReset = findPathBetweenIntersectionsM4(
+        travelTimeMatrix[i]  = findPathBetweenIntersectionsM4(
             turn_penalty,
             indexToIntersectionId[i], 
             points, 
-            destinationSet,
-            depotSet,
-            false
+            false,
+            deliveries,
+            depots
             );
-        std::vector<TravelMatrixElem> tempData;
-
-        for(int j = 0; j < points; j++){
-            TravelMatrixElem data;
-
-            data.to = indexToIntersectionId[j];
-            data.from = indexToIntersectionId[i];
-            data.path = retracePathM4(indexToIntersectionId[i],indexToIntersectionId[j]);
-            data.travelTime = intersections[indexToIntersectionId[j]].bestTime;
-            data.legal = true;
-
-            tempData.push_back(data);
-        }
-
-        travelTimeMatrix.push_back(tempData);
-
-        resetNodesM4(nodesToReset);
+        
     }
 
     //=====================================END OF MATRIX SETUP================================================
 
-    // DRAWS OUT MATRIX
-    // for(int i = 0; i< 6; i++){
-    //     for(int j = 0; j < travelTimeMatrix[i].size(); j++){
-    //         if(travelTimeMatrix[i][j].legal)
-    //         std::cout<<travelTimeMatrix[i][j].travelTime << "       ";
-    //         else
-    //         std::cout<<"false         ";
-    //         if(travelTimeMatrix[i][j].travelTime == 0)
-    //             std::cout<<"      ";
 
-    //     }
-    //     std::cout<<std::endl;
-    // }
+
+
+
+
+
+
+
+
+
+
+
+
+
+    //DRAWS OUT MATRIX
+    for(int i = 0; i< 6; i++){
+        for(int j = 0; j < travelTimeMatrix[i].size(); j++){
+            if(travelTimeMatrix[i][j].legal)
+            std::cout<<travelTimeMatrix[i][j].travelTime << "       ";
+            else
+            std::cout<<"false         ";
+            if(travelTimeMatrix[i][j].travelTime == 0)
+                std::cout<<"      ";
+
+        }
+        std::cout<<std::endl;
+    }
 
     // Empty return
     CourierSubPath data;
@@ -227,21 +198,20 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
     auto currTime = std::chrono::high_resolution_clock::now();
                 auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
                 std::cout << "findPath took " << wallClock.count() <<" seconds" << std::endl;
-
     return temp;
 }
 
 
-std::vector<IntersectionIdx> findPathBetweenIntersectionsM4(
+std::vector<TravelMatrixElem> findPathBetweenIntersectionsM4(
             const double turn_penalty,
             IntersectionIdx intersect_Start, 
             int combinations, 
-            std::unordered_set<int> destinationSet,
-            std::unordered_set<int> depotSet,
-            bool includeDepots
+            bool includeDepots,
+            const std::vector<DeliveryInf>& deliveries,
+            const std::vector<IntersectionIdx>& depots
             ) {
-
     
+    std::vector<Intersection_data> localIntersections = intersections; 
 
     std::unordered_set<int> visitedDestinations;  
 
@@ -258,21 +228,78 @@ std::vector<IntersectionIdx> findPathBetweenIntersectionsM4(
 
         IntersectionIdx nodeId = node.nodeID;
 
-        if( node.travelTime < intersections[nodeId].bestTime){
+        if( node.travelTime < localIntersections[nodeId].bestTime){
 
-            intersections[nodeId].reachingEdge = node.edgeID;
-            intersections[nodeId].reachingNode = node.reachingNodeID;
-            intersections[nodeId].bestTime = node.travelTime;
+            localIntersections[nodeId].reachingEdge = node.edgeID;
+            localIntersections[nodeId].reachingNode = node.reachingNodeID;
+            localIntersections[nodeId].bestTime = node.travelTime;
             
-            if(destinationSet.find(nodeId)!= destinationSet.end()|| (includeDepots && depotSet.find(nodeId) != depotSet.end())){
+            if(destinationSet.find(nodeId)!= destinationSet.end() || (includeDepots && depotSet.find(nodeId) != depotSet.end())){
                 pathsFound++;
             }
 
             if(pathsFound > combinations){
                 //std::vector<TravelMatrixElem> path = retracePaths(intersect_ids.second,intersect_ids.first);
                 //resetNodes(nodesToReset);
+
+                if(includeDepots){
+                    std::vector<TravelMatrixElem> tempData;
+
+                    
+                    for(int j = 0; j < combinations; j++){
+                        
+                        TravelMatrixElem data;
+
+                        data.to = indexToIntersectionId[j];
+                        data.from = intersect_Start;
+
+                        if(data.to == data.from){
+                                data.path = {-1};
+                                data.travelTime = std::numeric_limits<double>::infinity();
+                                data.legal = false;
+                                tempData.push_back(data);
+                                continue;
+                            }
+                        
+                        if(j < deliveries.size()*2){
+                            if(intersectionToDeliveryId.find(data.from)->second == intersectionToDeliveryId.find(data.to)->second)
+                            {
+                                if(deliveries[intersectionToDeliveryId.find(data.from)->second].pickUp == data.to){
+                                    data.path = {-1};
+                                    data.travelTime = std::numeric_limits<double>::infinity();
+                                    data.legal = false;
+                                    
+                                    tempData.push_back(data);
+                                    continue;
+                                }
+                            }
+                            
+                        }
+                        data.path = retracePathM4(intersect_Start,indexToIntersectionId[j],localIntersections );
+                        data.travelTime = localIntersections[indexToIntersectionId[j]].bestTime;
+                        data.legal = true;
+
+                        tempData.push_back(data);
+                    }
+                    return tempData;
+                }else{
+                    std::vector<TravelMatrixElem> tempData;
+
+                    for(int j = 0; j < deliveries.size()*2; j++){
+                        TravelMatrixElem data;
+
+                        data.to = indexToIntersectionId[j];
+                        data.from = intersect_Start;
+                        data.path = retracePathM4(intersect_Start,indexToIntersectionId[j],localIntersections );
+                        data.travelTime = localIntersections[indexToIntersectionId[j]].bestTime;
+                        data.legal = true;
+
+                        tempData.push_back(data);
+                    }
+                    return tempData;
+                }
                 
-                return nodesToReset;
+                
             }
 
             for(int connectedNode = 0; connectedNode < connectedIntersections[nodeId].size(); connectedNode++){
@@ -299,8 +326,8 @@ std::vector<IntersectionIdx> findPathBetweenIntersectionsM4(
             }
         }
     }
-
-    return nodesToReset;
+    std::vector<TravelMatrixElem> empty;
+    return empty;
 }
 
 void resetNodesM4(std::vector<int> nodes){
@@ -313,12 +340,12 @@ void resetNodesM4(std::vector<int> nodes){
 }
 
 std::vector<StreetSegmentIdx> retracePathM4(
-            int startingNode, int nodeId){
+            int startingNode, int nodeId, std::vector<Intersection_data>& intersectionLinks){
     std::list<StreetSegmentIdx> path;
     int index = nodeId;
     while(index != startingNode ){
-        path.push_front(intersections[index].reachingEdge);
-        index = intersections[index].reachingNode;
+        path.push_front(intersectionLinks[index].reachingEdge);
+        index = intersectionLinks[index].reachingNode;
     
     }
     //std::cout<<"EXITED" << std::endl;
