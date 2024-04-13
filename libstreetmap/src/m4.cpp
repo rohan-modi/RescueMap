@@ -88,6 +88,8 @@ std::vector<bool> delivery_droppedoff;
 void resetNodesM4(std::vector<int> nodes);
 bool twoOpt(std::vector<CourierSubPath>* initialPath, std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryInfos, double turnPenalty);
 void twoOptAnneal(std::vector<CourierSubPath>* initialPath, std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryInfos, double turnPenalty, unsigned int seed, int perturbationSize, struct twoOptData* returnStruct);
+bool checkLegal(std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>>* legalChecker, std::unordered_set<IntersectionIdx>* previousIntersections, IntersectionIdx nextIntersections);
+IntersectionIdx findFastest(IntersectionIdx currentIntersection, std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>>* legalChecker, std::unordered_set<IntersectionIdx>* previousIntersections);
 std::vector<StreetSegmentIdx> retracePathM4(int startingNode, int nodeId, std::vector<Intersection_data>& intersectionLinks);
 std::vector<TravelMatrixElem> findPathBetweenIntersectionsM4(
             const double turn_penalty,
@@ -100,7 +102,6 @@ std::vector<TravelMatrixElem> findPathBetweenIntersectionsM4(
             );
 
 std::vector<CourierSubPath> get_greedy_route(const float turn_penalty,const std::vector<DeliveryInf>& deliveries,const std::vector<IntersectionIdx>& depots);
-bool checkLegal(std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>>* legalChecker, std::unordered_set<IntersectionIdx>* previousIntersections, IntersectionIdx nextIntersections);
 //std::pair<int, int> get_nearest_legal(IntersectionIdx srcInter, const std::vector<DeliveryInf>& deliveries);
 //bool is_legal_delivery(TravelMatrixElem& travel_elem, const std::vector<DeliveryInf>& deliveries);
 //void reset_delivery_flags(const std::vector<DeliveryInf>& deliveries);
@@ -273,7 +274,7 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
     double tempMultiplier = 0.9;
     struct twoOptData perturbationData;
     while (1) {
-        for (int i = 0; i = numberOfPerturbations; i++) {
+        for (int i = 0; i < numberOfPerturbations; i++) {
             auto currTime = std::chrono::high_resolution_clock::now();
             auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
             if (wallClock.count() >= 50*0.9) {
@@ -604,9 +605,9 @@ void twoOptAnneal(std::vector<CourierSubPath>* initialPath, std::unordered_map<I
     returnStruct->swapStartIndex = firstIndex-1;
 }
 
-bool checkLegal(std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>>* legalChecker, std::unordered_set<IntersectionIdx>* previousIntersections, IntersectionIdx nextIntersections) {
-    auto currentIterator = legalChecker->find(nextIntersections);
-    auto otherCurrentIterator = previousIntersections->find(nextIntersections);
+bool checkLegal(std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>>* legalChecker, std::unordered_set<IntersectionIdx>* previousIntersections, IntersectionIdx nextIntersection) {
+    auto currentIterator = legalChecker->find(nextIntersection);
+    auto otherCurrentIterator = previousIntersections->find(nextIntersection);
     if (otherCurrentIterator != previousIntersections->end()) {
         return false;
     }
@@ -628,6 +629,19 @@ std::vector<CourierSubPath> get_greedy_route(const float turn_penalty,const std:
 
 }
 
-
-
-
+IntersectionIdx findFastest(IntersectionIdx currentIntersection, std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>>* legalChecker, std::unordered_set<IntersectionIdx>* previousIntersections) {
+    int currentIntersectionIndex = intersectionVectorIndices.find(currentIntersection)->second;
+    double fastestTravelTime = travelTimeMatrix[currentIntersectionIndex][0].travelTime;
+    double tempTravelTime;
+    IntersectionIdx currentFastest = travelTimeMatrix[currentIntersectionIndex][0].to;
+    for (int i = 0; i < travelTimeMatrix[currentIntersectionIndex].size(); i++) {
+        tempTravelTime = travelTimeMatrix[currentIntersectionIndex][i].travelTime;
+        if (tempTravelTime < fastestTravelTime) {
+            if (checkLegal(legalChecker, previousIntersections, travelTimeMatrix[currentIntersectionIndex][i].to)) {
+                fastestTravelTime = tempTravelTime;
+                currentFastest = travelTimeMatrix[currentIntersectionIndex][i].to;
+            }
+        }
+    }
+    return currentFastest;
+}
