@@ -82,10 +82,12 @@ extern std::vector<std::vector<connected_intersection_data>> connectedIntersecti
 extern std::vector<Intersection_data> intersections;
 extern float cos_latavg;
 
+std::vector<bool> delivery_pickedup;
+std::vector<bool> delivery_droppedoff;
+
 void resetNodesM4(std::vector<int> nodes);
 bool twoOpt(std::vector<CourierSubPath>* initialPath, std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryInfos, double turnPenalty);
 void twoOptAnneal(std::vector<CourierSubPath>* initialPath, std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryInfos, double turnPenalty, unsigned int seed, int perturbationSize, struct twoOptData* returnStruct);
-bool checkLegal(std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>>* legalChecker, std::unordered_set<IntersectionIdx>* previousIntersections, IntersectionIdx nextIntersections);
 std::vector<StreetSegmentIdx> retracePathM4(int startingNode, int nodeId, std::vector<Intersection_data>& intersectionLinks);
 std::vector<TravelMatrixElem> findPathBetweenIntersectionsM4(
             const double turn_penalty,
@@ -95,6 +97,14 @@ std::vector<TravelMatrixElem> findPathBetweenIntersectionsM4(
             const std::vector<DeliveryInf>& deliveries,
             const std::vector<IntersectionIdx>& depots
             );
+
+std::vector<CourierSubPath> get_greedy_route(const float turn_penalty,const std::vector<DeliveryInf>& deliveries,const std::vector<IntersectionIdx>& depots);
+bool checkLegal(std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>>* legalChecker, std::unordered_set<IntersectionIdx>* previousIntersections, IntersectionIdx nextIntersections);
+//std::pair<int, int> get_nearest_legal(IntersectionIdx srcInter, const std::vector<DeliveryInf>& deliveries);
+//bool is_legal_delivery(TravelMatrixElem& travel_elem, const std::vector<DeliveryInf>& deliveries);
+//void reset_delivery_flags(const std::vector<DeliveryInf>& deliveries);
+//bool deliveries_complete();
+
 
     std::unordered_map<int, int> intersectionVectorIndices;
     std::unordered_map<int, int> intersectionToDeliveryId;
@@ -177,12 +187,17 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
 
     // MAKING MAP FOR 2-OPT
     std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryRequirements;
+    std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>> legalityChecking;
+
+    // use vecotr instead of unordered set .insdert -> .push_back()
     for (int i = 0; i < deliveries.size(); i++) {
         auto dropOffIterator = deliveryRequirements.find(deliveries[i].dropOff);
         if (dropOffIterator != deliveryRequirements.end()) {
             deliveryRequirements[deliveries[i].dropOff].insert(deliveries[i].pickUp);
+            legalityChecking[deliveries[i].dropOff].push_back(deliveries[i].pickUp);
         } else {
             deliveryRequirements[deliveries[i].dropOff] = {deliveries[i].pickUp};
+            legalityChecking[deliveries[i].dropOff] = {deliveries[i].pickUp};
         }
     }
 
@@ -241,17 +256,20 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
         }
         std::cout<<std::endl;
     }
-
+/*
     // Empty return
     CourierSubPath data;
     std::vector<CourierSubPath> temp;
     temp.push_back(data);
+*/
+    //std::vector<CourierSubPath> path = get_greedy_route(turn_penalty, deliveries, depots);
+
 
     //timing analysis
     auto currTime = std::chrono::high_resolution_clock::now();
     auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
     std::cout << "findPath took " << wallClock.count() <<" seconds" << std::endl;
-    return temp;
+    return path;
 }
 
 
@@ -544,8 +562,8 @@ void twoOptAnneal(std::vector<CourierSubPath>* initialPath, std::unordered_map<I
 }
 
 bool checkLegal(std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>>* legalChecker, std::unordered_set<IntersectionIdx>* previousIntersections, IntersectionIdx nextIntersections) {
-    auto currentIterator = legalChecker->find(nextIntersection);
-    auto otherCurrentIterator = previousIntersections->find(nextIntersection);
+    auto currentIterator = legalChecker->find(nextIntersections);
+    auto otherCurrentIterator = previousIntersections->find(nextIntersections);
     if (otherCurrentIterator != previousIntersections->end()) {
         return false;
     }
@@ -556,7 +574,17 @@ bool checkLegal(std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>
         auto pickupIterator = previousIntersections->find(currentIterator->second[i]);
         if (pickupIterator == previousIntersections->end()) {
             return false;
-        }
+        }   
     }
     return true;
+
 }
+
+
+std::vector<CourierSubPath> get_greedy_route(const float turn_penalty,const std::vector<DeliveryInf>& deliveries,const std::vector<IntersectionIdx>& depots) {
+
+}
+
+
+
+
