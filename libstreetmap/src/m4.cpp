@@ -73,6 +73,7 @@ extern std::vector<Intersection_data> intersections;
 extern float cos_latavg;
 
 void resetNodesM4(std::vector<int> nodes);
+bool twoOpt(std::vector<CourierSubPath>* initialPath, std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryInfos, double turnPenalty);
 std::vector<StreetSegmentIdx> retracePathM4(int startingNode, int nodeId, std::vector<Intersection_data>& intersectionLinks);
 std::vector<TravelMatrixElem> findPathBetweenIntersectionsM4(
             const double turn_penalty,
@@ -83,7 +84,7 @@ std::vector<TravelMatrixElem> findPathBetweenIntersectionsM4(
             const std::vector<IntersectionIdx>& depots
             );
 
-    std::unordered_map<int, int> intersectionVectorIndicies;
+    std::unordered_map<int, int> intersectionVectorIndices;
     std::unordered_map<int, int> intersectionToDeliveryId;
     std::unordered_set<int> destinationSet;
     std::unordered_set<int> depotSet;
@@ -98,7 +99,7 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
     int points = deliveries.size()*2;
     int indexTracker = 0;
 
-    intersectionVectorIndicies.clear();
+    intersectionVectorIndices.clear();
     intersectionToDeliveryId.clear();
     destinationSet.clear();
     depotSet.clear();
@@ -117,16 +118,16 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
         indexToIntersectionId.push_back(deliveries[i].dropOff);
         intersectionToDeliveryId.insert(std::make_pair(deliveries[i].pickUp, i));
         intersectionToDeliveryId.insert(std::make_pair(deliveries[i].dropOff, i));
-        intersectionVectorIndicies.insert(std::make_pair(deliveries[i].pickUp, indexTracker));
+        intersectionVectorIndices.insert(std::make_pair(deliveries[i].pickUp, indexTracker));
         indexTracker++;
-        intersectionVectorIndicies.insert(std::make_pair(deliveries[i].dropOff, indexTracker));
+        intersectionVectorIndices.insert(std::make_pair(deliveries[i].dropOff, indexTracker));
         indexTracker++;
     }
     //Populates data structs for depot locations mapping interIds to indicies
     for(int i = 0; i < depots.size(); i++){
         depotSet.insert(depots[i]);
         indexToIntersectionId.push_back(depots[i]);
-        intersectionVectorIndicies.insert(std::make_pair(depots[i], indexTracker));
+        intersectionVectorIndices.insert(std::make_pair(depots[i], indexTracker));
         indexTracker++;
     }
     
@@ -162,16 +163,17 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
     //=====================================END OF MATRIX SETUP================================================
 
 
-
-
-
-
-
-
-
-
-
-
+    // MAKING MAP FOR 2-OPT
+    std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryRequirements;
+    for (int i = 0; i < deliveries.size(); i++) {
+        auto dropOffIterator = deliveryRequirements.find(deliveries[i].dropOff);
+        if (dropOffIterator != deliveryRequirements.end()) {
+            deliveryRequirements[deliveries[i].dropOff].insert(deliveries[i].pickUp);
+            //dropOffIterator->second.insert(deliveries[i].pickUp);
+        } else {
+            deliveryRequirements[deliveries[i].dropOff] = {deliveries[i].pickUp};
+        }
+    }
 
 
 
@@ -350,4 +352,58 @@ std::vector<StreetSegmentIdx> retracePathM4(
     }
     //std::cout<<"EXITED" << std::endl;
     return std::vector<StreetSegmentIdx>(path.begin(), path.end());
+}
+
+bool twoOpt(std::vector<CourierSubPath>* initialPath, std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryInfos, double turnPenalty) {
+    std::vector<IntersectionIdx> pathIntersections;
+    int pathIntersectionsSize = initialPath->size()+1;
+    int initialSolutionSize = initialPath->size();
+    pathIntersections.resize(pathIntersectionsSize);
+    for (int i =  0; i < pathIntersectionsSize; i++) {
+        pathIntersections[i] = (*initialPath)[i].intersections.first;
+    }
+    pathIntersections[pathIntersectionsSize-1] = (*initialPath)[initialSolutionSize-1].intersections.second;
+
+    for (int i = 0; i < initialSolutionSize-2; i++) {
+        auto intersectionIterator = deliveryInfos.find(pathIntersections[i+1]);
+        if (intersectionIterator != deliveryInfos.end()) {
+            auto pickUpIterator = deliveryInfos[pathIntersections[i+1]].find(pathIntersections[i]);
+            if (pickUpIterator != deliveryInfos[pathIntersections[i+1]].end()) {
+                continue; // Swap illegal
+            }
+        }
+        // Swap legal
+        std::vector<IntersectionIdx> swappedIntersections(4);
+        for (int j = 0; j < 3; j++) {
+            swappedIntersections[j] = pathIntersections[i-1+j];
+        }
+        IntersectionIdx temp = swappedIntersections[2];
+        swappedIntersections[2] = swappedIntersections[1];
+        swappedIntersections[1] = temp;
+
+        int currentTravelTime = 0;
+        int tempTravelTime = 0;
+        for (int j = 0; j < 3; j++) {
+            int firstOne = intersectionVectorIndices.find(pathIntersections[i-1+j])->second;
+            int secondOne = intersectionVectorIndices.find(pathIntersections[i+j])->second;
+            currentTravelTime += travelTimeMatrix[firstOne][secondOne].travelTime;
+        }
+        for (int j = 0; j < 3; j++) {
+            int firstOne = intersectionVectorIndices.find(swappedIntersections[j])->second;
+            int secondOne = intersectionVectorIndices.find(swappedIntersections[j+1])->second;
+            tempTravelTime += travelTimeMatrix[firstOne][secondOne].travelTime;
+        }
+
+        if (tempTravelTime < currentTravelTime) { // Swap made path faster
+            pathIntersections[i] = swappedIntersections[1];
+            pathIntersections[i+1] = swappedIntersections[2];
+        }
+
+        for (int j = 0; j < 3; j++) {
+            std::pair<IntersectionIdx, IntersectionIdx> intersectionPair (pathIntersections[i-1+j], pathIntersections[i+j]);
+            (*initialPath)[i-1+j].subpath = findPathBetweenIntersections(turnPenalty, intersectionPair);
+        }
+        return true;
+    }
+    return false;
 }
