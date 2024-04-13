@@ -205,7 +205,64 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
 
     //=====================================END OF MATRIX SETUP================================================
 
+    //Greedy TEST
 
+    std::vector<CourierSubPath> returnPath;
+    
+
+    for(int i = 0; i< 1; i++){
+        std::unordered_set<int> legalIntersection;
+
+        for(int j = 0; j < deliveries.size(); j++){
+            legalIntersection.insert(deliveries[j].pickUp);
+        }
+
+        bool pathFound = false;
+        int minIndex = -1;
+        int currentNodeIndex = depots[i];
+
+        while(!pathFound){
+
+            double minTime = std::numeric_limits<double>::infinity();
+            
+
+            for(auto iterator = legalIntersection.begin(); iterator != legalIntersection.end(); ++iterator){
+                std::cout<< *iterator <<std::endl;
+
+                if(travelTimeMatrix[intersectionVectorIndices.find(currentNodeIndex)->second][intersectionVectorIndices.find(*iterator)->second].travelTime < minTime){
+                    minTime = travelTimeMatrix[intersectionVectorIndices.find(currentNodeIndex)->second][intersectionVectorIndices.find(*iterator)->second].travelTime ;
+                    minIndex = *iterator;
+                }
+
+            }
+
+            legalIntersection.erase(minIndex);
+
+            std::cout<< minTime<< std::endl;
+
+            if(deliveries[intersectionToDeliveryId.find(minIndex)->second].pickUp == minIndex){
+                legalIntersection.insert(deliveries[intersectionToDeliveryId.find(minIndex)->second].dropOff);
+            }
+            CourierSubPath data; 
+            data.intersections = std::make_pair(currentNodeIndex, minIndex);
+            data.subpath = travelTimeMatrix[intersectionVectorIndices.find(currentNodeIndex)->second][intersectionVectorIndices.find(minIndex)->second].path;
+            returnPath.push_back(data);
+            currentNodeIndex = minIndex; 
+
+
+            if(legalIntersection.empty()){
+                data.intersections = std::make_pair(currentNodeIndex, depots[i]);
+                data.subpath = travelTimeMatrix[intersectionVectorIndices.find(currentNodeIndex)->second][intersectionVectorIndices.find(depots[i])->second].path;
+                returnPath.push_back(data);
+
+                pathFound = true;
+            }
+        }
+    }
+    return returnPath;
+    
+
+/*
     // MAKING MAP FOR 2-OPT
     std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryRequirements;
     std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>> legalityChecking;
@@ -324,7 +381,7 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
     auto currTime = std::chrono::high_resolution_clock::now();
     auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
     std::cout << "findPath took " << wallClock.count() <<" seconds" << std::endl;
-    return temp;
+    return temp;*/
 }
 
 
@@ -638,11 +695,12 @@ bool checkLegal(std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>
 }
 
 
-std::vector<CourierSubPath> get_greedy_route(const float turn_penalty,const std::vector<DeliveryInf>& deliveries,const std::vector<IntersectionIdx>& depots) {
+/*
+IntersectionIdx findFastest(
+    IntersectionIdx currentIntersection,
+    std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>>* legalChecker,
+    std::unordered_set<IntersectionIdx>* previousIntersections) {
 
-}
-
-IntersectionIdx findFastest(IntersectionIdx currentIntersection, std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>>* legalChecker, std::unordered_set<IntersectionIdx>* previousIntersections) {
     int currentIntersectionIndex = intersectionVectorIndices.find(currentIntersection)->second;
     double fastestTravelTime = travelTimeMatrix[currentIntersectionIndex][0].travelTime;
     double tempTravelTime;
@@ -658,3 +716,24 @@ IntersectionIdx findFastest(IntersectionIdx currentIntersection, std::unordered_
     }
     return currentFastest;
 }
+
+
+std::vector<CourierSubPath> get_greedy_route(
+    std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>>* legalChecker
+    ) {
+
+    std::unordered_set<IntersectionIdx> previousIntersections;
+    IntersectionIdx currInterIdx;
+
+
+    while (1) {
+
+        IntersectionIdx nextInterIdx = findFastest(currInterIdx, legalChecker, &previousIntersections);
+
+        
+    }    
+
+
+
+}
+*/
