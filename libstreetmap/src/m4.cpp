@@ -545,6 +545,10 @@ void twoOptAnneal(std::vector<CourierSubPath>* initialPath, std::unordered_map<I
 
 bool checkLegal(std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>>* legalChecker, std::unordered_set<IntersectionIdx>* previousIntersections, IntersectionIdx nextIntersections) {
     auto currentIterator = legalChecker->find(nextIntersection);
+    auto otherCurrentIterator = previousIntersections->find(nextIntersection);
+    if (otherCurrentIterator != previousIntersections->end()) {
+        return false;
+    }
     if (currentIterator == legalChecker->end()) {
         return true;
     }
