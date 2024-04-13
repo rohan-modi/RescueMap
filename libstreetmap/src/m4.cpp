@@ -167,6 +167,8 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
 
 
 
+    //Min spanning Tree
+    
 
 
 
@@ -174,20 +176,19 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
 
 
 
+    // //DRAWS OUT MATRIX
+    // for(int i = 0; i< 6; i++){
+    //     for(int j = 0; j < travelTimeMatrix[i].size(); j++){
+    //         if(travelTimeMatrix[i][j].legal)
+    //         std::cout<<travelTimeMatrix[i][j].travelTime << "       ";
+    //         else
+    //         std::cout<<"false         ";
+    //         if(travelTimeMatrix[i][j].travelTime == 0)
+    //             std::cout<<"      ";
 
-    //DRAWS OUT MATRIX
-    for(int i = 0; i< 6; i++){
-        for(int j = 0; j < travelTimeMatrix[i].size(); j++){
-            if(travelTimeMatrix[i][j].legal)
-            std::cout<<travelTimeMatrix[i][j].travelTime << "       ";
-            else
-            std::cout<<"false         ";
-            if(travelTimeMatrix[i][j].travelTime == 0)
-                std::cout<<"      ";
-
-        }
-        std::cout<<std::endl;
-    }
+    //     }
+    //     std::cout<<std::endl;
+    // }
 
     // Empty return
     CourierSubPath data;

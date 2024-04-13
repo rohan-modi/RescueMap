@@ -23,6 +23,8 @@
 
 #include "m1.h"
 #include "m2.h"
+#include "m3.h"
+#include "m4.h"
 
 //Program exit codes
 constexpr int SUCCESS_EXIT_CODE = 0;        //Everyting went OK
@@ -88,8 +90,29 @@ int main(int argc, char** argv) {
     std::cout << "Successfully loaded map '" << map_path << "'\n";
 
     //You can now do something with the map data
-    drawMap();
+    //drawMap();
 
+    std::vector<DeliveryInf> deliveries;
+    std::vector<IntersectionIdx> depots;
+
+    deliveries.push_back(DeliveryInf(342,51666));
+    deliveries.push_back(DeliveryInf(5323,23166));
+    depots.push_back(33424);
+    depots.push_back(19274);
+    int temp1 = 2; 
+    int temp2 = 41423;
+    
+    // for(int i = 0; i < 100; i++){
+    //     deliveries.push_back(DeliveryInf(temp1,temp2));
+    //     temp1++;
+    //     temp2++;
+    // }
+
+    travelingCourier(0.0,deliveries,depots);
+
+    std::cout<<"TRAVEL TIME : " << computePathTravelTime(0.0,findPathBetweenIntersections(0.0,{5323,23166}))<<std::endl;
+
+    
     //Clean-up the map data and related data structures
     std::cout << "Closing map\n";
     closeMap(); 

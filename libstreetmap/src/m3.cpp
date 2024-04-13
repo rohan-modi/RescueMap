@@ -166,11 +166,11 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
 
         IntersectionIdx nodeId = node.nodeID;
 
-        if( node.travelTime+node.timeToDest < intersections[nodeId].bestTime){
+        if( node.travelTime< intersections[nodeId].bestTime){
 
             intersections[nodeId].reachingEdge = node.edgeID;
             intersections[nodeId].reachingNode = node.reachingNodeID;
-            intersections[nodeId].bestTime = node.travelTime + node.timeToDest;
+            intersections[nodeId].bestTime = node.travelTime;
 
             if(nodeId == intersect_ids.second){
                 std::vector<StreetSegmentIdx> path = retracePath(intersect_ids.second,intersect_ids.first);
@@ -178,7 +178,7 @@ std::vector<StreetSegmentIdx> findPathBetweenIntersections(
 
                 auto currTime = std::chrono::high_resolution_clock::now();
                 auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
-                std::cout << "findPath took " << wallClock.count() <<" seconds" << std::endl;
+                //std::cout << "findPath took " << wallClock.count() <<" seconds" << std::endl;
                 return path;
             }
 
