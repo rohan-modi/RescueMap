@@ -251,9 +251,6 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
 
     std::cout<< "finding" <<travelTimeMatrix[intersectionVectorIndices.find(23166)->second][intersectionVectorIndices.find(2432)->second].travelTime<<std::endl;
 
-
-    /*
-
     std::vector<CourierSubPath> startPath;
 
 
@@ -292,13 +289,14 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
                     newPair.second = perturbationData.swappedSection[j+1];
                     startPath[perturbationData.swapStartIndex+j].intersections.first = newPair.first;
                     startPath[perturbationData.swapStartIndex+j].intersections.second = newPair.second;
-                    startPath[perturbationData.swapStartIndex+j].subpath = findPathBetweenIntersections(turn_penalty, newPair);
+                    int firstIndex = intersectionVectorIndices.find(newPair.first)->second;
+                    int secondIndex = intersectionVectorIndices.find(newPair.second)->second;
+                    startPath[perturbationData.swapStartIndex+j].subpath = travelTimeMatrix[firstIndex][secondIndex].path;
                 }
             }
         }
         temperature *= tempMultiplier;
     }
-    */
 
     // Empty return
     CourierSubPath data;
