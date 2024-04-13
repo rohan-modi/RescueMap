@@ -261,9 +261,7 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
             }
         }
     }
-    std::cout << "TOTAL COST: " << route_cost(turn_penalty, returnPath) << std::endl;
-    return returnPath;
-    
+    // std::cout << "TOTAL COST: " << route_cost(turn_penalty, returnPath) << std::endl;    
 
     // MAKING MAP FOR 2-OPT
     std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryRequirements;
@@ -315,17 +313,17 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
 
 
     // int counter = 0;
+    std::cout << "Initial cost: " << route_cost(turn_penalty, returnPath) << std::endl;
     while (twoOpt(&returnPath, deliveryRequirements, turn_penalty)) {
         // std::cout << "Counter number: " << counter << std::endl;
         // counter++;
         auto currTime = std::chrono::high_resolution_clock::now();
         auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
-        if (wallClock.count() >= 50*0.5) {
+        if (wallClock.count() >= 50*0.9) {
             break;
         }
     }
-    std::cout << "Time almost out" << std::endl;
-
+    std::cout << "Final cost: " << route_cost(turn_penalty, returnPath) << std::endl;
     return returnPath;
 
 
