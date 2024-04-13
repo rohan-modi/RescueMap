@@ -93,7 +93,8 @@ std::vector<TravelMatrixElem> findPathBetweenIntersectionsM4(
             int combinations, 
             bool includeDepots,
             const std::vector<DeliveryInf>& deliveries,
-            const std::vector<IntersectionIdx>& depots
+            const std::vector<IntersectionIdx>& depots,
+            int duplicates
             );
 
     std::unordered_map<int, int> intersectionVectorIndices;
@@ -130,6 +131,10 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
         if(destinationSet.find(deliveries[i].pickUp)!=destinationSet.end()){
             duplicates++;
         }
+        if(destinationSet.find(deliveries[i].dropOff) != destinationSet.end()){
+            duplicates++;
+        }
+
             destinationSet.insert(deliveries[i].pickUp);
             indexToIntersectionId.push_back(deliveries[i].pickUp);
             intersectionVectorIndices.insert(std::make_pair(deliveries[i].pickUp, indexTracker));
@@ -138,9 +143,7 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
             
         
         
-        if(destinationSet.find(deliveries[i].dropOff) != destinationSet.end()){
-            
-        }
+        
             destinationSet.insert(deliveries[i].dropOff);
             indexToIntersectionId.push_back(deliveries[i].dropOff);
             intersectionVectorIndices.insert(std::make_pair(deliveries[i].dropOff, indexTracker));
@@ -169,7 +172,8 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
             points + depots.size(), 
             true,
             deliveries,
-            depots
+            depots,
+            duplicates
             );
     }
 
@@ -182,7 +186,8 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
             points, 
             false,
             deliveries,
-            depots
+            depots,
+            duplicates
             );
         
     }
@@ -298,7 +303,8 @@ std::vector<TravelMatrixElem> findPathBetweenIntersectionsM4(
             int combinations, 
             bool includeDepots,
             const std::vector<DeliveryInf>& deliveries,
-            const std::vector<IntersectionIdx>& depots
+            const std::vector<IntersectionIdx>& depots,
+            int duplicates
             ) {
     
     std::vector<Intersection_data> localIntersections = intersections; 
@@ -328,7 +334,7 @@ std::vector<TravelMatrixElem> findPathBetweenIntersectionsM4(
                 pathsFound++;
             }
 
-            if(pathsFound > combinations-1){
+            if(pathsFound > combinations-duplicates){
                 //std::vector<TravelMatrixElem> path = retracePaths(intersect_ids.second,intersect_ids.first);
                 //resetNodes(nodesToReset);
 
