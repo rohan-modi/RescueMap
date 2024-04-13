@@ -549,8 +549,8 @@ bool checkLegal(std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>
         return true;
     }
     for (int i = 0; i < currentIterator->second.size(); i++) {
-        auto pickupIterator = previousIntersections.find(currentIterator->second[i]);
-        if (pickupIterator == previousIntersections.end()) {
+        auto pickupIterator = previousIntersections->find(currentIterator->second[i]);
+        if (pickupIterator == previousIntersections->end()) {
             return false;
         }
     }
