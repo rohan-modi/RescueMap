@@ -97,6 +97,7 @@ int main(int argc, char** argv) {
 
     deliveries.push_back(DeliveryInf(342,51666));
     deliveries.push_back(DeliveryInf(5323,23166));
+    deliveries.push_back(DeliveryInf(23166,2432));
     depots.push_back(33424);
     depots.push_back(19274);
     int temp1 = 2; 

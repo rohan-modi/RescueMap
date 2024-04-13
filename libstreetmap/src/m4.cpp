@@ -85,6 +85,7 @@ extern float cos_latavg;
 void resetNodesM4(std::vector<int> nodes);
 bool twoOpt(std::vector<CourierSubPath>* initialPath, std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryInfos, double turnPenalty);
 void twoOptAnneal(std::vector<CourierSubPath>* initialPath, std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryInfos, double turnPenalty, unsigned int seed, int perturbationSize, struct twoOptData* returnStruct);
+bool checkLegal(std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>>* legalChecker, std::unordered_set<IntersectionIdx>* previousIntersections, IntersectionIdx nextIntersections);
 std::vector<StreetSegmentIdx> retracePathM4(int startingNode, int nodeId, std::vector<Intersection_data>& intersectionLinks);
 std::vector<TravelMatrixElem> findPathBetweenIntersectionsM4(
             const double turn_penalty,
@@ -574,4 +575,22 @@ void twoOptAnneal(std::vector<CourierSubPath>* initialPath, std::unordered_map<I
     returnStruct->swappedSection.resize(clippedSection.size());
     returnStruct->swappedSection = clippedSection;
     returnStruct->swapStartIndex = firstIndex-1;
+}
+
+bool checkLegal(std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>>* legalChecker, std::unordered_set<IntersectionIdx>* previousIntersections, IntersectionIdx nextIntersections) {
+    auto currentIterator = legalChecker->find(nextIntersection);
+    auto otherCurrentIterator = previousIntersections->find(nextIntersection);
+    if (otherCurrentIterator != previousIntersections->end()) {
+        return false;
+    }
+    if (currentIterator == legalChecker->end()) {
+        return true;
+    }
+    for (int i = 0; i < currentIterator->second.size(); i++) {
+        auto pickupIterator = previousIntersections->find(currentIterator->second[i]);
+        if (pickupIterator == previousIntersections->end()) {
+            return false;
+        }
+    }
+    return true;
 }
