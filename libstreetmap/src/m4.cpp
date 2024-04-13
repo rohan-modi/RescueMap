@@ -299,26 +299,11 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
     }
     */
 
-
-    //DRAWS OUT MATRIX
-    for(int i = 0; i< 6; i++){
-        for(int j = 0; j < travelTimeMatrix[i].size(); j++){
-            if(travelTimeMatrix[i][j].legal)
-            std::cout<<travelTimeMatrix[i][j].travelTime << "       ";
-            else
-            std::cout<<"false         ";
-            if(travelTimeMatrix[i][j].travelTime == 0)
-                std::cout<<"      ";
-
-        }
-        std::cout<<std::endl;
-    }
-/*
     // Empty return
     CourierSubPath data;
     std::vector<CourierSubPath> temp;
     temp.push_back(data);
-*/
+
     //std::vector<CourierSubPath> path = get_greedy_route(turn_penalty, deliveries, depots);
 
 
@@ -326,7 +311,7 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
     auto currTime = std::chrono::high_resolution_clock::now();
     auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
     std::cout << "findPath took " << wallClock.count() <<" seconds" << std::endl;
-    return path;
+    return temp;
 }
 
 
