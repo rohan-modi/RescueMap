@@ -228,6 +228,9 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
     }
 
 
+    std::cout<< "finding" <<travelTimeMatrix[intersectionVectorIndices.find(23166)->second][intersectionVectorIndices.find(2432)->second].travelTime<<std::endl;
+
+
     /*
 
     std::vector<CourierSubPath> startPath;
@@ -578,8 +581,8 @@ void twoOptAnneal(std::vector<CourierSubPath>* initialPath, std::unordered_map<I
 }
 
 bool checkLegal(std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>>* legalChecker, std::unordered_set<IntersectionIdx>* previousIntersections, IntersectionIdx nextIntersections) {
-    auto currentIterator = legalChecker->find(nextIntersection);
-    auto otherCurrentIterator = previousIntersections->find(nextIntersection);
+    auto currentIterator = legalChecker->find(nextIntersections);
+    auto otherCurrentIterator = previousIntersections->find(nextIntersections);
     if (otherCurrentIterator != previousIntersections->end()) {
         return false;
     }
