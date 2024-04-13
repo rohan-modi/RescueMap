@@ -298,6 +298,23 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
         temperature *= tempMultiplier;
     }
 
+<<<<<<< HEAD
+=======
+    //DRAWS OUT MATRIX
+    for(int i = 0; i< 6; i++){
+        for(int j = 0; j < travelTimeMatrix[i].size(); j++){
+            if(travelTimeMatrix[i][j].legal)
+            std::cout<<travelTimeMatrix[i][j].travelTime << "       ";
+            else
+            std::cout<<"false         ";
+            if(travelTimeMatrix[i][j].travelTime == 0)
+                std::cout<<"      ";
+
+        }
+        std::cout<<std::endl;
+    }
+
+>>>>>>> 1c79b89 (Function stub for return path)
     // Empty return
     CourierSubPath data;
     std::vector<CourierSubPath> temp;
