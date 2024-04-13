@@ -14,6 +14,8 @@
 #include <thread>
 #include <queue>
 #include <limits>
+#include <random>
+#include <algorithm>
 
 #include <unordered_set>
 
@@ -65,6 +67,14 @@ struct TravelMatrixElem{
     bool legal = false;
 };
 
+struct twoOptData{
+    bool legalPathFound;
+    double timeDifference;
+    double newTime;
+    std::vector<IntersectionIdx> swappedSection;
+    int swapStartIndex;
+};
+
 
 
 // ==================================== Declare Globals ====================================
@@ -74,6 +84,7 @@ extern float cos_latavg;
 
 void resetNodesM4(std::vector<int> nodes);
 bool twoOpt(std::vector<CourierSubPath>* initialPath, std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryInfos, double turnPenalty);
+void twoOptAnneal(std::vector<CourierSubPath>* initialPath, std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryInfos, double turnPenalty, unsigned int seed, int perturbationSize, struct twoOptData* returnStruct);
 std::vector<StreetSegmentIdx> retracePathM4(int startingNode, int nodeId, std::vector<Intersection_data>& intersectionLinks);
 std::vector<TravelMatrixElem> findPathBetweenIntersectionsM4(
             const double turn_penalty,
@@ -169,13 +180,52 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
         auto dropOffIterator = deliveryRequirements.find(deliveries[i].dropOff);
         if (dropOffIterator != deliveryRequirements.end()) {
             deliveryRequirements[deliveries[i].dropOff].insert(deliveries[i].pickUp);
-            //dropOffIterator->second.insert(deliveries[i].pickUp);
         } else {
             deliveryRequirements[deliveries[i].dropOff] = {deliveries[i].pickUp};
         }
     }
 
+    std::vector<CourierSubPath> startPath;
 
+    // while (twoOpt(&startPath, deliveryRequirements, turn_penalty)) {
+    //     auto currTime = std::chrono::high_resolution_clock::now();
+    //     auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
+    //     if (wallClock.count() >= 50*0.9) {
+    //         break;
+    //     }
+    // }
+
+    // Parameters for annealing
+    int perturbationSize = 10;
+    int numberOfPerturbations = 50;
+    double temperature = 1000;
+    double tempMultiplier = 0.9;
+    struct twoOptData perturbationData;
+    while (1) {
+        for (int i = 0; i = numberOfPerturbations; i++) {
+            auto currTime = std::chrono::high_resolution_clock::now();
+            auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
+            if (wallClock.count() >= 50*0.9) {
+                break;
+            }
+            twoOptAnneal(&startPath, deliveryRequirements, turn_penalty, (unsigned int) wallClock.count(), perturbationSize, &perturbationData);
+            std::mt19937 generator(wallClock.count());
+            std::uniform_real_distribution<double> distribution(0.0, 1.0);
+            double randomNumber = distribution(generator);
+            double exponential = std::exp((-1)*perturbationData.timeDifference/temperature);
+            if (perturbationData.timeDifference < 0 || randomNumber < exponential) {
+                for (int j = 0; j < perturbationData.swappedSection.size()+1; j++) {
+                    std::pair<IntersectionIdx, IntersectionIdx> newPair;
+                    newPair.first = perturbationData.swappedSection[j];
+                    newPair.second = perturbationData.swappedSection[j+1];
+                    startPath[perturbationData.swapStartIndex+j].intersections.first = newPair.first;
+                    startPath[perturbationData.swapStartIndex+j].intersections.second = newPair.second;
+                    startPath[perturbationData.swapStartIndex+j].subpath = findPathBetweenIntersections(turn_penalty, newPair);
+                }
+            }
+        }
+        temperature *= tempMultiplier;
+    }
 
     //DRAWS OUT MATRIX
     for(int i = 0; i< 6; i++){
@@ -198,8 +248,8 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
 
     //timing analysis
     auto currTime = std::chrono::high_resolution_clock::now();
-                auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
-                std::cout << "findPath took " << wallClock.count() <<" seconds" << std::endl;
+    auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
+    std::cout << "findPath took " << wallClock.count() <<" seconds" << std::endl;
     return temp;
 }
 
@@ -397,13 +447,97 @@ bool twoOpt(std::vector<CourierSubPath>* initialPath, std::unordered_map<Interse
         if (tempTravelTime < currentTravelTime) { // Swap made path faster
             pathIntersections[i] = swappedIntersections[1];
             pathIntersections[i+1] = swappedIntersections[2];
-        }
 
-        for (int j = 0; j < 3; j++) {
-            std::pair<IntersectionIdx, IntersectionIdx> intersectionPair (pathIntersections[i-1+j], pathIntersections[i+j]);
-            (*initialPath)[i-1+j].subpath = findPathBetweenIntersections(turnPenalty, intersectionPair);
+            for (int j = 0; j < 3; j++) {
+                std::pair<IntersectionIdx, IntersectionIdx> intersectionPair (pathIntersections[i-1+j], pathIntersections[i+j]);
+                (*initialPath)[i-1+j].subpath = findPathBetweenIntersections(turnPenalty, intersectionPair);
+            }
+            return true;
         }
-        return true;
     }
     return false;
+}
+
+void twoOptAnneal(std::vector<CourierSubPath>* initialPath, std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryInfos, double turnPenalty, unsigned int seed, int perturbationSize, struct twoOptData* returnStruct) {
+    std::vector<IntersectionIdx> pathIntersections;
+    int pathIntersectionsSize = initialPath->size()+1;
+    int initialSolutionSize = initialPath->size();
+    pathIntersections.resize(pathIntersectionsSize);
+    for (int i =  0; i < pathIntersectionsSize; i++) {
+        pathIntersections[i] = (*initialPath)[i].intersections.first;
+    }
+    pathIntersections[pathIntersectionsSize-1] = (*initialPath)[initialSolutionSize-1].intersections.second;
+
+    std::mt19937 generator(seed);
+    std::uniform_int_distribution<int> distribution(1, pathIntersectionsSize-1);
+
+    int randomNumber1 = distribution(generator);
+    int randomNumber2 = distribution(generator);
+
+    int firstIndex = std::min(randomNumber1, randomNumber2);
+    int secondIndex = std::max(randomNumber1, randomNumber2);
+
+    if (firstIndex == secondIndex) {
+        if (secondIndex < pathIntersectionsSize-1) {
+            secondIndex++;
+        } else if (firstIndex > 1) {
+            firstIndex--;
+        }
+    }
+    if ((secondIndex-firstIndex) > perturbationSize) {
+        secondIndex = firstIndex + perturbationSize;
+    }
+
+    int difference = secondIndex - firstIndex;
+
+    std::vector<IntersectionIdx> clippedSection;
+    clippedSection.resize(difference + 1);
+    for (int i = 0; i < difference+1; i++) {
+        clippedSection[i] = pathIntersections[secondIndex-i];
+    }
+    
+    for (int i = 0; i < difference; i++) {
+        IntersectionIdx suspiciousIntersection = clippedSection[i];
+        auto dropOffIterator = deliveryInfos.find(suspiciousIntersection);
+        if (dropOffIterator == deliveryInfos.end()) {
+            continue;
+        }
+        int numberOfPickupChecks = difference-i;
+        for (int j = 0; j < numberOfPickupChecks; j++) {
+            IntersectionIdx pickupId = clippedSection[i+1+j];
+            auto pickUpIterator = deliveryInfos[suspiciousIntersection].find(pickupId);
+            if (pickUpIterator != deliveryInfos[suspiciousIntersection].end()) {
+                returnStruct->legalPathFound = false;
+                return;
+            }
+        }
+    }
+
+    returnStruct->legalPathFound = true;
+
+    double currentTravelTime = 0.0;
+    double tempTravelTime = 0.0;
+    for (int i = 0; i < difference+2; i++) {
+        int firstOne = intersectionVectorIndices.find(pathIntersections[firstIndex+i-1])->second;
+        int secondOne = intersectionVectorIndices.find(pathIntersections[firstIndex+i])->second;
+        currentTravelTime += travelTimeMatrix[firstOne][secondOne].travelTime;
+    }
+    for (int i = 0; i < difference; i++) {
+        int firstOne = intersectionVectorIndices.find(clippedSection[i])->second;
+        int secondOne = intersectionVectorIndices.find(clippedSection[i+1])->second;
+        tempTravelTime += travelTimeMatrix[firstOne][secondOne].travelTime;
+    }
+    int firstOne = intersectionVectorIndices.find(pathIntersections[firstIndex-1])->second;
+    int secondOne = intersectionVectorIndices.find(clippedSection[0])->second;
+    int thirdOne = intersectionVectorIndices.find(clippedSection[difference])->second;
+    int fourthOne = intersectionVectorIndices.find(pathIntersections[secondIndex+1])->second;
+
+    tempTravelTime += travelTimeMatrix[firstOne][secondOne].travelTime;
+    tempTravelTime += travelTimeMatrix[thirdOne][fourthOne].travelTime;
+
+    returnStruct->newTime = tempTravelTime;
+    returnStruct->timeDifference = tempTravelTime - currentTravelTime;
+    returnStruct->swappedSection.resize(clippedSection.size());
+    returnStruct->swappedSection = clippedSection;
+    returnStruct->swapStartIndex = firstIndex-1;
 }
