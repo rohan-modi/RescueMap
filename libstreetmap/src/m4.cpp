@@ -85,6 +85,8 @@ extern float cos_latavg;
 std::vector<bool> delivery_pickedup;
 std::vector<bool> delivery_droppedoff;
 
+double route_cost(const double turn_penalty, std::vector<CourierSubPath> route);
+
 void resetNodesM4(std::vector<int> nodes);
 bool twoOpt(std::vector<CourierSubPath>* initialPath, std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryInfos, double turnPenalty);
 void twoOptAnneal(std::vector<CourierSubPath>* initialPath, std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryInfos, double turnPenalty, unsigned int seed, int perturbationSize, struct twoOptData* returnStruct);
@@ -259,6 +261,7 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
             }
         }
     }
+    std::cout << "TOTAL COST: " << route_cost(turn_penalty, returnPath) << std::endl;
     return returnPath;
     
 
@@ -737,3 +740,11 @@ std::vector<CourierSubPath> get_greedy_route(
 
 }
 */
+
+double route_cost(const double turn_penalty, std::vector<CourierSubPath> route) {
+    double total_cost = 0.0;
+    for (int i = 0; i < route.size(); i++) {
+        total_cost += computePathTravelTime(turn_penalty, route[i].subpath);
+    }
+    return total_cost;
+}
