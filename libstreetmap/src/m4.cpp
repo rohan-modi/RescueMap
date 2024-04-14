@@ -377,7 +377,7 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
     std::cout<< "finding" <<travelTimeMatrix[intersectionVectorIndices.find(23166)->second][intersectionVectorIndices.find(2432)->second].travelTime<<std::endl;
 
     */
-
+   return returnPath;
 
     int counter = 0;
     std::cout << "Initial cost: " << route_cost(turn_penalty, returnPath) << std::endl;
@@ -391,6 +391,8 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
         }
     }
     std::cout << "Next cost: " << route_cost(turn_penalty, returnPath) << std::endl;
+
+
 
     bool timeFinished = false;
     int iterationCounter = 0;
