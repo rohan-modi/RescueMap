@@ -310,9 +310,6 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
                 pathFound = true;
             }
         }
-        if(i == 0){
-            std::cout<<route_cost(turn_penalty, tempPath)<<std::endl;
-        }
         multiStartPaths[i].path = tempPath;
         multiStartPaths[i].travelTime = route_cost(turn_penalty, tempPath);
     }
