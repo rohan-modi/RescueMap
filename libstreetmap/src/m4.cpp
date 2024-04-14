@@ -232,18 +232,20 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
 
     //Greedy TEST
     std::vector<CourierSubPath> returnPath;
+    std::vector<CourierSubPath> bestPath;
+    double bestTime;
     double minPath = std::numeric_limits<double>::infinity();
     int minPathDepot = 0;
     std::vector<pathData> multiStartPaths;
 
-    multiStartPaths.resize(250000);
+    multiStartPaths.resize(200000);
     //std::cout<<depots.size()<<std::endl;
 
     std::default_random_engine generator;
     std::uniform_int_distribution<int> distribution(1,100);
 
     #pragma omp parallel for
-    for(int i = 0; i< 250000; i++){
+    for(int i = 0; i< 200000; i++){
         std::vector<CourierSubPath> tempPath;
         std::unordered_set<int> legalIntersection;
         std::multimap<int, pickUpStatusInformation> multiDropOff;
@@ -314,7 +316,7 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
         multiStartPaths[i].travelTime = route_cost(turn_penalty, tempPath);
     }
 
-    for(int i = 0; i < 250000; i++){
+    for(int i = 0; i < 200000; i++){
         if(multiStartPaths[i].travelTime < minPath){
             minPathDepot = i;
             minPath = multiStartPaths[i].travelTime;
@@ -374,7 +376,10 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
     std::cout<< "finding" <<travelTimeMatrix[intersectionVectorIndices.find(23166)->second][intersectionVectorIndices.find(2432)->second].travelTime<<std::endl;
 
     */
-   return returnPath;
+   bestTime = route_cost(turn_penalty, returnPath);
+   bestPath = returnPath;
+   std::cout << "These should be the same " << route_cost(turn_penalty, returnPath) << " - " << route_cost(turn_penalty, bestPath) << std::endl;
+//    return returnPath;
 
     int counter = 0;
     std::cout << "Initial cost: " << route_cost(turn_penalty, returnPath) << std::endl;
@@ -458,14 +463,19 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
                 returnPath[perturbationData.swapStartIndex+perturbationData.swappedSection.size()].subpath = travelTimeMatrix[firstIndex2][secondIndex2].path;
                 // std::cout << "Path set again" << std::endl;
             }
+            if (route_cost(turn_penalty, returnPath) < bestTime) {
+                bestTime = route_cost(turn_penalty, returnPath);
+                bestPath = returnPath;
+            }
         }
         if (timeFinished) {
             break;
         }
         temperature *= tempMultiplier;
     }
-    std::cout << "Final cost: " << route_cost(turn_penalty, returnPath) << std::endl;
-    return returnPath;
+    std::cout << "Annealed cost: " << route_cost(turn_penalty, returnPath) << std::endl;
+    std::cout << "Returned cost: " << route_cost(turn_penalty, bestPath) << std::endl;
+    return bestPath;
 
     /*
 
