@@ -93,6 +93,8 @@ extern float cos_latavg;
 std::vector<bool> delivery_pickedup;
 std::vector<bool> delivery_droppedoff;
 
+double route_cost(const double turn_penalty, std::vector<CourierSubPath> route);
+
 void resetNodesM4(std::vector<int> nodes);
 bool twoOpt(std::vector<CourierSubPath>* initialPath, std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryInfos, double turnPenalty);
 void twoOptAnneal(std::vector<CourierSubPath>* initialPath, std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryInfos, double turnPenalty, unsigned int seed, int perturbationSize, struct twoOptData* returnStruct);
@@ -299,8 +301,8 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
 
     return returnPath;
     
+    // std::cout << "TOTAL COST: " << route_cost(turn_penalty, returnPath) << std::endl;    
 
-/*
     // MAKING MAP FOR 2-OPT
     std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryRequirements;
     std::unordered_map<IntersectionIdx, std::vector<IntersectionIdx>> legalityChecking;
@@ -329,7 +331,7 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
 
 
 
-
+    /*
     // //DRAWS OUT MATRIX
     for(int i = 0; i< travelTimeMatrix.size(); i++){
         for(int j = 0; j < travelTimeMatrix[i].size(); j++){
@@ -347,17 +349,25 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
     std::cout<< "finding" <<travelTimeMatrix[intersectionVectorIndices.find(23166)->second][intersectionVectorIndices.find(2432)->second].travelTime<<std::endl;
 
     std::vector<CourierSubPath> startPath;
+    */
 
 
+    // int counter = 0;
+    std::cout << "Initial cost: " << route_cost(turn_penalty, returnPath) << std::endl;
+    while (twoOpt(&returnPath, deliveryRequirements, turn_penalty)) {
+        // std::cout << "Counter number: " << counter << std::endl;
+        // counter++;
+        auto currTime = std::chrono::high_resolution_clock::now();
+        auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
+        if (wallClock.count() >= 50*0.9) {
+            break;
+        }
+    }
+    std::cout << "Final cost: " << route_cost(turn_penalty, returnPath) << std::endl;
+    return returnPath;
 
 
-    // while (twoOpt(&startPath, deliveryRequirements, turn_penalty)) {
-    //     auto currTime = std::chrono::high_resolution_clock::now();
-    //     auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
-    //     if (wallClock.count() >= 50*0.9) {
-    //         break;
-    //     }
-    // }
+    /*
 
     // Parameters for annealing
     int perturbationSize = 10;
@@ -575,6 +585,7 @@ std::vector<StreetSegmentIdx> retracePathM4(
 }
 
 bool twoOpt(std::vector<CourierSubPath>* initialPath, std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryInfos, double turnPenalty) {
+    // std::cout << "IN FUNCTION" << std::endl;
     std::vector<IntersectionIdx> pathIntersections;
     int pathIntersectionsSize = initialPath->size()+1;
     int initialSolutionSize = initialPath->size();
@@ -582,10 +593,12 @@ bool twoOpt(std::vector<CourierSubPath>* initialPath, std::unordered_map<Interse
     for (int i =  0; i < pathIntersectionsSize; i++) {
         pathIntersections[i] = (*initialPath)[i].intersections.first;
     }
+    // std::cout << "Past first for loop" << std::endl;
     pathIntersections[pathIntersectionsSize-1] = (*initialPath)[initialSolutionSize-1].intersections.second;
 
-    for (int i = 0; i < initialSolutionSize-2; i++) {
-        auto intersectionIterator = deliveryInfos.find(pathIntersections[i+1]);
+    for (int i = 1; i < initialSolutionSize-2; i++) {
+        // std::cout << "In main for loop" << std::endl;
+        auto intersectionIterator = deliveryInfos.find(pathIntersections[i]);
         if (intersectionIterator != deliveryInfos.end()) {
             auto pickUpIterator = deliveryInfos[pathIntersections[i+1]].find(pathIntersections[i]);
             if (pickUpIterator != deliveryInfos[pathIntersections[i+1]].end()) {
@@ -593,14 +606,15 @@ bool twoOpt(std::vector<CourierSubPath>* initialPath, std::unordered_map<Interse
             }
         }
         // Swap legal
+        // std::cout << "Found a legal swap, index " << i << std::endl;
         std::vector<IntersectionIdx> swappedIntersections(4);
-        for (int j = 0; j < 3; j++) {
+        for (int j = 0; j < 4; j++) {
             swappedIntersections[j] = pathIntersections[i-1+j];
         }
         IntersectionIdx temp = swappedIntersections[2];
         swappedIntersections[2] = swappedIntersections[1];
         swappedIntersections[1] = temp;
-
+        // std::cout << "Swapped Intersections set up" << std::endl;
         int currentTravelTime = 0;
         int tempTravelTime = 0;
         for (int j = 0; j < 3; j++) {
@@ -608,13 +622,18 @@ bool twoOpt(std::vector<CourierSubPath>* initialPath, std::unordered_map<Interse
             int secondOne = intersectionVectorIndices.find(pathIntersections[i+j])->second;
             currentTravelTime += travelTimeMatrix[firstOne][secondOne].travelTime;
         }
+        // std::cout << "First time calculated" << std::endl;
         for (int j = 0; j < 3; j++) {
+            // std::cout << "Loop number " << j << std::endl;
             int firstOne = intersectionVectorIndices.find(swappedIntersections[j])->second;
             int secondOne = intersectionVectorIndices.find(swappedIntersections[j+1])->second;
+            // std::cout << "Indices calculated" << std::endl;
             tempTravelTime += travelTimeMatrix[firstOne][secondOne].travelTime;
         }
+        // std::cout << "Travel times calculated" << std::endl;
 
         if (tempTravelTime < currentTravelTime) { // Swap made path faster
+            // std::cout << "Found a fast swap, index " << i << std::endl;
             pathIntersections[i] = swappedIntersections[1];
             pathIntersections[i+1] = swappedIntersections[2];
 
@@ -622,6 +641,8 @@ bool twoOpt(std::vector<CourierSubPath>* initialPath, std::unordered_map<Interse
                 int firstIndex = intersectionVectorIndices.find(pathIntersections[i-1+j])->second;
                 int secondIndex = intersectionVectorIndices.find(pathIntersections[i+j])->second;
                 (*initialPath)[i-1+j].subpath = travelTimeMatrix[firstIndex][secondIndex].path;
+                std::pair<IntersectionIdx, IntersectionIdx> newPair (pathIntersections[i-1+j], pathIntersections[i+j]);
+                (*initialPath)[i-1+j].intersections = newPair;
             }
             return true;
         }
@@ -775,3 +796,11 @@ std::vector<CourierSubPath> get_greedy_route(
 
 }
 */
+
+double route_cost(const double turn_penalty, std::vector<CourierSubPath> route) {
+    double total_cost = 0.0;
+    for (int i = 0; i < route.size(); i++) {
+        total_cost += computePathTravelTime(turn_penalty, route[i].subpath);
+    }
+    return total_cost;
+}
