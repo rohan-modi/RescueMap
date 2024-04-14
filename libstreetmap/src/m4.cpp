@@ -378,16 +378,16 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
 
     int counter = 0;
     std::cout << "Initial cost: " << route_cost(turn_penalty, returnPath) << std::endl;
-    while (twoOpt(&returnPath, deliveryRequirements, turn_penalty)) {
-        // std::cout << "Counter number: " << counter << std::endl;
-        // counter++;
-        auto currTime = std::chrono::high_resolution_clock::now();
-        auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
-        if (wallClock.count() >= 50*0.9) {
-            break;
-        }
-    }
-    std::cout << "Next cost: " << route_cost(turn_penalty, returnPath) << std::endl;
+    // while (twoOpt(&returnPath, deliveryRequirements, turn_penalty)) {
+    //     // std::cout << "Counter number: " << counter << std::endl;
+    //     // counter++;
+    //     auto currTime = std::chrono::high_resolution_clock::now();
+    //     auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
+    //     if (wallClock.count() >= 50*0.9) {
+    //         break;
+    //     }
+    // }
+    // std::cout << "Next cost: " << route_cost(turn_penalty, returnPath) << std::endl;
 
 
 
@@ -883,7 +883,9 @@ std::vector<CourierSubPath> get_greedy_route(
 double route_cost(const double turn_penalty, std::vector<CourierSubPath>& route) {
     double total_cost = 0.0;
     for (int i = 0; i < route.size(); i++) {
-        total_cost += computePathTravelTime(turn_penalty, route[i].subpath);
+        int index1 = intersectionVectorIndices.find(route[i].intersections.first)->second;
+        int index2 = intersectionVectorIndices.find(route[i].intersections.second)->second;
+        total_cost += travelTimeMatrix[index1][index2].travelTime;
     }
     return total_cost;
 }
