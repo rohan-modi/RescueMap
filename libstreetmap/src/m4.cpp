@@ -378,11 +378,11 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
     */
    bestTime = route_cost(turn_penalty, returnPath);
    bestPath = returnPath;
-   std::cout << "These should be the same " << route_cost(turn_penalty, returnPath) << " - " << route_cost(turn_penalty, bestPath) << std::endl;
+//    std::cout << "These should be the same " << route_cost(turn_penalty, returnPath) << " - " << route_cost(turn_penalty, bestPath) << std::endl;
 //    return returnPath;
 
     int counter = 0;
-    std::cout << "Initial cost: " << route_cost(turn_penalty, returnPath) << std::endl;
+    // std::cout << "Initial cost: " << route_cost(turn_penalty, returnPath) << std::endl;
     // while (twoOpt(&returnPath, deliveryRequirements, turn_penalty)) {
     //     // std::cout << "Counter number: " << counter << std::endl;
     //     // counter++;
@@ -399,9 +399,9 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
     bool timeFinished = false;
     int iterationCounter = 0;
     // Parameters for annealing
-    int perturbationSize = 10;
+    int perturbationSize = 35;
     int numberOfPerturbations = 50;
-    double temperature = 1000;
+    double temperature = 500;
     double tempMultiplier = 0.9;
     while (1) {
         for (int i = 0; i < numberOfPerturbations; i++) {
@@ -409,7 +409,7 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
             struct twoOptData perturbationData;
             auto currTime = std::chrono::high_resolution_clock::now();
             auto wallClock = std::chrono::duration_cast<std::chrono::duration<double>>(currTime - startTime);
-            if (wallClock.count() >= 50*0.9) {
+            if (wallClock.count() >= 50*0.85) {
                 timeFinished = true;
                 break;
             }
@@ -473,8 +473,8 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
         }
         temperature *= tempMultiplier;
     }
-    std::cout << "Annealed cost: " << route_cost(turn_penalty, returnPath) << std::endl;
-    std::cout << "Returned cost: " << route_cost(turn_penalty, bestPath) << std::endl;
+    // std::cout << "Annealed cost: " << route_cost(turn_penalty, returnPath) << std::endl;
+    // std::cout << "Returned cost: " << route_cost(turn_penalty, bestPath) << std::endl;
     return bestPath;
 
     /*
