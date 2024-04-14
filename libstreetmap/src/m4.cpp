@@ -236,14 +236,14 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
     int minPathDepot = 0;
     std::vector<pathData> multiStartPaths;
 
-    multiStartPaths.resize(200000);
+    multiStartPaths.resize(250000);
     //std::cout<<depots.size()<<std::endl;
 
     std::default_random_engine generator;
     std::uniform_int_distribution<int> distribution(1,100);
 
     #pragma omp parallel for
-    for(int i = 0; i< 200000; i++){
+    for(int i = 0; i< 250000; i++){
         std::vector<CourierSubPath> tempPath;
         std::unordered_set<int> legalIntersection;
         std::multimap<int, pickUpStatusInformation> multiDropOff;
@@ -314,7 +314,7 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
         multiStartPaths[i].travelTime = route_cost(turn_penalty, tempPath);
     }
 
-    for(int i = 0; i < 200000; i++){
+    for(int i = 0; i < 250000; i++){
         if(multiStartPaths[i].travelTime < minPath){
             minPathDepot = i;
             minPath = multiStartPaths[i].travelTime;
