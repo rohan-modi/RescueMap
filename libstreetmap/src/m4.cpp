@@ -93,7 +93,7 @@ extern float cos_latavg;
 std::vector<bool> delivery_pickedup;
 std::vector<bool> delivery_droppedoff;
 
-double route_cost(const double turn_penalty, std::vector<CourierSubPath> route);
+double route_cost(const double turn_penalty, std::vector<CourierSubPath>& route);
 
 void resetNodesM4(std::vector<int> nodes);
 bool twoOpt(std::vector<CourierSubPath>* initialPath, std::unordered_map<IntersectionIdx, std::unordered_set<IntersectionIdx>> deliveryInfos, double turnPenalty);
@@ -227,7 +227,10 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
     int minPathDepot = 0;
     std::vector<pathData> multiStartPaths;
 
-    for(int i = 0; i< 1; i++){
+    multiStartPaths.resize(depots.size());
+    std::cout<<depots.size()<<std::endl;
+
+    for(int i = 0; i< depots.size(); i++){
         std::vector<CourierSubPath> tempPath;
         std::unordered_set<int> legalIntersection;
         std::multimap<int, pickUpStatusInformation> multiDropOff;
@@ -283,22 +286,23 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
                 data.intersections = std::make_pair(currentNodeIndex, depots[i]);
                 data.subpath = travelTimeMatrix[intersectionVectorIndices.find(currentNodeIndex)->second][intersectionVectorIndices.find(depots[i])->second].path;
                 tempPath.push_back(data);
-                    //ADD TIME LOGIC
+                    
                 pathFound = true;
             }
         }
-        multiStartPaths[i] = tempPath;
+        multiStartPaths[i].path = tempPath;
+        multiStartPaths[i].travelTime = route_cost(turn_penalty, tempPath);
     }
 
     for(int i = 0; i < depots.size(); i++){
-        if(multiStartPaths[i].minTime < minPath){
+        if(multiStartPaths[i].travelTime < minPath){
             minPathDepot = i;
         }
     }
 
-    returnPath = multiStartPaths[minPathDepot];
+    returnPath = multiStartPaths[minPathDepot].path;
 
-
+    
     return returnPath;
     
     // std::cout << "TOTAL COST: " << route_cost(turn_penalty, returnPath) << std::endl;    
@@ -797,7 +801,7 @@ std::vector<CourierSubPath> get_greedy_route(
 }
 */
 
-double route_cost(const double turn_penalty, std::vector<CourierSubPath> route) {
+double route_cost(const double turn_penalty, std::vector<CourierSubPath>& route) {
     double total_cost = 0.0;
     for (int i = 0; i < route.size(); i++) {
         total_cost += computePathTravelTime(turn_penalty, route[i].subpath);

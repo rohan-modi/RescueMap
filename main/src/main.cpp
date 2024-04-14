@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
 
     travelingCourier(0.0,deliveries,depots);
 
-    std::cout<<"TRAVEL TIME : " << computePathTravelTime(0.0,findPathBetweenIntersections(0.0,{5323,23166}))<<std::endl;
+    //std::cout<<"TRAVEL TIME : " << computePathTravelTime(0.0,findPathBetweenIntersections(0.0,{5323,23166}))<<std::endl;
 
     
     //Clean-up the map data and related data structures
