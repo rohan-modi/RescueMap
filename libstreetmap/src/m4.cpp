@@ -220,8 +220,14 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
 
     //=====================================END OF MATRIX SETUP================================================
 
-    //Greedy TEST
+    // Handles unreachable node edge case (return empty vector)
+    for (int fromIdx = 0; fromIdx < travelTimeMatrix.size(); fromIdx++) {
+        if (travelTimeMatrix[fromIdx].size() == 0) {
+            return {};
+        }
+    }
 
+    //Greedy TEST
     std::vector<CourierSubPath> returnPath;
     double minPath = std::numeric_limits<double>::infinity();
     int minPathDepot = 0;
