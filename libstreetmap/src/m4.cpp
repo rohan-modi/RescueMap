@@ -16,6 +16,7 @@
 #include <limits>
 #include <random>
 #include <algorithm>
+#include <random>
 
 #include <unordered_set>
 
@@ -227,10 +228,14 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
     int minPathDepot = 0;
     std::vector<pathData> multiStartPaths;
 
-    multiStartPaths.resize(depots.size());
-    std::cout<<depots.size()<<std::endl;
+    multiStartPaths.resize(300000);
+    //std::cout<<depots.size()<<std::endl;
 
-    for(int i = 0; i< depots.size(); i++){
+    std::default_random_engine generator;
+    std::uniform_int_distribution<int> distribution(1,100);
+
+    #pragma omp parallel for
+    for(int i = 0; i< 300000; i++){
         std::vector<CourierSubPath> tempPath;
         std::unordered_set<int> legalIntersection;
         std::multimap<int, pickUpStatusInformation> multiDropOff;
@@ -245,11 +250,12 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
         }
 
         bool pathFound = false;
-        int minIndex = -1;
-        int currentNodeIndex = depots[i];
+        
+        int currentNodeIndex = depots[0];
 
         while(!pathFound){
-
+            int minIndex = -1;
+            int secondMin = -1;
             double minTime = std::numeric_limits<double>::infinity();
             
 
@@ -257,9 +263,15 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
 
                 if(travelTimeMatrix[intersectionVectorIndices.find(currentNodeIndex)->second][intersectionVectorIndices.find(*iterator)->second].travelTime < minTime){
                     minTime = travelTimeMatrix[intersectionVectorIndices.find(currentNodeIndex)->second][intersectionVectorIndices.find(*iterator)->second].travelTime ;
+                    secondMin = minIndex;
                     minIndex = *iterator;
                 }
 
+            }
+            int dice_roll = distribution(generator);
+            if(i >0 && dice_roll <= 3 && secondMin != -1){
+                //std::cout<<i<<std::endl;
+                minIndex = secondMin;
             }
 
             legalIntersection.erase(minIndex);
@@ -283,20 +295,24 @@ std::vector<CourierSubPath> travelingCourier(const float turn_penalty,const std:
 
 
             if(legalIntersection.empty()){
-                data.intersections = std::make_pair(currentNodeIndex, depots[i]);
-                data.subpath = travelTimeMatrix[intersectionVectorIndices.find(currentNodeIndex)->second][intersectionVectorIndices.find(depots[i])->second].path;
+                data.intersections = std::make_pair(currentNodeIndex, depots[0]);
+                data.subpath = travelTimeMatrix[intersectionVectorIndices.find(currentNodeIndex)->second][intersectionVectorIndices.find(depots[0])->second].path;
                 tempPath.push_back(data);
                     
                 pathFound = true;
             }
         }
+        if(i == 0){
+            std::cout<<route_cost(turn_penalty, tempPath)<<std::endl;
+        }
         multiStartPaths[i].path = tempPath;
         multiStartPaths[i].travelTime = route_cost(turn_penalty, tempPath);
     }
 
-    for(int i = 0; i < depots.size(); i++){
+    for(int i = 0; i < 300000; i++){
         if(multiStartPaths[i].travelTime < minPath){
             minPathDepot = i;
+            minPath = multiStartPaths[i].travelTime;
         }
     }
 
