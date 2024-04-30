@@ -90,7 +90,7 @@ int main(int argc, char** argv) {
     std::cout << "Successfully loaded map '" << map_path << "'\n";
 
     //You can now do something with the map data
-    //drawMap();
+    drawMap();
 
     std::vector<DeliveryInf> deliveries;
     std::vector<IntersectionIdx> depots;

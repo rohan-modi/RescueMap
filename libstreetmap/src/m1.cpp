@@ -893,20 +893,20 @@ bool loadMap(std::string map_streets_database_filename) {
     populateIntersectionData(); //Critical do not remove
 
     populateConnectedIntersectionData(); //Addedfor m3 speed improvements
-    //populateOSMWayByID();
+    populateOSMWayByID();
     populateSegmentsdata();
     
-    //populateStreetNamesVector();
+    populateStreetNamesVector();
 
-    //populateOSMNodeByID();
+    populateOSMNodeByID();
 
     
     
-    //populateOSMWaylengths();
+    populateOSMWaylengths();
     
-    //populateFeatures();
+    populateFeatures();
 
-    //populatePOILocations();
+    populatePOILocations();
     populateMapNames();
 
     load_successful = check1 && check2; //Make sure this is updated to reflect whether
